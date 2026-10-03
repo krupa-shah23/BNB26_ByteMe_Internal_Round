@@ -8,7 +8,7 @@ import clsx from "clsx";
 import { Poster, Reveal, SlidingNav } from "@/components/ui/bits";
 import { fingerprint } from "@/lib/fingerprint";
 import { defaultGroup, groupById, groups, matchFiles, sampleFingerprints } from "@/lib/match";
-import { PROFILES, absTime, fmtTime, makeProject, relTime, totalDur } from "@/lib/projects";
+import { PROFILES, absTime, fmtTime, friendlyTitle, makeProject, relTime, totalDur } from "@/lib/projects";
 import { clipService } from "@/lib/services";
 import { generationSteps, sleep } from "@/lib/services/demo";
 import { useStore } from "@/lib/store";
@@ -33,14 +33,14 @@ function JobRing({ progress }: { progress: number }) {
   );
 }
 
-export function UploadWorkspace({ kind }: { kind: Kind }) {
+export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, dropHint }: { kind: Kind; embedded?: boolean; forcedTab?: string; dropTitle?: string; dropHint?: string }) {
   const router = useRouter();
   const params = useSearchParams();
   const { projects, upsertProject, forceGroup, toast } = useStore();
   const tabs = TABS[kind];
   const typeParam = params.get("type");
   const initial = tabs.find((t) => t.id.toLowerCase() === typeParam?.toLowerCase())?.id ?? tabs[0].id;
-  const [tab, setTab] = useState<string>(initial);
+  const [tab, setTab] = useState<string>(forcedTab ?? initial);
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState<"reading" | "job" | null>(null);
   const [files, setFiles] = useState<FileFingerprint[]>([]);
@@ -93,7 +93,7 @@ export function UploadWorkspace({ kind }: { kind: Kind }) {
       files: files.filter((f) => f.kind === "video").map((f) => f.name).slice(0, 6).concat(match?.isDefault ? [] : []),
       photos: match?.photosMatched.length ?? group.photos.length,
       ...(targets ? { platforms: targets } : {}),
-      title: match?.isDefault ? `Quick edit — ${files[0]?.name ?? "upload"}` : group.title,
+      title: match?.isDefault ? friendlyTitle(files[0]?.name ?? "upload") : group.title,
     });
     if (!p.files.length) p.files = group.inputs.map((i) => i.filenames[0]);
     upsertProject(p);
@@ -112,17 +112,17 @@ export function UploadWorkspace({ kind }: { kind: Kind }) {
 
   return (
     <div className="mx-auto max-w-[1400px]">
-      <Reveal className="mb-8 flex flex-wrap items-end justify-between gap-4">
+      {!embedded && <Reveal className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="t-label text-muted">{kind === "short" ? "9:16 · Reels, Shorts, Stories, Ads" : "16:9 · Podcasts, lectures, vlogs"}</p>
           <h1 className="t-h1 mt-2">{kind === "short" ? "Short Videos" : "Videos"}</h1>
         </div>
         <SlidingNav id={`ws-${kind}`} items={tabs as unknown as { id: string; label: string }[]} value={tab} onChange={setTab} />
-      </Reveal>
+      </Reveal>}
 
       {/* upload zone */}
-      <section aria-label="Upload" className="grid gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-3">
+      <section aria-label="Upload" className={embedded ? "grid gap-4" : "grid gap-6 lg:grid-cols-5"}>
+        <div className={embedded ? "" : "lg:col-span-3"}>
           <motion.div
             onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
             onDrop={(e) => { e.preventDefault(); setDrag(false); onFiles(e.dataTransfer.files); }}
@@ -130,8 +130,8 @@ export function UploadWorkspace({ kind }: { kind: Kind }) {
             className={clsx("grain relative grid min-h-[300px] place-items-center rounded-3xl border-2 border-dashed p-8 text-center transition-colors", drag ? "border-brand bg-brand/10" : "border-line bg-surface")}>
             <div className="relative z-10 grid justify-items-center gap-4">
               <motion.div animate={{ y: drag ? -10 : [0, -6, 0] }} transition={drag ? undefined : { repeat: Infinity, duration: 2.6 }} className="grid h-16 w-16 place-items-center rounded-2xl bg-brand text-brand-ink"><UploadCloud /></motion.div>
-              <h2 className="t-h2">Drop your clips here</h2>
-              <p className="max-w-md text-sm text-muted">Add a set of videos plus optional photos and audio — in any order. We recognise the set by fingerprint, not by upload order.</p>
+              <h2 className="t-h2">{dropTitle ?? "Drop your clips here"}</h2>
+              <p className="max-w-md text-sm text-muted">{dropHint ?? "Add a set of videos plus optional photos and audio — in any order. We recognise the set by fingerprint, not by upload order."}</p>
               <input ref={input} type="file" multiple accept="video/*,image/*,audio/*" className="sr-only" aria-label="Choose files" onChange={(e) => e.target.files && onFiles(e.target.files)} />
               <div className="flex flex-wrap justify-center gap-2">
                 <button className="btn-primary" onClick={() => input.current?.click()}>Choose files</button>
@@ -141,8 +141,11 @@ export function UploadWorkspace({ kind }: { kind: Kind }) {
           </motion.div>
         </div>
 
-        <div className="lg:col-span-2">
-          <div className="card h-full p-6">
+        {embedded ? (
+          <details className="group mx-auto w-full max-w-2xl text-center">
+            <summary className="cursor-pointer list-none text-sm text-muted underline-offset-4 hover:text-text hover:underline">No files handy? Try a sample set</summary>
+            <div className="card mt-3 p-4 text-left">
+
             <h2 className="t-label text-muted">No files handy? Try a sample set</h2>
             <ul className="mt-4 grid gap-2">
               {groups.filter((g) => kind === "short" || true).map((g) => (
@@ -154,11 +157,31 @@ export function UploadWorkspace({ kind }: { kind: Kind }) {
                 </li>
               ))}
             </ul>
+          
+</div>
+          </details>
+        ) : (
+          <div className="lg:col-span-2">
+            <div className="card h-full p-6">
+
+            <h2 className="t-label text-muted">No files handy? Try a sample set</h2>
+            <ul className="mt-4 grid gap-2">
+              {groups.filter((g) => kind === "short" || true).map((g) => (
+                <li key={g.id}>
+                  <button onClick={() => useSample(g.id)} className="flex w-full items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-left text-sm transition-colors hover:border-brand hover:bg-sunken">
+                    <Poster seed={g.hue} className="h-10 w-10 shrink-0 rounded-lg"><span className="absolute inset-0 grid place-items-center text-xs font-bold text-brand-ink">{g.id.toUpperCase()}</span></Poster>
+                    <span className="min-w-0 flex-1"><span className="block truncate font-medium">{g.title}</span><span className="text-xs text-muted">3 clips + 1 photo · {g.format === "short" ? "Short" : "Video"} · {g.type}</span></span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          
+</div>
           </div>
-        </div>
+        )}
       </section>
 
-      {kind === "short" && tab === "Ads" && (
+      {!embedded && kind === "short" && tab === "Ads" && (
         <Reveal className="card mt-6 grid gap-4 p-6 sm:grid-cols-3">
           <div><label className="t-label mb-2 block text-muted" htmlFor="cta">CTA text</label><input id="cta" className="input" value={cta} onChange={(e) => setCta(e.target.value)} /></div>
           <div><span className="t-label mb-2 block text-muted">Length variant</span><div className="flex gap-2">{([15, 30] as const).map((v) => <button key={v} aria-pressed={variant === v} onClick={() => setVariant(v)} className={clsx("chip px-4 py-2 text-sm", variant === v && "border-brand bg-brand text-brand-ink")}>{v} s</button>)}</div></div>
@@ -250,7 +273,7 @@ export function UploadWorkspace({ kind }: { kind: Kind }) {
       )}
 
       {/* previous projects */}
-      <section className="mt-14" aria-labelledby="prev-h">
+      {!embedded && <section className="mt-14" aria-labelledby="prev-h">
         <h2 id="prev-h" className="t-h2 mb-6">Previous projects</h2>
         {visible.length === 0 ? <p className="text-sm text-muted">Nothing here yet — generate your first one above.</p> : (
           <ul className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
@@ -267,7 +290,7 @@ export function UploadWorkspace({ kind }: { kind: Kind }) {
             ))}
           </ul>
         )}
-      </section>
+      </section>}
     </div>
   );
 }

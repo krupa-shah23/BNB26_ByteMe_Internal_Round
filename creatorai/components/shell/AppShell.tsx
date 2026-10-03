@@ -100,6 +100,7 @@ function Menu({ label, button, children, align = "right" }: { label: string; but
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const path = usePathname();
+  const minimal = /^\/(short-videos|videos|studio)(\/|$)/.test(path);
   const qc = useQueryClient();
   const hydrated = useHydrated();
   const loggedIn = useStore((s) => s.loggedIn);
@@ -150,12 +151,47 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
   const unread = notices.filter((n) => !n.read).length;
 
+  const minimalHeader = (
+    <header className="relative z-30 mx-auto flex h-20 max-w-[1500px] items-center justify-between gap-4 px-5 md:px-10">
+      <Link href="/" className="font-display text-[1.7rem] tracking-tight" aria-label="CreatorAi home">Creator<span className="text-brand">Ai</span></Link>
+      <nav aria-label="Primary" className="hidden items-center gap-8 lg:flex">
+        {TABS.map(({ href, label }) => {
+          const on = isActive(path, href);
+          return <Link key={href} href={href} aria-current={on ? "page" : undefined} className={clsx("whitespace-nowrap text-[0.95rem] transition-opacity", on ? "font-semibold underline decoration-brand decoration-2 underline-offset-[10px]" : "hover:opacity-60")}>{label}</Link>;
+        })}
+      </nav>
+      <div className="flex items-center gap-3 md:gap-5">
+        <button onClick={() => setPalette(true)} className="flex items-center gap-2 text-[0.95rem] hover:opacity-60" aria-label="Search (Ctrl K)"><Search size={18} /><span className="hidden md:inline">Search</span></button>
+        <Menu label="Notifications" button={<span className="relative grid h-9 w-9 place-items-center rounded-full hover:bg-sunken"><Bell size={18} />{unread > 0 && <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-brand" />}</span>}>
+          {() => (
+            <div>
+              <div className="flex items-center justify-between border-b border-line px-4 py-3"><span className="text-sm font-semibold">Notifications</span><button className="text-xs text-brand" onClick={() => useStore.getState().markNoticesRead()}>Mark read</button></div>
+              <ul className="max-h-80 overflow-y-auto">{notices.map((n) => (<li key={n.id} className="border-b border-line px-4 py-3 text-sm last:border-0"><div className="font-medium">{n.title}</div><div className="text-xs text-muted">{n.body}</div></li>))}</ul>
+            </div>
+          )}
+        </Menu>
+        <ThemeToggle />
+        <Menu label="Profile menu" button={<span className="flex items-center gap-2 text-[0.95rem] hover:opacity-60"><span className="hidden md:inline">Profile</span><span className="grid h-8 w-8 place-items-center rounded-full border-2 border-text text-sm font-semibold">A</span></span>}>
+          {(close) => (
+            <div className="p-2 text-sm">
+              <div className="px-3 py-2"><div className="font-medium">Aarav</div><div className="text-xs text-muted">@aarav.makes · demo creator</div></div>
+              <button role="menuitem" onClick={() => { close(); setSettings(true); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-sunken"><Settings size={16} />Settings</button>
+              <button role="menuitem" onClick={() => { close(); router.push("/profile-studio"); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-sunken"><UserCircle2 size={16} />Manage profile</button>
+              <button role="menuitem" onClick={() => { close(); setDemo(true); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-sunken"><span className="w-4 text-center text-xs">⌃⇧D</span>Demo Panel</button>
+            </div>
+          )}
+        </Menu>
+        <button onClick={requestLogout} className="flex items-center gap-2 text-[0.95rem] hover:opacity-60" aria-label="Log out"><LogOut size={16} /><span className="hidden md:inline">Logout</span></button>
+      </div>
+    </header>
+  );
+
   return (
-    <div className="min-h-screen">
+    <div className={clsx("min-h-screen", minimal && "sv-theme bg-bg text-text")}>
       <a href="#app-main" className="sr-only z-[200] rounded-pill bg-text px-4 py-2 text-bg focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Skip to content</a>
 
       {/* left rail */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[84px] flex-col items-center justify-between border-r border-line bg-bg py-5 lg:flex xl:w-60 xl:items-stretch xl:px-4">
+      <aside className={clsx("fixed inset-y-0 left-0 z-30 hidden w-[84px] flex-col items-center justify-between border-r border-line bg-bg py-5 lg:flex xl:w-60 xl:items-stretch xl:px-4", minimal && "!hidden")}>
         <div>
           <Link href="/" className="mb-8 flex items-center justify-center font-display text-2xl xl:justify-start xl:px-3" aria-label="CreatorAi">
             <span className="xl:hidden">C<span className="text-brand">A</span></span><span className="hidden xl:inline">Creator<span className="text-brand">Ai</span></span>
@@ -176,9 +212,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <button onClick={() => setCreate(true)} className="btn-primary mx-auto xl:mx-0 xl:w-full" aria-label="Create"><Plus size={18} /><span className="hidden xl:inline">Create</span></button>
       </aside>
 
-      <div className="lg:pl-[84px] xl:pl-60">
+      <div className={minimal ? "" : "lg:pl-[84px] xl:pl-60"}>
         {/* navbar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-line bg-bg/85 px-4 backdrop-blur-md md:px-8">
+        {minimal ? minimalHeader : <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-line bg-bg/85 px-4 backdrop-blur-md md:px-8">
           <button onClick={() => setPalette(true)} className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-pill border border-line bg-surface px-4 text-sm text-muted hover:bg-sunken md:max-w-sm md:flex-none md:basis-80" aria-label="Search (Ctrl K)">
             <Search size={16} /><span className="truncate">Search</span><kbd className="ml-auto hidden rounded border border-line px-1.5 text-[10px] md:inline">⌘K</kbd>
           </button>
@@ -206,7 +242,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Menu>
             <button onClick={requestLogout} className="btn-ghost h-10 py-0" aria-label="Log out"><LogOut size={16} /><span className="hidden sm:inline">Logout</span></button>
           </div>
-        </header>
+        </header>}
 
         <main id="app-main" className="px-4 pb-28 pt-6 md:px-8 lg:pb-16">{children}</main>
       </div>
@@ -232,7 +268,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Overlay open={confirmOut} onClose={() => setConfirmOut(false)} side="center" width="max-w-md" labelledBy="lo-h">
         <div className="p-8 pt-14">
           <h2 id="lo-h" className="t-h2">Unsaved Studio edits</h2>
-          <p className="mt-2 text-sm text-muted">Your edits autosave to the project as a new EDL version. Save before logging out?</p>
+          <p className="mt-2 text-sm text-muted">Your changes haven’t been saved yet. Save them before logging out?</p>
           <div className="mt-6 grid gap-2">
             <button data-autofocus className="btn-primary" onClick={() => { useStore.getState().setDirty(false); doLogout(); }}>Save &amp; log out</button>
             <button className="btn-ghost" onClick={doLogout}>Log out anyway</button>
