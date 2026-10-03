@@ -63,7 +63,7 @@ export function SlidingNav<T extends string>({ items, value, onChange, id }: { i
         const on = it.id === value;
         return (
           <button key={it.id} role="tab" aria-selected={on} onClick={() => onChange(it.id)}
-            className={clsx("relative whitespace-nowrap rounded-pill px-4 py-2 text-sm font-medium transition-colors", on ? "text-brand-ink" : "text-muted hover:text-text")}>
+            className={clsx("relative whitespace-nowrap rounded-pill px-4 py-2 text-sm font-medium transition-colors", on ? "text-white dark:text-brand-ink" : "text-muted hover:text-text")}>
             {on && <motion.span layoutId={`pill-${id}`} className="absolute inset-0 rounded-pill bg-brand" transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
             <span className="relative">{it.label}</span>
           </button>

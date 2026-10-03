@@ -167,7 +167,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             const on = isActive(path, href);
             return (
               <Link key={href} href={href} title={label} aria-current={on ? "page" : undefined}
-                className={clsx("relative flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-colors", railOpen ? "" : "justify-center", on ? "bg-brand text-brand-ink" : "text-muted hover:bg-sunken hover:text-text")}>
+                className={clsx("relative flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-colors", railOpen ? "" : "justify-center", on ? "bg-brand text-white dark:text-brand-ink" : "text-muted hover:bg-sunken hover:text-text")}>
                 <Icon size={19} className="shrink-0" />{railOpen && <span className="truncate">{label}</span>}
               </Link>
             );
@@ -226,7 +226,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               const on = isActive(path, href);
               return (
                 <Link key={href} href={href} aria-current={on ? "page" : undefined} title={label}
-                  className={clsx("relative flex items-center justify-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors xl:justify-start", on ? "text-brand-ink" : "text-muted hover:bg-sunken hover:text-text")}>
+                  className={clsx("relative flex items-center justify-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors xl:justify-start", on ? "text-white dark:text-brand-ink" : "text-muted hover:bg-sunken hover:text-text")}>
                   {on && <motion.span layoutId="rail-pill" className="absolute inset-0 rounded-xl bg-brand" transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
                   <Icon size={20} className="relative" /><span className="relative hidden xl:inline">{label}</span>
                 </Link>

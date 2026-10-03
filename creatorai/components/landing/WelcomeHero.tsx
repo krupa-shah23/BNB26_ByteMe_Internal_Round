@@ -1,8 +1,8 @@
 "use client";
 import { motion, useAnimationFrame, useReducedMotion } from "framer-motion";
 import { Heart, Share2 } from "lucide-react";
-import Link from "next/link";
 import { useRef } from "react";
+import { AuthSwitch } from "@/components/landing/AuthSwitch";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 /* Social tiles. Brand marks are simplified, hand-drawn shapes (no logo files). */
@@ -99,8 +99,7 @@ export function WelcomeHero() {
         <span className="font-display text-[clamp(1.4rem,2vw,1.9rem)] font-semibold tracking-tight">Creator<span className="text-brand">Ai</span></span>
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          <Link href="/login" className="hidden px-2 text-sm font-medium hover:opacity-60 sm:inline">Log in</Link>
-          <Link href="/signup" className="btn-primary">Sign up</Link>
+          <AuthSwitch active="signup" />
         </div>
       </header>
 
