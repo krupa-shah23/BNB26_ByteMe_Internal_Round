@@ -115,7 +115,7 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
       {!embedded && <Reveal className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="t-label text-muted">{kind === "short" ? "9:16 · Reels, Shorts, Stories, Ads" : "16:9 · Podcasts, lectures, vlogs"}</p>
-          <h1 className="t-h1 mt-2">{kind === "short" ? "Short Videos" : "Videos"}</h1>
+          <h1 className="t-h1 mt-2">{kind === "short" ? "Short Videos" : "Video Studio"}</h1>
         </div>
         <SlidingNav id={`ws-${kind}`} items={tabs as unknown as { id: string; label: string }[]} value={tab} onChange={setTab} />
       </Reveal>}
@@ -135,7 +135,8 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
               <input ref={input} type="file" multiple accept="video/*,image/*,audio/*" className="sr-only" aria-label="Choose files" onChange={(e) => e.target.files && onFiles(e.target.files)} />
               <div className="flex flex-wrap justify-center gap-2">
                 <button className="btn-primary" onClick={() => input.current?.click()}>Choose files</button>
-                <Link href="/?section=library" className="btn-ghost">Pick from library</Link>
+                <Link href="/home#library" className="btn-ghost">Pick from library</Link>
+                <Link href="/studio" className="btn-ghost">Studio history</Link>
               </div>
             </div>
           </motion.div>

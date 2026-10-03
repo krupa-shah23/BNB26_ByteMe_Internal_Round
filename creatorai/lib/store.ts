@@ -7,7 +7,9 @@ import { groupById } from "./match";
 import { makeProject, uid } from "./projects";
 
 export interface Permissions { earnings: boolean; reach: boolean; audience: boolean; comments: boolean; decided: boolean }
-export interface Toast { id: string; title: string; body?: string }
+export interface Toast { id: string; title: string; body?: string; duration: number; kind: "success" | "error" | "info" }
+export interface ToastOpts { duration?: number; kind?: Toast["kind"] }
+export interface CollabRequest { creatorId: string; name: string; handle: string; niche: string; at: string }
 
 const day = 86_400_000;
 function seedProjects(): Project[] {
@@ -46,6 +48,7 @@ interface State {
   permissions: Permissions;
   pref: number[];            // collab preference vector
   swiped: Record<string, "right" | "left" | "up">;
+  requests: CollabRequest[]; // outgoing collaboration requests = the Tracker
   leads: (Lead & { at: string })[];
   newsletter: string[];
   timeOffsetMs: number;      // Demo Panel "fast-forward time"
@@ -60,8 +63,10 @@ interface State {
   notify(title: string, body: string): void; markNoticesRead(): void;
   setPermissions(p: Partial<Permissions>): void;
   swipe(id: string, dir: "right" | "left" | "up", vec: number[]): void;
+  /** Single source of truth for "Collaborate": returns "duplicate" (and changes nothing) if already requested. */
+  requestCollab(c: Omit<CollabRequest, "at">): "sent" | "duplicate";
   addLead(l: Lead): void; addNewsletter(e: string): void;
-  setDirty(v: boolean): void; toast(title: string, body?: string): void; dismissToast(id: string): void;
+  setDirty(v: boolean): void; toast(title: string, body?: string, opts?: ToastOpts): void; dismissToast(id: string): void;
   set(p: Partial<State>): void;
   reset(): void;
 }
@@ -74,6 +79,7 @@ const initial = () => ({
   permissions: { earnings: false, reach: false, audience: false, comments: false, decided: false },
   pref: [0, 0, 0, 0, 0, 0, 0, 0],
   swiped: {} as Record<string, "right" | "left" | "up">,
+  requests: [] as CollabRequest[],
   leads: [] as (Lead & { at: string })[],
   newsletter: [] as string[],
   timeOffsetMs: 0,
@@ -104,13 +110,18 @@ export const useStore = create<State>()(
         const a = dir === "up" ? 0.5 : dir === "right" ? 0.3 : -0.15;
         set((s) => ({ swiped: { ...s.swiped, [id]: dir }, pref: s.pref.map((p, i) => p + a * (vec[i] ?? 0)) }));
       },
+      requestCollab: (c) => {
+        if (get().requests.some((r) => r.creatorId === c.creatorId)) return "duplicate";
+        set((s) => ({ requests: [{ ...c, at: new Date().toISOString() }, ...s.requests] }));
+        return "sent";
+      },
       addLead: (l) => set((s) => ({ leads: [...s.leads, { ...l, at: new Date().toISOString() }] })),
       addNewsletter: (e) => set((s) => ({ newsletter: [...s.newsletter, e] })),
       setDirty: (v) => set({ dirty: v }),
-      toast: (title, body) => {
+      // lifetime is owned by the SwipeToast component (duration + swipe/close), which calls dismissToast
+      toast: (title, body, opts) => {
         const id = uid("t");
-        set((s) => ({ toasts: [...s.toasts, { id, title, body }] }));
-        setTimeout(() => get().dismissToast(id), 5200);
+        set((s) => ({ toasts: [...s.toasts, { id, title, body, duration: opts?.duration ?? 5000, kind: opts?.kind ?? "success" }] }));
       },
       dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
       set: (p) => set(p),

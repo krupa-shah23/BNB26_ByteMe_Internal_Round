@@ -25,7 +25,7 @@ export function DemoPanel({ open, onClose }: { open: boolean; onClose: () => voi
         </div>
         <div className="mt-3 flex gap-2">
           <button className="btn-ghost flex-1" onClick={() => { onClose(); router.push("/short-videos"); }}>Go to Short Videos</button>
-          <button className="btn-ghost flex-1" onClick={() => { onClose(); router.push("/videos"); }}>Go to Videos</button>
+          <button className="btn-ghost flex-1" onClick={() => { onClose(); router.push("/video-studio"); }}>Go to Video Studio</button>
         </div>
 
         <h3 className="t-label mt-8 text-muted">Network</h3>
@@ -44,7 +44,7 @@ export function DemoPanel({ open, onClose }: { open: boolean; onClose: () => voi
         <h3 className="t-label mt-8 text-muted">Export note</h3>
         <p className="mt-1 text-sm text-muted">Studio export returns the group's pre-baked MP4 (or a staged render job). Nothing is rendered on stage.</p>
 
-        <button className="btn-primary mt-8 w-full" onClick={() => { useStore.getState().reset(); toast("Seed restored", "Projects, calendar and permissions reset"); onClose(); router.push("/"); }}>Reset to seed state</button>
+        <button className="btn-primary mt-8 w-full" onClick={() => { useStore.getState().reset(); toast("Seed restored", "Projects, calendar and permissions reset"); onClose(); router.push("/home"); }}>Reset to seed state</button>
       </div>
     </Overlay>
   );
