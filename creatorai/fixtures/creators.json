@@ -1,0 +1,16 @@
+{
+  "creators": [
+    { "id": "c1", "name": "Demo Devika", "handle": "@demo.devika", "niche": "Coding tutorials", "followers": 52000, "topics": ["education", "tech", "career"], "vec": [0.9, 0.2, 0.1, 0.7, 0.3, 0.8, 0.2, 0.4] },
+    { "id": "c2", "name": "Sample Sahil", "handle": "@sample.sahil", "niche": "Budget travel", "followers": 41000, "topics": ["travel", "food", "vlog"], "vec": [0.2, 0.9, 0.6, 0.2, 0.5, 0.3, 0.8, 0.3] },
+    { "id": "c3", "name": "Mock Meera", "handle": "@mock.meera", "niche": "Founder stories", "followers": 61000, "topics": ["startup-india", "career", "podcast"], "vec": [0.7, 0.3, 0.2, 0.9, 0.4, 0.7, 0.3, 0.5] },
+    { "id": "c4", "name": "Fiction Farhan", "handle": "@fiction.farhan", "niche": "Comedy sketches", "followers": 120000, "topics": ["comedy", "memes", "hostel"], "vec": [0.3, 0.4, 0.9, 0.2, 0.9, 0.2, 0.4, 0.8] },
+    { "id": "c5", "name": "Test Tanvi", "handle": "@test.tanvi", "niche": "Study with me", "followers": 38000, "topics": ["education", "hostel", "career"], "vec": [0.8, 0.2, 0.3, 0.5, 0.4, 0.6, 0.2, 0.5] },
+    { "id": "c6", "name": "Placeholder Pranav", "handle": "@placeholder.pranav", "niche": "Finance basics", "followers": 74000, "topics": ["finance", "startup-india", "career"], "vec": [0.6, 0.2, 0.1, 0.9, 0.2, 0.9, 0.2, 0.3] },
+    { "id": "c7", "name": "Dummy Disha", "handle": "@dummy.disha", "niche": "Food vlogs", "followers": 29000, "topics": ["food", "travel", "vlog"], "vec": [0.2, 0.7, 0.5, 0.2, 0.6, 0.2, 0.9, 0.4] },
+    { "id": "c8", "name": "Alpha Ayaan", "handle": "@alpha.ayaan", "niche": "AI tools reviews", "followers": 88000, "topics": ["tech", "education", "startup-india"], "vec": [0.9, 0.1, 0.1, 0.7, 0.3, 0.9, 0.1, 0.4] },
+    { "id": "c9", "name": "Beta Bhavna", "handle": "@beta.bhavna", "niche": "Podcast clips", "followers": 45000, "topics": ["podcast", "startup-india", "career"], "vec": [0.5, 0.3, 0.2, 0.8, 0.4, 0.6, 0.3, 0.6] },
+    { "id": "c10", "name": "Gamma Gaurav", "handle": "@gamma.gaurav", "niche": "Meme reviews", "followers": 150000, "topics": ["memes", "comedy"], "vec": [0.2, 0.3, 0.9, 0.1, 0.9, 0.1, 0.3, 0.9] },
+    { "id": "c11", "name": "Delta Diya", "handle": "@delta.diya", "niche": "Campus lifestyle", "followers": 33000, "topics": ["hostel", "vlog", "education"], "vec": [0.5, 0.5, 0.6, 0.3, 0.6, 0.3, 0.6, 0.6] },
+    { "id": "c12", "name": "Omega Ojas", "handle": "@omega.ojas", "niche": "Productivity", "followers": 57000, "topics": ["career", "education", "tech"], "vec": [0.7, 0.2, 0.2, 0.7, 0.3, 0.8, 0.2, 0.3] }
+  ]
+}
