@@ -11,7 +11,8 @@
 - Multi-platform profiles: IG Reel, YT Short, YT Video, LinkedIn, X, Facebook.
 
 ## Routes
-- /welcome — public landing page
+- / — public landing page
+- /home — Home (creator discovery and quick looks)
 - / — Home (Overview, Trends, Library, Collabs, Calendar via ?section=)
 - /short-videos, /videos — upload + generation workspaces
 - /studio, /studio/[projectId] — history list and editor

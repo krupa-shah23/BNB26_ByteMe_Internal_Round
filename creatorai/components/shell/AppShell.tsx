@@ -16,14 +16,14 @@ import { RubberSegment } from "@/components/ui/RubberSegment";
 import { relTime } from "@/lib/projects";
 
 const TABS = [
-  { href: "/", label: "Home", icon: Home },
+  { href: "/home", label: "Home", icon: Home },
   { href: "/short-videos", label: "Short Videos", icon: Smartphone },
   { href: "/videos", label: "Videos", icon: Film },
   { href: "/studio", label: "Studio", icon: Scissors },
   { href: "/messages", label: "Messages", icon: MessageCircle },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
-const isActive = (path: string, href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+const isActive = (path: string, href: string) => path.startsWith(href);
 
 function beep() {
   try {
@@ -103,7 +103,7 @@ function Menu({ label, button, children, align = "right", wide = false }: { labe
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const path = usePathname();
-  const home = path === "/" || path === "/messages";
+  const home = path === "/home" || path === "/messages";
   // pages designed to fit one screen: no page scroll on desktop
   const fit = /^\/(short-videos|videos)(\/|$)/.test(path);
   const [cal, setCal] = useState(false);
@@ -114,6 +114,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const qc = useQueryClient();
   const hydrated = useHydrated();
   const loggedIn = useStore((s) => s.loggedIn);
+  const account = useStore((s) => s.account);
   const notices = useStore((s) => s.notices);
   const messages = useStore((s) => s.messages);
   const toasts = useStore((s) => s.toasts);
@@ -128,13 +129,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useAlarms(hydrated && loggedIn);
 
   // auth gate
-  useEffect(() => { if (hydrated && !loggedIn) router.replace("/welcome"); }, [hydrated, loggedIn, router]);
+  useEffect(() => { if (hydrated && !loggedIn) router.replace("/"); }, [hydrated, loggedIn, router]);
 
   // cross-tab logout
   useEffect(() => {
     if (typeof BroadcastChannel === "undefined") return;
     bc.current = new BroadcastChannel("creatorai-auth");
-    bc.current.onmessage = (e) => { if (e.data === "logout") { useStore.setState({ loggedIn: false }); router.replace("/welcome"); } };
+    bc.current.onmessage = (e) => { if (e.data === "logout") { useStore.setState({ loggedIn: false }); router.replace("/"); } };
     return () => bc.current?.close();
   }, [router]);
 
@@ -143,7 +144,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     qc.clear();
     bc.current?.postMessage("logout");
     setConfirmOut(false);
-    router.push("/welcome");
+    router.push("/");
   }, [qc, router]);
   const requestLogout = () => (useStore.getState().dirty ? setConfirmOut(true) : doLogout());
 
@@ -171,7 +172,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             const on = isActive(path, href);
             return (
               <Link key={href} href={href} title={label} aria-current={on ? "page" : undefined}
-                className={clsx("relative flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-colors", railOpen ? "" : "justify-center", on ? "bg-brand text-brand-ink" : "text-muted hover:bg-sunken hover:text-text")}>
+                className={clsx("relative flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-colors", railOpen ? "" : "justify-center", on ? "bg-brand text-white dark:text-brand-ink" : "text-muted hover:bg-sunken hover:text-text")}>
                 <span className="relative shrink-0"><Icon size={19} />{href === "/messages" && dmUnread > 0 && <span className="absolute -right-1.5 -top-1.5 h-2.5 w-2.5 rounded-full bg-brand-2 ring-2 ring-bg" />}</span>{railOpen && <span className="truncate">{label}</span>}
               </Link>
             );
@@ -188,7 +189,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const minimalHeader = (
     <header className="relative z-30 mx-auto flex h-20 max-w-[1500px] items-center justify-between gap-4 px-5 md:px-10">
       <div className="flex min-w-0 items-center">
-        <Link href="/" className={clsx("mr-4 shrink-0 font-display text-[1.7rem] tracking-tight xl:mr-6", railOpen && "lg:mr-0 xl:mr-0 lg:min-w-[calc(17rem_-_2.5rem_-_max(0px,(100vw_-_1500px)/2))]")} aria-label="CreatorAi home">Creator<span className="text-brand">Ai</span></Link>
+        <Link href="/home" className={clsx("mr-4 shrink-0 font-display text-[1.7rem] tracking-tight", railOpen ? "lg:mr-0 lg:min-w-[calc(17rem_-_2.5rem_-_max(0px,(100vw_-_1500px)/2))]" : "xl:mr-6")} aria-label="CreatorAi home">Creator<span className="text-brand">Ai</span></Link>
         <button onClick={() => setPalette(true)} className="glow-border flex h-10 items-center gap-2 rounded-pill px-4 text-[0.95rem] text-muted hover:text-text md:w-56 xl:w-80" aria-label="Search (Ctrl K)"><Search size={16} /><span className="hidden md:inline">Search</span></button>
       </div>
       <div className="flex items-center gap-3 xl:gap-4">
@@ -218,7 +219,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Menu label="Profile menu" button={<span className="flex items-center gap-2 text-[0.95rem] hover:opacity-60"><span className="hidden md:inline">Profile</span><span className="grid h-8 w-8 place-items-center rounded-full border-2 border-text text-sm font-semibold">A</span></span>}>
           {(close) => (
             <div className="p-2 text-sm">
-              <div className="px-3 py-2"><div className="font-medium">Aarav</div><div className="text-xs text-muted">@aarav.makes · demo creator</div></div>
+              <div className="px-3 py-2"><div className="font-medium">{account?.name ?? "Aarav"}</div><div className="text-xs text-muted">{account?.email ?? "@aarav.makes · demo creator"}</div></div>
               <button role="menuitem" onClick={() => { close(); setSettings(true); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-sunken"><Settings size={16} />Settings</button>
               <button role="menuitem" onClick={() => { close(); router.push("/profile-studio"); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-sunken"><UserCircle2 size={16} />Manage profile</button>
             </div>
@@ -236,7 +237,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* left rail */}
       <aside className={clsx("fixed inset-y-0 left-0 z-30 hidden w-[84px] flex-col items-center justify-between border-r border-line bg-bg py-5 lg:flex xl:w-60 xl:items-stretch xl:px-4", minimal && "!hidden")}>
         <div>
-          <Link href="/" className="mb-8 flex items-center justify-center font-display text-2xl xl:justify-start xl:px-3" aria-label="CreatorAi">
+          <Link href="/home" className="mb-8 flex items-center justify-center font-display text-2xl xl:justify-start xl:px-3" aria-label="CreatorAi">
             <span className="xl:hidden">C<span className="text-brand">A</span></span><span className="hidden xl:inline">Creator<span className="text-brand">Ai</span></span>
           </Link>
           <nav aria-label="Main" className="grid gap-1">
@@ -244,7 +245,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               const on = isActive(path, href);
               return (
                 <Link key={href} href={href} aria-current={on ? "page" : undefined} title={label}
-                  className={clsx("relative flex items-center justify-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors xl:justify-start", on ? "text-brand-ink" : "text-muted hover:bg-sunken hover:text-text")}>
+                  className={clsx("relative flex items-center justify-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors xl:justify-start", on ? "text-white dark:text-brand-ink" : "text-muted hover:bg-sunken hover:text-text")}>
                   {on && <motion.span layoutId="rail-pill" className="absolute inset-0 rounded-xl bg-brand" transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
                   <Icon size={20} className="relative" /><span className="relative hidden xl:inline">{label}</span>
                 </Link>
@@ -276,7 +277,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Menu label="Account menu" button={<span className="flex h-10 items-center gap-1 rounded-full border border-line bg-surface pl-1 pr-2 hover:bg-sunken"><span className="grid h-8 w-8 place-items-center rounded-full bg-brand text-sm font-semibold text-brand-ink">A</span><ChevronDown size={14} /></span>}>
               {(close) => (
                 <div className="p-2 text-sm">
-                  <div className="px-3 py-2"><div className="font-medium">Aarav</div><div className="text-xs text-muted">@aarav.makes · demo creator</div></div>
+                  <div className="px-3 py-2"><div className="font-medium">{account?.name ?? "Aarav"}</div><div className="text-xs text-muted">{account?.email ?? "@aarav.makes · demo creator"}</div></div>
                   <button role="menuitem" onClick={() => { close(); setSettings(true); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-sunken"><Settings size={16} />Settings</button>
                   <button role="menuitem" onClick={() => { close(); router.push("/profile-studio"); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-sunken"><UserCircle2 size={16} />Manage profile</button>
                 </div>

@@ -1,4 +1,5 @@
 "use client";
+import { SongSearch } from "@/components/audio/SongSearch";
 import { ideaService } from "@/lib/services";
 import { motion } from "framer-motion";
 import { ArrowUpRight, Grid2x2, List, Pause, Play, Sparkles } from "lucide-react";
@@ -91,13 +92,14 @@ export function Trends() {
     <div>
       <div role="tablist" className="mb-6 flex gap-2">{(["songs", "memes", "topics", "hashtags"] as const).map((k) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={clsx("chip px-5 py-2 text-sm capitalize", tab === k && "border-brand bg-brand text-brand-ink")}>{k}</button>)}</div>
       {tab === "songs" && (
+        <><div className="mb-6 max-w-2xl"><SongSearch /></div>
         <ul className="grid gap-3 md:grid-cols-2">{t.songs.map((s) => (
           <li key={s.id} className="card flex items-center gap-4 p-4">
             <button onClick={() => setPlaying(playing === s.id ? null : s.id)} aria-label={`${playing === s.id ? "Pause" : "Play"} ${s.title}`} className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand text-brand-ink">{playing === s.id ? <Pause size={18} /> : <Play size={18} />}</button>
             <div className="min-w-0 flex-1"><p className="truncate font-medium">{s.title}</p><p className="text-xs text-muted">{s.artist} · {s.uses} uses · {s.growth}</p>
               <div className="mt-2 flex h-5 items-end gap-0.5" aria-hidden="true">{Array.from({ length: 28 }, (_, i) => <motion.span key={i} className="w-1 rounded-full bg-accent" animate={{ height: playing === s.id ? [4, 4 + ((i * 7) % 16), 4] : 4 + ((i * 5) % 12) }} transition={{ repeat: playing === s.id ? Infinity : 0, duration: 0.7 + (i % 5) * 0.1 }} />)}</div></div>
             <Badge tone={riskTone[s.risk as keyof typeof riskTone]}>{riskLabel[s.risk as keyof typeof riskLabel]}</Badge>
-          </li>))}</ul>
+          </li>))}</ul></>
       )}
       {tab === "memes" && <ul className="grid gap-3 md:grid-cols-3">{t.memes.map((m, i) => <li key={m.id} className="card overflow-hidden"><div className="grain relative grid aspect-square place-items-center bg-sunken p-6 text-center"><div><p className="t-label text-muted">{m.template}</p><p className="mt-3 font-display text-2xl leading-tight">{m.caption}</p></div><span className="absolute right-3 top-3 text-brand">{["◐", "◑", "◒"][i]}</span></div><div className="flex items-center justify-between p-4 text-sm"><span>Growth</span><Badge tone="ok">{m.growth}</Badge></div></li>)}</ul>}
       {tab === "topics" && <ul className="grid gap-3 md:grid-cols-2">{t.topics.map((x) => <li key={x.id} className="card flex items-center justify-between p-5"><div><p className="font-display text-xl">{x.name}</p><p className="text-xs text-muted">Searches up {Math.round((x.series[6] / x.series[0] - 1) * 100)}% in 7 days</p></div><Sparkline data={x.series} /></li>)}</ul>}

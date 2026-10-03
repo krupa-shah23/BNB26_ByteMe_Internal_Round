@@ -21,6 +21,7 @@ import { CaptionsDrawer, ThumbnailModal, ThumbCard } from "./Tools";
 import { PROFILES, aspectDims, fmtTime, friendlyTitle, normalize, relTime, segmentName, totalDur, uid } from "@/lib/projects";
 import { groupById } from "@/lib/match";
 import { tracks, trackById } from "@/lib/precheck";
+import { MusicSearch } from "@/components/audio/SongSearch";
 import { dnaTraits, sortHooksByDNA } from "@/lib/creatorDna";
 import { useStore } from "@/lib/store";
 import type { Aspect, PlatformId, Segment } from "@/lib/types";
@@ -388,6 +389,7 @@ export function Editor({ projectId }: { projectId: string }) {
               {tracks.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
             </select>
             <div className="mt-2"><Badge tone={{ low: "ok", medium: "warn", high: "bad" }[music?.risk ?? "low"] as "ok"}>{RISK_COPY[(music?.risk ?? "low") as keyof typeof RISK_COPY]}</Badge></div>
+            <MusicSearch onPick={(tr) => { patch(project.id, { audioId: tr.id }); toast("Music changed", `${tr.title} · commercial track, flagged as high copyright risk`); }} />
           </div>
         </section>
       </div>

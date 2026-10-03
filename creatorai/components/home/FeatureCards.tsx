@@ -6,6 +6,7 @@ import clsx from "clsx";
 import home from "@/fixtures/home.json";
 import analytics from "@/fixtures/analytics.json";
 import { Glyph, type GlyphName } from "@/components/short/Glyphs";
+import { SongSearch } from "@/components/audio/SongSearch";
 import { Overlay } from "@/components/ui/Overlay";
 import { useStore } from "@/lib/store";
 import { DemandCompact } from "@/components/audience/DemandEngine";
@@ -67,7 +68,10 @@ function Panel({ id, close }: { id: Id; close: () => void }) {
     ...t.topics.slice(0, 2).map((x) => ({ k: "Topic", n: x.name, g: `+${Math.round((x.series[x.series.length - 1] / x.series[0] - 1) * 100)}%` })),
   ];
   return (
+    <>
     <ul className="grid gap-2">{rows.map((r) => <li key={r.k + r.n} className="flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-sm"><span className="flex items-center gap-3"><span className="chip py-0.5 text-[11px]">{r.k}</span><span className="font-medium">{r.n}</span></span><span className="font-display text-lg text-ok">{r.g}</span></li>)}</ul>
+    <div className="mt-6"><h3 className="t-label mb-3 text-muted">Search songs</h3><SongSearch /></div>
+    </>
   );
 }
 

@@ -44,7 +44,7 @@ export function DemoPanel({ open, onClose }: { open: boolean; onClose: () => voi
         <h3 className="t-label mt-8 text-muted">Export note</h3>
         <p className="mt-1 text-sm text-muted">Studio export returns the group's pre-baked MP4 (or a staged render job). Nothing is rendered on stage.</p>
 
-        <button className="btn-primary mt-8 w-full" onClick={() => { useStore.getState().reset(); toast("Seed restored", "Projects, calendar and permissions reset"); onClose(); router.push("/"); }}>Reset to seed state</button>
+        <button className="btn-primary mt-8 w-full" onClick={() => { useStore.getState().reset(); toast("Seed restored", "Projects, calendar and permissions reset"); onClose(); router.push("/home"); }}>Reset to seed state</button>
       </div>
     </Overlay>
   );

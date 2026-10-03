@@ -16,7 +16,21 @@ export interface PrecheckResult { summary: Record<Severity, number>; items: Prec
 /** Facts the project itself does not carry. Sent by the Review screen (BACKEND-SLOT(prepublish)). */
 export interface PrecheckContext { containsAi?: boolean; aiDisclosed?: boolean }
 
-export const tracks = audio.tracks as { id: string; title: string; artist: string; source: string; risk: "low" | "medium" | "high"; notes: string }[];
+export type Track = { id: string; title: string; artist: string; source: string; risk: "low" | "medium" | "high"; notes: string; image?: string; previewUrl?: string };
+export const tracks = audio.tracks as Track[];
+
+/** Songs searched from the song API join the catalogue at runtime, so a project's audioId keeps resolving after a reload. */
+const SAVED_SONGS = "creatorai-songs";
+export function registerTrack(t: Track): Track {
+  if (!tracks.some((x) => x.id === t.id)) {
+    tracks.push(t);
+    try { localStorage.setItem(SAVED_SONGS, JSON.stringify(tracks.filter((x) => x.id.startsWith("saavn_")).slice(-30))); } catch { /* storage unavailable */ }
+  }
+  return tracks.find((x) => x.id === t.id) ?? t;
+}
+if (typeof window !== "undefined") {
+  try { for (const t of JSON.parse(localStorage.getItem(SAVED_SONGS) ?? "[]") as Track[]) if (!tracks.some((x) => x.id === t.id)) tracks.push(t); } catch { /* ignore */ }
+}
 export const trackById = (id: string) => tracks.find((t) => t.id === id);
 export const DISCLAIMER = rules.disclaimer;
 /** The cleared tracks offered by "Fix it". Only these may be swapped in. */

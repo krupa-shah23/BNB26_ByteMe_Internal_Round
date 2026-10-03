@@ -27,6 +27,7 @@ function seedCalendar(): CalendarItem[] {
 
 interface State {
   loggedIn: boolean;
+  account: { name: string; email: string } | null; // demo account (no password is stored)
   projects: Project[];
   calendar: CalendarItem[];
   notices: Notice[];
@@ -45,7 +46,7 @@ interface State {
   forceGroup?: string;
   dirty: boolean;            // unsaved studio edits
   toasts: Toast[];
-  login(): void; logout(): void;
+  signIn(a: { name: string; email: string }): void; login(): void; logout(): void;
   upsertProject(p: Project): void; patchProject(id: string, patch: Partial<Project>): void; removeProject(id: string): void;
   addCal(i: Omit<CalendarItem, "id">): void; patchCal(id: string, patch: Partial<CalendarItem>): void; removeCal(id: string): void;
   notify(title: string, body: string, extra?: Pick<Notice, "kind" | "href">): void; markNoticesRead(): void;
@@ -73,6 +74,7 @@ function seedNotices(): Notice[] {
 
 const initial = () => ({
   loggedIn: false,
+  account: null as { name: string; email: string } | null,
   projects: seedProjects(),
   calendar: seedCalendar(),
   notices: seedNotices(),
@@ -97,6 +99,7 @@ export const useStore = create<State>()(
   persist(
     (set, get) => ({
       ...initial(),
+      signIn: (a) => set({ account: a, loggedIn: true }),
       login: () => set({ loggedIn: true }),
       logout: () => set({ loggedIn: false, dirty: false, toasts: [] }),
       // BACKEND-SLOT(project-patch): projects move server-side in B3; this store becomes a cache

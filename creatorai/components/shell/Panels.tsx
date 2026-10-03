@@ -38,11 +38,11 @@ export function CommandPalette({ open, onClose, onDemo }: { open: boolean; onClo
   const cmds = useMemo<Cmd[]>(() => {
     const go = (h: string) => () => router.push(h);
     return [
-      { id: "home", label: "Home", hint: "Page", run: go("/") },
-      { id: "trends", label: "Trends", hint: "Home section", run: go("/?section=trends") },
-      { id: "library", label: "Library", hint: "Home section", run: go("/?section=library") },
-      { id: "collabs", label: "Collabs", hint: "Home section", run: go("/?section=collabs") },
-      { id: "calendar", label: "Calendar", hint: "Home section", run: go("/?section=calendar") },
+      { id: "home", label: "Home", hint: "Page", run: go("/home") },
+      { id: "trends", label: "Trends", hint: "Home section", run: go("/home?section=trends") },
+      { id: "library", label: "Library", hint: "Home section", run: go("/home?section=library") },
+      { id: "collabs", label: "Collabs", hint: "Home section", run: go("/home?section=collabs") },
+      { id: "calendar", label: "Calendar", hint: "Home section", run: go("/home?section=calendar") },
       { id: "short", label: "Short Videos", hint: "Page", run: go("/short-videos") },
       { id: "videos", label: "Videos", hint: "Page", run: go("/videos") },
       { id: "studio", label: "Studio", hint: "Page", run: go("/studio") },
