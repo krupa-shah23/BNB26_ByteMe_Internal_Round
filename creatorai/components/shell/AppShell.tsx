@@ -111,6 +111,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const qc = useQueryClient();
   const hydrated = useHydrated();
   const loggedIn = useStore((s) => s.loggedIn);
+  const account = useStore((s) => s.account);
   const notices = useStore((s) => s.notices);
   const toasts = useStore((s) => s.toasts);
   const dirty = useStore((s) => s.dirty);
@@ -198,7 +199,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Menu label="Profile menu" button={<span className="flex items-center gap-2 text-[0.95rem] hover:opacity-60"><span className="hidden md:inline">Profile</span><span className="grid h-8 w-8 place-items-center rounded-full border-2 border-text text-sm font-semibold">A</span></span>}>
           {(close) => (
             <div className="p-2 text-sm">
-              <div className="px-3 py-2"><div className="font-medium">Aarav</div><div className="text-xs text-muted">@aarav.makes · demo creator</div></div>
+              <div className="px-3 py-2"><div className="font-medium">{account?.name ?? "Aarav"}</div><div className="text-xs text-muted">{account?.email ?? "@aarav.makes · demo creator"}</div></div>
               <button role="menuitem" onClick={() => { close(); setSettings(true); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-sunken"><Settings size={16} />Settings</button>
               <button role="menuitem" onClick={() => { close(); router.push("/profile-studio"); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-sunken"><UserCircle2 size={16} />Manage profile</button>
               <button role="menuitem" onClick={() => { close(); setDemo(true); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-sunken"><span className="w-4 text-center text-xs">⌃⇧D</span>Demo Panel</button>
@@ -257,7 +258,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Menu label="Account menu" button={<span className="flex h-10 items-center gap-1 rounded-full border border-line bg-surface pl-1 pr-2 hover:bg-sunken"><span className="grid h-8 w-8 place-items-center rounded-full bg-brand text-sm font-semibold text-brand-ink">A</span><ChevronDown size={14} /></span>}>
               {(close) => (
                 <div className="p-2 text-sm">
-                  <div className="px-3 py-2"><div className="font-medium">Aarav</div><div className="text-xs text-muted">@aarav.makes · demo creator</div></div>
+                  <div className="px-3 py-2"><div className="font-medium">{account?.name ?? "Aarav"}</div><div className="text-xs text-muted">{account?.email ?? "@aarav.makes · demo creator"}</div></div>
                   <button role="menuitem" onClick={() => { close(); setSettings(true); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-sunken"><Settings size={16} />Settings</button>
                   <button role="menuitem" onClick={() => { close(); router.push("/profile-studio"); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-sunken"><UserCircle2 size={16} />Manage profile</button>
                   <button role="menuitem" onClick={() => { close(); setDemo(true); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-sunken"><span className="w-4 text-center text-xs">⌃⇧D</span>Demo Panel</button>

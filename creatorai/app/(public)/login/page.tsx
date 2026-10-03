@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import { EB_Garamond } from "next/font/google";
-import { WelcomeHero } from "@/components/landing/WelcomeHero";
+import { AuthForm } from "@/components/landing/AuthForm";
 
 const serif = EB_Garamond({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-serif", display: "swap" });
 
-export const metadata: Metadata = { title: "CreatorAi" };
+export const metadata: Metadata = { title: "Log in — CreatorAi" };
 
-export default function Welcome() {
+export default function Page() {
   return (
     <div className={serif.variable}>
-      <WelcomeHero />
+      <AuthForm mode="login" />
     </div>
   );
 }

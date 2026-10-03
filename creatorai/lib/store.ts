@@ -49,6 +49,7 @@ interface State {
   swiped: Record<string, "right" | "left" | "up">;
   creatorDNA: CreatorDNA;     // current distilled style profile
   creatorFeedback: CreatorFeedback[]; // persistent history of corrections
+  account: { name: string; email: string } | null; // demo account (no password is stored)
   requested: string[];       // creators we sent a collaboration message to (Tracker)
   leads: (Lead & { at: string })[];
   newsletter: string[];
@@ -58,7 +59,7 @@ interface State {
   forceGroup?: string;
   dirty: boolean;            // unsaved studio edits
   toasts: Toast[];
-  login(): void; logout(): void;
+  signIn(a: { name: string; email: string }): void; login(): void; logout(): void;
   upsertProject(p: Project): void; patchProject(id: string, patch: Partial<Project>): void; removeProject(id: string): void;
   addCal(i: Omit<CalendarItem, "id">): void; patchCal(id: string, patch: Partial<CalendarItem>): void; removeCal(id: string): void;
   notify(title: string, body: string): void; markNoticesRead(): void;
@@ -78,6 +79,7 @@ const initial = () => ({
   notices: [{ id: "n0", title: "Welcome to CreatorAi", body: "Drop a group of clips in Short Videos to see the magic.", at: new Date().toISOString(), read: false }] as Notice[],
   permissions: { earnings: false, reach: false, audience: false, comments: false, decided: false },
   pref: [0, 0, 0, 0, 0, 0, 0, 0],
+  account: null as { name: string; email: string } | null,
   requested: [] as string[],
   creatorDNA: defaultDNA,
   creatorFeedback: [] as CreatorFeedback[],
@@ -97,6 +99,7 @@ export const useStore = create<State>()(
     (set, get) => ({
       ...initial(),
       login: () => set({ loggedIn: true }),
+      signIn: (a) => set({ account: a, loggedIn: true }),
       logout: () => set({ loggedIn: false, dirty: false, toasts: [] }),
       upsertProject: (p) => set((s) => ({ projects: [p, ...s.projects.filter((x) => x.id !== p.id)] })),
       patchProject: (id, patch) => set((s) => ({ projects: s.projects.map((p) => (p.id === id ? { ...p, ...patch, updatedAt: new Date().toISOString() } : p)) })),
