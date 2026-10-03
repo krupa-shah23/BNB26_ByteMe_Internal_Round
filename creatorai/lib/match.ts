@@ -15,7 +15,15 @@ function score(f: FileFingerprint, role: { filenames: string[]; sha256_first_1mb
   return 0;
 }
 
-export function matchFiles(files: FileFingerprint[]): MatchResult {
+export interface MatchOpts {
+  /** inject groups (tests, or a server that loads them from a store) */
+  groups?: Group[];
+  /** restrict matching to one group (Demo Panel "force a group") */
+  only?: string;
+}
+
+export function matchFiles(files: FileFingerprint[], opts: MatchOpts = {}): MatchResult {
+  const pool = (opts.groups ?? groups).filter((g) => !opts.only || g.id === opts.only);
   // dedupe on sha (or name+size when hashing failed)
   const seen = new Set<string>();
   const duplicates: string[] = [];
@@ -28,7 +36,7 @@ export function matchFiles(files: FileFingerprint[]): MatchResult {
   const videos = uniq.filter((f) => f.kind === "video");
   const images = uniq.filter((f) => f.kind === "image");
 
-  const results = groups.map((g) => {
+  const results = pool.map((g) => {
     const used = new Set<string>();
     const matched: { role: string; fileName: string; s: number }[] = [];
     for (const r of g.inputs) {
@@ -48,6 +56,10 @@ export function matchFiles(files: FileFingerprint[]): MatchResult {
   });
   results.sort((a, b) => b.count - a.count || b.total - a.total);
   const top = results[0];
+  if (opts.only && top && top.count === 0) {
+    // forced group but nothing recognised: still report that group so the UI can offer "generate anyway"
+    return { groupId: top.g.id, matched: [], missingRoles: top.g.inputs.map((r) => r.role), photosMatched: [], unused: uniq.map((f) => f.name), confidence: 0, candidates: [], isDefault: false, duplicates };
+  }
   const candidates = results.filter((r) => r.count > 0 && r.count === top.count && r.total === top.total).map((r) => ({ groupId: r.g.id, score: r.total }));
 
   if (!top || top.count === 0) {

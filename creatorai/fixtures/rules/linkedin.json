@@ -1,0 +1,2 @@
+{ "id": "linkedin", "platforms": ["linkedin"], "policy": "linkedin",
+  "audio": { "system": "LinkedIn's own rights process", "platformName": "LinkedIn", "policy": "linkedin", "highSeverity": "warn" } }

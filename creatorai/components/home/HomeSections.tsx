@@ -9,6 +9,7 @@ import home from "@/fixtures/home.json";
 import { Badge, Count, Reveal, Sparkline } from "@/components/ui/bits";
 import { Collabs } from "./Collabs";
 import { useStore } from "@/lib/store";
+import { ideaService } from "@/lib/services";
 
 const riskTone = { low: "ok", medium: "warn", high: "bad" } as const;
 const riskLabel = { low: "Low claim risk", medium: "Check license", high: "High claim risk" } as const;
@@ -79,19 +80,12 @@ export function Trends() {
   const [gen, setGen] = useState<null | { topic: string; meme: string[]; reel: string[]; hooks: string[]; formats: string[]; story: string[] }>(null);
   const [busy, setBusy] = useState(false);
   const t = home.trending;
-  const generate = () => {
+  const generate = async () => {
     if (!topic.trim()) return;
     setBusy(true);
-    setTimeout(() => {
-      const x = topic.trim();
-      setGen({ topic: x,
-        meme: [`"Me explaining ${x} vs. what the algorithm heard"`, `Two-paths meme: ${x} edition`],
-        reel: [`3 mistakes everyone makes with ${x}`, `${x} in 30 seconds — no jargon`],
-        hooks: [`Nobody talks about this part of ${x}…`, `I tried ${x} for 7 days. Here's the truth.`, `Stop doing ${x} like this.`],
-        formats: ["Green-screen explainer", "Split-screen reaction", "Carousel → Reel"],
-        story: [`Poll: ${x} — yes or no?`, `Ask me anything about ${x}`] });
-      setBusy(false);
-    }, 900);
+    const r = await ideaService.generate(topic.trim());
+    setGen(r.ideas);
+    setBusy(false);
   };
   return (
     <div>

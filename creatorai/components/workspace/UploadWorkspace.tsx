@@ -6,10 +6,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import { Poster, Reveal, SlidingNav } from "@/components/ui/bits";
+import { AiClipLab } from "@/components/workspace/AiClipLab";
 import { fingerprint } from "@/lib/fingerprint";
-import { defaultGroup, groupById, groups, matchFiles, sampleFingerprints } from "@/lib/match";
+import { defaultGroup, groupById, groups, sampleFingerprints } from "@/lib/match";
 import { PROFILES, absTime, fmtTime, makeProject, relTime, totalDur } from "@/lib/projects";
-import { clipService } from "@/lib/services";
+import { projectApi } from "@/lib/api/projects";
+import { clipService, groupService } from "@/lib/services";
 import { generationSteps, sleep } from "@/lib/services/demo";
 import { useStore } from "@/lib/store";
 import type { FileFingerprint, MatchResult, PlatformId, Project } from "@/lib/types";
@@ -65,7 +67,7 @@ export function UploadWorkspace({ kind }: { kind: Kind }) {
     const all = [...base, ...incoming];
     setFiles(all);
     await sleep(500);
-    let m = matchFiles(all);
+    let m = await groupService.match(all); // BACKEND-SLOT(groups-match): demo = local matcher, live = POST /api/v1/groups/match
     if (forceGroup && (m.isDefault || m.confidence < 1)) {
       const g = groupById(forceGroup);
       m = { groupId: g.id, matched: g.inputs.map((r) => ({ role: r.role, fileName: r.filenames[0] })), missingRoles: [], photosMatched: g.photos.map((p) => p.filenames[0]), unused: [], confidence: 1, candidates: [{ groupId: g.id, score: 9 }], isDefault: false, duplicates: [] };
@@ -87,14 +89,17 @@ export function UploadWorkspace({ kind }: { kind: Kind }) {
     setBusy("job");
     const steps = generationSteps(group);
     setJob({ step: 0, progress: 0, steps });
-    await clipService.generate(group, (p) => setJob({ step: p.stepIndex, progress: p.progress, steps: p.steps }));
+    const out = await clipService.generate(group, (p) => setJob({ step: p.stepIndex, progress: p.progress, steps: p.steps }));
+    const server = out?.projectId ? await projectApi.get(out.projectId).catch(() => null) : null; // live: the server already created the project
     const targets = kind === "short" ? TARGETS[tab] ?? TARGETS.Reels : undefined;
-    const p = makeProject(group, {
+    const fresh = makeProject(group, {
       files: files.filter((f) => f.kind === "video").map((f) => f.name).slice(0, 6).concat(match?.isDefault ? [] : []),
       photos: match?.photosMatched.length ?? group.photos.length,
       ...(targets ? { platforms: targets } : {}),
       title: match?.isDefault ? `Quick edit — ${files[0]?.name ?? "upload"}` : group.title,
     });
+    // live: keep the server's id/version/timeline but apply what this screen knows (upload tab targets, file names)
+    const p: Project = server ? { ...server, files: fresh.files, photos: fresh.photos, platforms: fresh.platforms, title: fresh.title } : fresh;
     if (!p.files.length) p.files = group.inputs.map((i) => i.filenames[0]);
     upsertProject(p);
     useStore.getState().notify("Video generated", `${p.title} is ready in Studio.`);
@@ -119,6 +124,8 @@ export function UploadWorkspace({ kind }: { kind: Kind }) {
         </div>
         <SlidingNav id={`ws-${kind}`} items={tabs as unknown as { id: string; label: string }[]} value={tab} onChange={setTab} />
       </Reveal>
+
+      <AiClipLab format={kind} />
 
       {/* upload zone */}
       <section aria-label="Upload" className="grid gap-6 lg:grid-cols-5">

@@ -1,0 +1,11 @@
+{
+  "note": "Pre-extracted frame stats for the demo set. A real pipeline (ffmpeg + face/eye/sharpness scoring) replaces this; same shape.",
+  "frames": [
+    { "i": 0, "face": 92, "sharp": 88, "eyesOpen": true,  "emotion": "surprise" },
+    { "i": 1, "face": 71, "sharp": 80, "eyesOpen": true,  "emotion": "neutral" },
+    { "i": 2, "face": 84, "sharp": 91, "eyesOpen": true,  "emotion": "smile" },
+    { "i": 3, "face": 63, "sharp": 70, "eyesOpen": false, "emotion": "blink" },
+    { "i": 4, "face": 88, "sharp": 85, "eyesOpen": true,  "emotion": "smile" },
+    { "i": 5, "face": 77, "sharp": 82, "eyesOpen": true,  "emotion": "neutral" }
+  ]
+}

@@ -1,0 +1,2 @@
+{ "id": "yt", "platforms": ["yt_short", "yt_video"], "policy": "yt",
+  "audio": { "system": "Content ID (YouTube)", "platformName": "YouTube", "policy": "contentId", "highSeverity": "fail" } }

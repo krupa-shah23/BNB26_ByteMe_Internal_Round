@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import hooksFx from "@/fixtures/captions.json";
-import scripts from "@/fixtures/scripts.json";
+import { hookService, mode, scriptService } from "@/lib/services";
 import { Badge } from "@/components/ui/bits";
 import { EdlPlayerLazy } from "./EdlPlayerLazy";
 import { CaptionsDrawer, ThumbnailModal, ThumbCard } from "./Tools";
@@ -45,7 +45,15 @@ export function Editor({ projectId }: { projectId: string }) {
   const tlRef = useRef<HTMLDivElement>(null);
   const latest = useRef(tl); latest.current = tl;
   const dirtyRef = useRef(false);
-  const [script, setScript] = useState(() => (scripts as Record<string, string[]>)[project?.groupId ?? "_default"]?.join("\n") ?? "");
+  const [script, setScript] = useState("");
+  const [hooks, setHooks] = useState<{ text: string; style: string; score?: number }[]>(hooksFx.hooks);
+  useEffect(() => {
+    if (!project) return;
+    let alive = true;
+    scriptService.write({ topic: project.title, groupId: project.groupId }).then((r) => { if (alive) setScript(r.lines.join("\n")); });
+    if (mode("hooks") === "live") hookService.suggest({ topic: project.title }).then((r) => { if (alive) setHooks(r.hooks.map((text) => ({ text, style: r.source === "live" ? "AI" : "sample" }))); });
+    return () => { alive = false; };
+  }, [project?.id, project?.groupId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const group = project ? groupById(project.groupId) : null;
   const total = totalDur(tl);
@@ -189,9 +197,9 @@ export function Editor({ projectId }: { projectId: string }) {
                 </div>
                 <div>
                   <p className="t-label mb-2 text-muted">Hooks</p>
-                  <ul className="grid gap-2">{hooksFx.hooks.map((h) => (
+                  <ul className="grid gap-2">{hooks.map((h) => (
                     <li key={h.text}><button className="flex w-full items-start justify-between gap-2 rounded-xl border border-line p-3 text-left hover:border-brand" onClick={() => { const first = tl[0]; if (first?.id) { edit(first.id, { caption: h.text }); toast("Hook applied", h.text); } }}>
-                      <span>{h.text}</span><Badge tone="muted">{h.style} · {h.score}</Badge></button></li>))}</ul>
+                      <span>{h.text}</span><Badge tone="muted">{h.score != null ? `${h.style} · ${h.score}` : h.style}</Badge></button></li>))}</ul>
                 </div>
               </div>
             )}

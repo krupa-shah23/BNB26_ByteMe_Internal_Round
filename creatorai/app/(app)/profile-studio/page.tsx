@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { Reveal } from "@/components/ui/bits";
 import { useStore } from "@/lib/store";
+import { bioService } from "@/lib/services";
 
 const token = (n: string) => `rgb(${getComputedStyle(document.documentElement).getPropertyValue(`--${n}`).trim().split(" ").join(" ")})`;
 const LIMITS = { Instagram: 150, YouTube: 1000, LinkedIn: 220, X: 160 } as const;
@@ -61,14 +62,12 @@ function BioGen() {
   const [net, setNet] = useState<Net>("Instagram");
   const [opts, setOpts] = useState<string[] | null>(null);
   const [copied, setCopied] = useState<number | null>(null);
-  const gen = () => {
-    const t = { friendly: ["Hey!", "✨"], pro: ["", "|"], witty: ["Professional overthinker.", "😅"] }[tone] ?? ["", ""];
-    const all = [
-      `${t[0]} ${niche} · building in public · new post every week ${t[1]}`.trim(),
-      `I turn ${niche} into short, useful videos. Daily lessons, zero fluff. ${t[1]}`,
-      `Making ${niche} simple · Mumbai → everywhere · DM for collabs ${t[1]}`,
-    ];
-    setOpts(all.map((o) => o.slice(0, LIMITS[net])));
+  const [busy, setBusy] = useState(false);
+  const gen = async () => {
+    setBusy(true);
+    const r = await bioService.write({ niche, tone });
+    setOpts(r.bios.map((o) => o.slice(0, LIMITS[net])));
+    setBusy(false);
   };
   return (
     <section className="card p-6" aria-labelledby="bio-h">
@@ -78,7 +77,7 @@ function BioGen() {
         <div><label htmlFor="bt" className="t-label mb-1 block text-muted">Tone</label><select id="bt" className="input" value={tone} onChange={(e) => setTone(e.target.value)}><option>friendly</option><option>pro</option><option>witty</option></select></div>
         <div><label htmlFor="bp" className="t-label mb-1 block text-muted">Platform</label><select id="bp" className="input" value={net} onChange={(e) => setNet(e.target.value as Net)}>{Object.keys(LIMITS).map((k) => <option key={k}>{k}</option>)}</select></div>
       </div>
-      <button className="btn-brand mt-4" onClick={gen}>Generate 3 options</button>
+      <button className="btn-brand mt-4" onClick={gen} disabled={busy}>{busy ? "Writing…" : "Generate 3 options"}</button>
       {opts && <ul className="mt-5 grid gap-3" aria-live="polite">{opts.map((o, i) => (
         <li key={i} className="flex items-start justify-between gap-3 rounded-xl border border-line p-4 text-sm"><div><p>{o}</p><p className={clsx("mt-1 text-xs", o.length >= LIMITS[net] ? "text-warn" : "text-muted")}>{o.length}/{LIMITS[net]}</p></div>
           <button className="btn-ghost shrink-0 py-1.5" aria-label="Copy bio" onClick={() => { navigator.clipboard?.writeText(o).catch(() => undefined); setCopied(i); setTimeout(() => setCopied(null), 1300); }}>{copied === i ? <Check size={14} /> : <Copy size={14} />}</button></li>))}</ul>}

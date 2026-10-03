@@ -3,29 +3,13 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { useEffect, useState } from "react";
 import type { CalendarItem, Lead, Notice, Project } from "./types";
-import { groupById } from "./match";
-import { makeProject, uid } from "./projects";
+import { seedProjects } from "./seed";
+import { uid } from "./projects";
 
 export interface Permissions { earnings: boolean; reach: boolean; audience: boolean; comments: boolean; decided: boolean }
 export interface Toast { id: string; title: string; body?: string }
 
 const day = 86_400_000;
-function seedProjects(): Project[] {
-  const now = Date.now();
-  const mk = (gid: string, ago: number, extra: Partial<Project>) => {
-    const p = makeProject(groupById(gid), { status: "Published", ...extra });
-    p.createdAt = new Date(now - ago * day).toISOString();
-    p.updatedAt = p.createdAt;
-    p.caption = { id: "seed", caption: "Published earlier", cta: "", tone: "witty", hashtags: [] };
-    p.thumb = { id: "seed", frame: 1, text: "TERM SHEET, 3 DAYS", template: "brand", score: 82 };
-    return p;
-  };
-  return [
-    mk("g5", 25, { id: "p_seed_g5", title: "Hostel memes: exam week" }),
-    mk("g3", 19, { id: "p_seed_g3" }),
-    mk("g1", 5, { id: "p_seed_g1" }),
-  ];
-}
 function seedCalendar(): CalendarItem[] {
   const now = Date.now();
   const at = (d: number, h = 18) => { const x = new Date(now + d * day); x.setHours(h, 0, 0, 0); return x.toISOString(); };
@@ -78,7 +62,7 @@ const initial = () => ({
   newsletter: [] as string[],
   timeOffsetMs: 0,
   slowNetwork: false,
-  services: { captions: "demo", clips: "demo", precheck: "demo" } as Record<string, "live" | "demo">,
+  services: { captions: "demo", clips: "demo", groups: "demo", precheck: "demo" } as Record<string, "live" | "demo">,
   forceGroup: undefined as string | undefined,
   dirty: false,
   toasts: [] as Toast[],
@@ -90,6 +74,7 @@ export const useStore = create<State>()(
       ...initial(),
       login: () => set({ loggedIn: true }),
       logout: () => set({ loggedIn: false, dirty: false, toasts: [] }),
+      // BACKEND-SLOT(project-patch): projects move server-side in B3; this store becomes a cache
       upsertProject: (p) => set((s) => ({ projects: [p, ...s.projects.filter((x) => x.id !== p.id)] })),
       patchProject: (id, patch) => set((s) => ({ projects: s.projects.map((p) => (p.id === id ? { ...p, ...patch, updatedAt: new Date().toISOString() } : p)) })),
       removeProject: (id) => set((s) => ({ projects: s.projects.filter((p) => p.id !== id) })),

@@ -32,19 +32,9 @@ export function ThumbCard({ hue, frame, text, template, cutout = true, badge, cl
   );
 }
 
-export function clickReadiness(o: { text: string; frameFace: number; cutout: boolean; template: ThumbSpec["template"] }) {
-  const words = o.text.trim().split(/\s+/).filter(Boolean).length;
-  const checks = [
-    { id: "face", pass: o.cutout, tip: "Cut out the subject — faces lift attention", pts: 18 },
-    { id: "words", pass: words > 0 && words <= 4, tip: `Use ≤ 4 words (now ${words})`, pts: 22 },
-    { id: "contrast", pass: o.template !== "blur", tip: "Blur template lowers text contrast", pts: 12 },
-    { id: "frame", pass: o.frameFace >= 75, tip: "Pick a frame with an open-eyed, expressive face", pts: 16 },
-    { id: "badge", pass: true, tip: "Duration badge zone is clear", pts: 8 },
-    { id: "brand", pass: true, tip: "Brand template applied", pts: 8 },
-  ];
-  const score = 16 + checks.reduce((a, c) => a + (c.pass ? c.pts : 0), 0);
-  return { score: Math.min(100, score), checks };
-}
+// Shared with POST /api/v1/thumbnails/score (BACKEND-SLOT(thumb-score)): one heuristic, same numbers in browser and server.
+export { clickReadiness } from "@/lib/thumbScore";
+import { clickReadiness } from "@/lib/thumbScore";
 
 /* ───────────── Thumbnail modal ───────────── */
 export function ThumbnailModal({ open, onClose, project, onUse }: { open: boolean; onClose: () => void; project: Project; onUse: (t: ThumbSpec) => void }) {

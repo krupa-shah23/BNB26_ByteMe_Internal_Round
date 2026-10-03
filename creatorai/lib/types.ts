@@ -62,5 +62,5 @@ export const leadSchema = z.object({
 }).refine((v) => v.heard !== "Other" || (v.heardOther ?? "").trim().length > 1, { path: ["heardOther"], message: "Please tell us where" });
 export type Lead = z.infer<typeof leadSchema>;
 
-export const captionOptionSchema = z.object({ id: z.string(), caption: z.string(), cta: z.string() });
+export const captionOptionSchema = z.object({ id: z.string(), caption: z.string(), cta: z.string(), hashtags: z.array(z.string()).optional() });
 export const captionResponseSchema = z.object({ options: z.array(captionOptionSchema).min(1) });

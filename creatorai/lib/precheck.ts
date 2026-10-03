@@ -1,5 +1,9 @@
 import audio from "@/fixtures/audioCatalog.json";
 import rules from "@/fixtures/rules.json";
+import igRules from "@/fixtures/rules/ig.json";
+import ytRules from "@/fixtures/rules/yt.json";
+import linkedinRules from "@/fixtures/rules/linkedin.json";
+import xRules from "@/fixtures/rules/x.json";
 import { PROFILES, totalDur } from "./projects";
 import type { PlatformId, Project } from "./types";
 
@@ -8,11 +12,22 @@ export interface PrecheckItem {
   id: string; platform: PlatformId | "all"; severity: Severity; title: string; detail: string; policyUrl?: string;
   fix?: { label: string; action: "swap-audio" | "add-cta" | "shorten-thumb" };
 }
+export interface PrecheckResult { summary: Record<Severity, number>; items: PrecheckItem[]; score: number }
+/** Facts the project itself does not carry. Sent by the Review screen (BACKEND-SLOT(prepublish)). */
+export interface PrecheckContext { containsAi?: boolean; aiDisclosed?: boolean }
+
 export const tracks = audio.tracks as { id: string; title: string; artist: string; source: string; risk: "low" | "medium" | "high"; notes: string }[];
 export const trackById = (id: string) => tracks.find((t) => t.id === id);
 export const DISCLAIMER = rules.disclaimer;
+/** The cleared tracks offered by "Fix it". Only these may be swapped in. */
+export const CLEARED_TRACKS = rules.swapAudio;
 
-export function precheck(p: Project): { summary: Record<Severity, number>; items: PrecheckItem[]; score: number } {
+// One JSON file per platform family (fixtures/rules/*.json): policy link plus how that platform's rights system is described and how severe a high-risk track is.
+type RuleFile = { id: string; platforms: string[]; policy: keyof typeof rules.policy; audio: { system: string; platformName: string; policy: keyof typeof rules.policy; highSeverity: "warn" | "fail" } };
+const RULE_FILES = [igRules, ytRules, linkedinRules, xRules] as RuleFile[];
+const ruleFor = (pl: PlatformId): RuleFile => RULE_FILES.find((r) => r.platforms.includes(pl)) ?? RULE_FILES[0];
+
+export function precheck(p: Project, ctx: PrecheckContext = {}): PrecheckResult {
   const items: PrecheckItem[] = [];
   const dur = totalDur(p.timeline);
   const track = trackById(p.audioId);
@@ -20,7 +35,8 @@ export function precheck(p: Project): { summary: Record<Severity, number>; items
 
   for (const pl of p.platforms) {
     const prof = PROFILES[pl];
-    const policy = pl.startsWith("yt") ? rules.policy.yt : pl === "linkedin" ? rules.policy.linkedin : pl === "x" ? rules.policy.x : rules.policy.ig;
+    const rf = ruleFor(pl);
+    const policy = rules.policy[rf.policy];
 
     add(dur > prof.maxSec
       ? { id: `dur-${pl}`, platform: pl, severity: "fail", title: "Too long for this platform", detail: `${dur.toFixed(0)} s exceeds the ${prof.maxSec} s cap. ${prof.notes}.`, policyUrl: policy }
@@ -47,20 +63,20 @@ export function precheck(p: Project): { summary: Record<Severity, number>; items
         ? { id: `tag-${pl}`, platform: pl, severity: "warn", title: "Spammy hashtag", detail: `Avoid ${banned.join(", ")}.`, policyUrl: policy }
         : { id: `tag-${pl}`, platform: pl, severity: "pass", title: "Hashtags look fine", detail: `${tags.length} of ${prof.hashtagMax}.`, policyUrl: policy });
 
-    // Copyright, honest wording: claim ≠ strike, royalty-free ≠ claim-free, Content ID is YouTube-only
+    // Copyright, honest wording: a claim is not a strike, royalty-free is not claim-free, Content ID is YouTube-only. Never "safe".
     if (track) {
-      const yt = pl.startsWith("yt");
-      const sys = yt ? "Content ID (YouTube)" : "Meta Rights Manager";
+      const { system, platformName, policy: audioPolicy, highSeverity } = rf.audio;
+      const audioUrl = rules.policy[audioPolicy];
       if (track.risk === "high") {
-        add({ id: `aud-${pl}`, platform: pl, severity: yt ? "fail" : "warn", title: `High risk of a claim on ${yt ? "YouTube" : "Meta"}`,
-          detail: `“${track.title}” is a commercial track and likely fingerprinted by ${sys}. Likely effect: revenue goes to the rights holder, or the video is muted/blocked. This is a claim, not a strike. Swap in a platform-library or owned track.`,
-          policyUrl: yt ? rules.policy.contentId : rules.policy.meta, fix: { label: "Fix it — swap audio", action: "swap-audio" } });
+        add({ id: `aud-${pl}`, platform: pl, severity: highSeverity, title: `High risk of a claim on ${platformName}`,
+          detail: `“${track.title}” is a commercial track and likely fingerprinted by ${system}. Likely effect: revenue goes to the rights holder, or the video is muted/blocked. This is a claim, not a strike. Swap in a platform-library or owned track.`,
+          policyUrl: audioUrl, fix: { label: "Fix it — swap audio", action: "swap-audio" } });
       } else if (track.risk === "medium") {
         add({ id: `aud-${pl}`, platform: pl, severity: "warn", title: "Possible claim on library music",
-          detail: `“${track.title}” (${track.source}). Royalty-free does not mean claim-free; ${sys} can still match it. Keep the license receipt handy.`,
-          policyUrl: yt ? rules.policy.contentId : rules.policy.meta, fix: { label: "Swap to a safer track", action: "swap-audio" } });
+          detail: `“${track.title}” (${track.source}). Royalty-free does not mean claim-free; ${system} can still match it. Keep the license receipt handy.`,
+          policyUrl: audioUrl, fix: { label: "Swap to a safer track", action: "swap-audio" } });
       } else {
-        add({ id: `aud-${pl}`, platform: pl, severity: "pass", title: "Low audio risk", detail: `“${track.title}” — ${track.notes}.`, policyUrl: yt ? rules.policy.contentId : rules.policy.meta });
+        add({ id: `aud-${pl}`, platform: pl, severity: "pass", title: "Low audio risk", detail: `“${track.title}” — ${track.notes}.`, policyUrl: audioUrl });
       }
     }
   }
@@ -82,11 +98,27 @@ export function precheck(p: Project): { summary: Record<Severity, number>; items
       ? { id: "thumb-words", platform: "all", severity: "warn", title: "Thumbnail text over 4 words", detail: `${words} words are hard to read at 120 px.`, fix: { label: "Shorten text", action: "shorten-thumb" } }
       : { id: "thumb-words", platform: "all", severity: "pass", title: "Thumbnail text is short", detail: `${words} words · click-readiness ${p.thumb.score}/100 (heuristic).` });
   }
-  add({ id: "ai", platform: "all", severity: "pass", title: "No synthetic realistic media", detail: "Real frames from your video; AI only touches suggestions. If that changes, set YouTube's “altered or synthetic” flag and Meta's AI label." });
 
-  // dedupe repeated fixes across platforms: keep one per id
+  // AI disclosure: the creator says whether the post contains realistic synthetic media; we only ask for the label, we never judge it.
+  add(ctx.containsAi && !ctx.aiDisclosed
+    ? { id: "ai", platform: "all", severity: "warn", title: "Disclose AI-generated content", detail: "You marked this post as containing AI-generated content. Set YouTube's “altered or synthetic” flag and Meta's AI label before publishing." }
+    : ctx.containsAi
+      ? { id: "ai", platform: "all", severity: "pass", title: "AI-generated content disclosed", detail: "Remember to keep the platform label switched on when you publish." }
+      : { id: "ai", platform: "all", severity: "pass", title: "No synthetic realistic media", detail: "Real frames from your video; AI only touches suggestions. If that changes, set YouTube's “altered or synthetic” flag and Meta's AI label." });
+
   const summary = { pass: 0, warn: 0, fail: 0 } as Record<Severity, number>;
   items.forEach((i) => summary[i.severity]++);
   const score = Math.max(0, Math.min(100, 100 - summary.fail * 22 - summary.warn * 6));
   return { summary, items, score };
+}
+
+/** What Perfect ✓ needs before the Review screen opens. Same list the Studio tooltip shows. */
+export function approvalGaps(p: Project): string[] {
+  const gaps: string[] = [];
+  if (!p.caption) gaps.push("caption");
+  if (!p.thumb) gaps.push("thumbnail");
+  const dur = totalDur(p.timeline);
+  const over = p.platforms.filter((pl) => dur > PROFILES[pl].maxSec).map((pl) => PROFILES[pl].label);
+  if (over.length) gaps.push(`duration within the limit for ${over.join(", ")}`);
+  return gaps;
 }

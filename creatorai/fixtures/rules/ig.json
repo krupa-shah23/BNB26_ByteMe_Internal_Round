@@ -1,0 +1,2 @@
+{ "id": "ig", "platforms": ["ig_reel", "facebook"], "policy": "ig",
+  "audio": { "system": "Meta Rights Manager", "platformName": "Meta", "policy": "meta", "highSeverity": "warn" } }
