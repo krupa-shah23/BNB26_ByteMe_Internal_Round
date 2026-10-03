@@ -1,0 +1,24 @@
+# CreatorAi
+
+> CreatorAi is an AI-powered content operations platform for creators (Bit N Build 2026, Web Dev PS1). It unifies idea → script → recording → editing → repurposing → publishing in one workspace. This build is a front-end demo: all data is fixture-backed (demo mode) and the product runs without any API keys.
+
+## What it does
+- Group Scenario Engine: upload a set of clips (+ photos/audio); the app recognises the set by file fingerprint (filename, SHA-256 of first 1 MB, duration) and produces a pre-authored edit.
+- Editable AI edits: every AI cut is stored as an Edit Decision List (EDL) JSON and rendered live with a Remotion Player; creators can trim, re-caption and reset any AI suggestion.
+- AI captions/hooks, thumbnail studio (real frame + brand template, heuristic "click-readiness" score).
+- Pre-publish check: deterministic rule engine for duration, aspect, captions, hashtags, thumbnail and music-copyright risk (claim vs strike wording, never "safe" guarantees).
+- Creator Intelligence: dashboard insights such as which section of a video drove shares.
+- Multi-platform profiles: IG Reel, YT Short, YT Video, LinkedIn, X, Facebook.
+
+## Routes
+- /welcome — public landing page
+- / — Home (Overview, Trends, Library, Collabs, Calendar via ?section=)
+- /short-videos, /videos — upload + generation workspaces
+- /studio, /studio/[projectId] — history list and editor
+- /review/[clipId] — pre-publish checks and publish
+- /dashboard — analytics (Overview, Earnings, Audience, Collab log)
+- /profile-studio — avatar, bio generator, brand kit
+
+## Notes for automated readers
+- Creators, handles, metrics and earnings are fictional demo data.
+- Copyright output is a risk estimate based on public platform policies, not legal advice.

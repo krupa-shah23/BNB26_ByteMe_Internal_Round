@@ -1,0 +1,69 @@
+{
+  "user": { "id": "u1", "name": "Aarav", "handle": "@aarav.makes", "niche": "Student founder content", "followers": 48200, "views7d": 312400, "engagement": 6.4 },
+  "brandKit": { "font": "Display", "logoPos": "bottom-left", "tagline": "Build in public" },
+  "ideas": [
+    { "id": "i1", "title": "What I wish I knew before my first pitch", "why": "Trending +240%", "format": "Short", "topic": "startup-india" },
+    { "id": "i2", "title": "Binary search in 60 seconds", "why": "Exam season in 3 weeks", "format": "Short", "topic": "education" },
+    { "id": "i3", "title": "Diwali budget travel: 3 cities under ₹5k", "why": "Festival +180%", "format": "Video", "topic": "travel" },
+    { "id": "i4", "title": "Hostel memes: exam week survival", "why": "Evergreen · high shares", "format": "Short", "topic": "comedy" },
+    { "id": "i5", "title": "Why college projects never ship", "why": "Your top audience question", "format": "Video", "topic": "startup-india" }
+  ],
+  "events": [
+    { "id": "e1", "name": "Navratri", "date": "2026-10-11", "hint": "Dance, outfits, garba reels" },
+    { "id": "e2", "name": "Dussehra", "date": "2026-10-20", "hint": "Tradition + story formats" },
+    { "id": "e3", "name": "Diwali", "date": "2026-11-08", "hint": "Gifting, budgets, home décor" },
+    { "id": "e4", "name": "Exam season", "date": "2026-11-25", "hint": "Study hacks, timetables" },
+    { "id": "e5", "name": "Hackathon season", "date": "2026-12-05", "hint": "Build logs, team stories" },
+    { "id": "e6", "name": "New Year", "date": "2026-12-31", "hint": "Recaps and goals" },
+    { "id": "e7", "name": "IPL auction", "date": "2027-01-20", "hint": "Hot takes, memes" }
+  ],
+  "trending": {
+    "songs": [
+      { "id": "s1", "title": "Midnight Tapri (demo)", "artist": "Fictional Artist", "uses": "182K", "growth": "+310%", "risk": "high" },
+      { "id": "s2", "title": "Chai Break Beat", "artist": "Demo Studio", "uses": "64K", "growth": "+95%", "risk": "low" },
+      { "id": "s3", "title": "Exam Montage Drill", "artist": "Fictional Collective", "uses": "98K", "growth": "+140%", "risk": "medium" },
+      { "id": "s4", "title": "Highway Sunrise", "artist": "Demo Studio", "uses": "41K", "growth": "+60%", "risk": "low" }
+    ],
+    "memes": [
+      { "id": "m1", "template": "Two paths diverge", "caption": "Study now vs. 'one more reel'", "growth": "+220%" },
+      { "id": "m2", "template": "Reaction freeze", "caption": "When the professor says 'it's easy'", "growth": "+130%" },
+      { "id": "m3", "template": "Split screen", "caption": "My plan vs. my 2 AM self", "growth": "+88%" }
+    ],
+    "topics": [
+      { "id": "t1", "name": "Salary negotiation", "series": [2, 3, 3, 5, 8, 9, 14] },
+      { "id": "t2", "name": "Budget travel", "series": [6, 6, 7, 9, 10, 12, 13] },
+      { "id": "t3", "name": "AI study tools", "series": [4, 6, 9, 13, 14, 18, 24] },
+      { "id": "t4", "name": "Hostel life", "series": [8, 8, 9, 8, 9, 10, 10] }
+    ],
+    "hashtags": {
+      "niche": ["#buildinpublic", "#studentfounder", "#dsaprep"],
+      "broad": ["#reels", "#india", "#creator"],
+      "trending": ["#diwali2026", "#examseason", "#aitools"],
+      "avoid": ["#followforfollow", "#like4like", "#viral100k"]
+    }
+  },
+  "seasonal": [
+    { "id": "z1", "title": "Navratri look-book", "note": "Peak in 8 days" },
+    { "id": "z2", "title": "Diwali gift guide under ₹999", "note": "Starts trending in 3 weeks" },
+    { "id": "z3", "title": "Placement season prep", "note": "Evergreen for your audience" }
+  ],
+  "unusedClips": [
+    { "id": "c7", "title": "Pricing slide breakdown", "range": "12:10–12:55", "score": 0.84 },
+    { "id": "c9", "title": "Guest's 80% trap story", "range": "24:02–24:41", "score": 0.79 },
+    { "id": "c11", "title": "Sunrise at Chapora", "range": "03:20–03:34", "score": 0.72 }
+  ],
+  "library": [
+    { "id": "a1", "name": "pitch_intro.mp4", "kind": "video", "folder": "Videos", "topic": "startup-india", "platform": "IG", "used": true, "date": "2026-09-28" },
+    { "id": "a2", "name": "pitch_demo.mp4", "kind": "video", "folder": "Videos", "topic": "startup-india", "platform": "IG", "used": true, "date": "2026-09-28" },
+    { "id": "a3", "name": "team.jpg", "kind": "image", "folder": "Photos", "topic": "startup-india", "platform": "IG", "used": true, "date": "2026-09-28" },
+    { "id": "a4", "name": "dsa_lecture_3.mp4", "kind": "video", "folder": "Podcasts", "topic": "education", "platform": "YT", "used": false, "date": "2026-09-20" },
+    { "id": "a5", "name": "goa_vlog.mp4", "kind": "video", "folder": "Videos", "topic": "travel", "platform": "YT", "used": false, "date": "2026-09-11" },
+    { "id": "a6", "name": "bgm_chai_lofi.mp3", "kind": "audio", "folder": "Audio", "topic": "general", "platform": "IG", "used": true, "date": "2026-09-02" },
+    { "id": "a7", "name": "ep12_final.mp4", "kind": "video", "folder": "Podcasts", "topic": "startup-india", "platform": "YT", "used": false, "date": "2026-09-30" },
+    { "id": "a8", "name": "launch_blog_draft.md", "kind": "blog", "folder": "Blogs", "topic": "startup-india", "platform": "LI", "used": false, "date": "2026-08-30" },
+    { "id": "a9", "name": "hook_script_v3.txt", "kind": "script", "folder": "Scripts", "topic": "comedy", "platform": "IG", "used": true, "date": "2026-09-25" },
+    { "id": "a10", "name": "ep11_thumb.png", "kind": "image", "folder": "Thumbnails", "topic": "startup-india", "platform": "YT", "used": true, "date": "2026-09-18" },
+    { "id": "a11", "name": "meme_setup.mp4", "kind": "video", "folder": "Shorts", "topic": "comedy", "platform": "IG", "used": false, "date": "2026-10-01" },
+    { "id": "a12", "name": "captions_oct.csv", "kind": "caption", "folder": "Captions", "topic": "general", "platform": "IG", "used": true, "date": "2026-10-01" }
+  ]
+}

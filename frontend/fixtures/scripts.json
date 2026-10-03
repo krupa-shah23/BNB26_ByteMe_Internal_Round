@@ -1,0 +1,8 @@
+{
+  "g1": ["We pitched to forty investors in three days.", "Here's the demo that changed the conversation.", "Meet the team that built it.", "Next week: the pricing slide, line by line.", "Add a customer testimonial here."],
+  "g2": ["Why does binary search need a sorted array?", "We halve the search space on every step.", "That gives us O(log n).", "Watch out for integer overflow in mid.", "Next lecture: two pointers.", "Show a code walkthrough of the recursive version."],
+  "g3": ["Two days in Goa for under five thousand rupees.", "Day one: scooter, sunrise, Chapora fort.", "The thali that beat every café.", "Full breakdown in the comments.", "Show the hostel booking receipt."],
+  "g4": ["Nobody ships because nobody owns it.", "The 80 percent trap, explained by our guest.", "Episode twelve is out now.", "Subscribe wherever you listen.", "Insert sponsor read here."],
+  "g5": ["Me at eleven PM: I'll start tomorrow.", "Exam tomorrow, nine AM.", "Every single semester.", "Tag your hostel roommate."],
+  "_default": ["The one thing nobody tells you.", "Here is what actually happened.", "Follow for more."]
+}

@@ -1,0 +1,8 @@
+{
+  "ig_reel": { "label": "Instagram Reel", "aspect": "9:16", "res": "1080×1920", "maxSec": 180, "minSec": 3, "safe": { "top": 14, "bottom": 35, "side": 6 }, "captionStyle": "Word highlight", "cover": "1080×1920 (grid crops 3:4)", "notes": "Verify cap in-app (older sources say 90 s)", "hashtagMax": 30, "muted": true },
+  "yt_short": { "label": "YouTube Short", "aspect": "9:16", "res": "1080×1920", "maxSec": 180, "minSec": 5, "safe": { "top": 10, "bottom": 30, "side": 6 }, "captionStyle": "Word highlight", "cover": "Frame pick", "notes": "Bottom ~300 px is UI", "hashtagMax": 15, "muted": true },
+  "yt_video": { "label": "YouTube Video", "aspect": "16:9", "res": "1920×1080", "maxSec": 43200, "minSec": 1, "safe": { "top": 5, "bottom": 8, "side": 5 }, "captionStyle": "Clean 2-line", "cover": "1280×720 custom thumbnail", "notes": "Chapters + end screen", "hashtagMax": 15, "muted": false },
+  "linkedin": { "label": "LinkedIn", "aspect": "1:1", "res": "1080×1080", "maxSec": 600, "minSec": 3, "safe": { "top": 6, "bottom": 10, "side": 6 }, "captionStyle": "Burned-in (mandatory)", "cover": "1:1", "notes": "Muted autoplay: captions mandatory", "hashtagMax": 5, "muted": true },
+  "x": { "label": "X", "aspect": "16:9", "res": "1280×720", "maxSec": 140, "minSec": 1, "safe": { "top": 6, "bottom": 10, "side": 6 }, "captionStyle": "Burned-in", "cover": "16:9", "notes": "140 s cap on standard accounts", "hashtagMax": 3, "muted": true },
+  "facebook": { "label": "Facebook", "aspect": "4:5", "res": "1080×1350", "maxSec": 240, "minSec": 3, "safe": { "top": 8, "bottom": 20, "side": 6 }, "captionStyle": "Burned-in", "cover": "4:5", "notes": "Meta Rights Manager, not Content ID", "hashtagMax": 10, "muted": true }
+}

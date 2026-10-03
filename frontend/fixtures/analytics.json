@@ -1,0 +1,28 @@
+{
+  "overview": { "followers": 48200, "followersDelta": 1240, "views": 312400, "engagement": 6.4, "posts": 42, "reels": 28, "collabs": 5, "gained": 1620, "lost": 380 },
+  "content": [
+    { "id": "reel_014", "title": "What I wish I knew before my first pitch", "platform": "Instagram", "kind": "Reel", "postedAt": "2026-09-28", "views": 84200, "reach": 61300, "likes": 6120, "comments": 412, "shares": 1310, "gained": 412, "earnings": null, "link": "#", "hue": 1,
+      "insight": { "headline": "The pricing explanation (0:41–1:05) drove 62% of shares", "topTopic": "salary negotiation", "heat": [8, 12, 14, 22, 40, 91, 88, 54, 30, 22, 18, 12], "nextActions": ["Make a Part 2 on pricing", "Repost clip c7 as a Short"] } },
+    { "id": "yt_021", "title": "Binary search finally clear (DSA 3)", "platform": "YouTube", "kind": "Long", "postedAt": "2026-09-22", "views": 21800, "reach": null, "likes": 1840, "comments": 233, "shares": 190, "gained": 318, "earnings": 4120, "link": "#", "hue": 2,
+      "insight": { "headline": "The 'mid overflow' bug (15:00–15:45) held 94% retention", "topTopic": "binary search", "heat": [60, 72, 70, 66, 64, 91, 94, 70, 58, 52, 48, 40], "nextActions": ["Cut a Short from 15:00", "Pin a comment with the fix"] } },
+    { "id": "yt_s018", "title": "Goa in 48 hours: ₹4,800", "platform": "YouTube", "kind": "Short", "postedAt": "2026-09-14", "views": 143000, "reach": null, "likes": 11200, "comments": 640, "shares": 2900, "gained": 905, "earnings": 2860, "link": "#", "hue": 3,
+      "insight": { "headline": "The ₹90 thali reveal (0:17–0:25) doubled replays", "topTopic": "budget food", "heat": [20, 30, 44, 55, 90, 84, 40, 30, 22, 14, 10, 8], "nextActions": ["Food-only Short series", "Link full cost sheet"] } },
+    { "id": "reel_011", "title": "Hostel memes: exam week", "platform": "Instagram", "kind": "Reel", "postedAt": "2026-09-08", "views": 212000, "reach": 168000, "likes": 21400, "comments": 1210, "shares": 8800, "gained": 1190, "earnings": null, "link": "#", "hue": 5,
+      "insight": { "headline": "The punchline cut (0:03–0:07) drove 71% of shares", "topTopic": "hostel life", "heat": [70, 92, 88, 60, 40, 30, 20, 16, 14, 12, 10, 8], "nextActions": ["Part 2: mess food", "Template for roommates"] } },
+    { "id": "yt_020", "title": "Ep. 11 — Hackathon horror stories", "platform": "YouTube", "kind": "Long", "postedAt": "2026-09-01", "views": 12900, "reach": null, "likes": 902, "comments": 118, "shares": 71, "gained": 142, "earnings": 1980, "link": "#", "hue": 4,
+      "insight": { "headline": "The 3 AM deploy story (31:10–33:00) is your best retention spike", "topTopic": "hackathons", "heat": [50, 52, 55, 48, 46, 44, 90, 88, 60, 50, 46, 44], "nextActions": ["Clip the 3 AM story", "Invite guest back"] } },
+    { "id": "reel_009", "title": "5 AI tools I use for notes", "platform": "Instagram", "kind": "Reel", "postedAt": "2026-08-24", "views": 58300, "reach": 44100, "likes": 4300, "comments": 302, "shares": 1010, "gained": 266, "earnings": null, "link": "#", "hue": 2,
+      "insight": { "headline": "Tool #3 (0:22–0:31) drove 48% of saves", "topTopic": "AI study tools", "heat": [30, 40, 52, 60, 66, 90, 76, 48, 32, 20, 16, 12], "nextActions": ["Deep-dive Video on tool #3"] } }
+  ],
+  "earningsMonthly": [
+    { "month": "Apr", "amount": 4200 }, { "month": "May", "amount": 5100 }, { "month": "Jun", "amount": 4800 },
+    { "month": "Jul", "amount": 7300 }, { "month": "Aug", "amount": 8900 }, { "month": "Sep", "amount": 11200 }
+  ],
+  "collabIncome": [{ "with": "@mock.meera", "amount": 6000 }, { "with": "@alpha.ayaan", "amount": 3500 }],
+  "collabLog": [
+    { "id": "cl1", "what": "Joint Reel: Founder vs student", "when": "2026-09-19", "withWhom": "@mock.meera", "platform": "Instagram", "views": 96000, "reach": 71000, "link": "#", "gained": 540, "lost": 90 },
+    { "id": "cl2", "what": "Podcast guest: AI tools", "when": "2026-09-05", "withWhom": "@alpha.ayaan", "platform": "YouTube", "views": 14200, "reach": null, "link": "#", "gained": 210, "lost": 22 },
+    { "id": "cl3", "what": "Meme duet", "when": "2026-08-17", "withWhom": "@fiction.farhan", "platform": "Instagram", "views": 188000, "reach": 140000, "link": "#", "gained": 880, "lost": 130 }
+  ],
+  "bestTimes": [{ "day": "Tue", "time": "7:30 PM" }, { "day": "Thu", "time": "8:00 PM" }, { "day": "Sat", "time": "11:00 AM" }]
+}
