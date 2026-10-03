@@ -9,6 +9,13 @@ import clsx from "clsx";
 import hooksFx from "@/fixtures/captions.json";
 import { hookService, mode, scriptService } from "@/lib/services";
 import { Badge } from "@/components/ui/bits";
+import { ChecksPanel } from "./compliance/ChecksPanel";
+import { BleepMarks, MonStrip, ReviewLanes, StrictBracket, type Focus, type Lane } from "./compliance/Lanes";
+import { PlayerOverlay } from "./compliance/Overlays";
+import { GateRow, ScoreChip } from "./compliance/ScoreChip";
+import { useCompliance } from "./compliance/useCompliance";
+import { captionIssues, computeAdSafe, gate, maskProfanity, profanityIn } from "@/lib/compliance/analyze";
+import { moveBlur } from "@/lib/compliance/actions";
 import { EdlPlayerLazy } from "./EdlPlayerLazy";
 import { CaptionsDrawer, ThumbnailModal, ThumbCard } from "./Tools";
 import { PROFILES, aspectDims, fmtTime, friendlyTitle, normalize, relTime, segmentName, totalDur, uid } from "@/lib/projects";
@@ -56,10 +63,21 @@ export function Editor({ projectId }: { projectId: string }) {
   useEffect(() => {
     if (!project) return;
     let alive = true;
-    scriptService.write({ topic: project.title, groupId: project.groupId }).then((r) => { if (alive) setScript(r.lines.join("\n")); });
+    // an audience-question project starts from its drafted script instead of the sample one
+    if (project.prefill) setScript(project.prefill.script.join("\n"));
+    else scriptService.write({ topic: project.title, groupId: project.groupId }).then((r) => { if (alive) setScript(r.lines.join("\n")); });
     if (mode("hooks") === "live") hookService.suggest({ topic: project.title }).then((r) => { if (alive) setHooks(r.hooks.map((text) => ({ text, style: r.source === "live" ? "AI" : "sample" }))); });
     return () => { alive = false; };
   }, [project?.id, project?.groupId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Audience → "Create response": drop the drafted hook into the opening once, keep everything editable
+  useEffect(() => {
+    const pf = project?.prefill;
+    if (!project || !pf || pf.applied) return;
+    const next = normalize(latest.current.map((s, i) => (i === 0 ? { ...s, caption: pf.hook, touched: true } : s)));
+    setTl(next);
+    patch(project.id, { timeline: next, prefill: { ...pf, applied: true } });
+  }, [project?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const group = project ? groupById(project.groupId) : null;
   const total = totalDur(tl);
@@ -110,6 +128,26 @@ export function Editor({ projectId }: { projectId: string }) {
   const edit = (id: string, p: Partial<Segment>) => commit(tl.map((s) => (s.id === id ? { ...s, ...p, touched: true } : s)));
   const selected = tl.find((s) => s.id === sel);
   const nameOf = (s: Segment) => segmentName(s.kind, tl.indexOf(s), tl.length);
+
+  // review lanes: ad-safety, PII, claims, consent
+  const [comp, applyComp] = useCompliance(project);
+  const [side, setSide] = useState<"adjust" | "checks">("adjust");
+  const [lane, setLane] = useState<Lane>("mon");
+  const [focus, setFocus] = useState<Focus>(null);
+  const [selBlur, setSelBlur] = useState<string | undefined>();
+  const checksRef = useRef<HTMLElement>(null);
+  const capIss = captionIssues(tl);
+  const jump = (t: number) => { const f = Math.round(t * FPS); playerRef.current?.seekTo(f); setFrame(f); };
+  const pick = (l: Lane, id: string, t: number) => {
+    setSide("checks"); setLane(l); setFocus({ lane: l, id }); jump(t);
+    if (window.innerWidth < 1280) checksRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  };
+  const fixCaptions = () => commit(tl.map((s) => (s.caption && profanityIn(s.caption).length ? { ...s, caption: maskProfanity(s.caption), touched: true } : s)));
+  // Review's "Review people" lands here: /studio/<id>?check=people
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("check");
+    if (q === "people" || q === "pii" || q === "claims" || q === "mon") { setSide("checks"); setLane(q); }
+  }, []);
 
   if (!project || !group) {
     return <div className="grid place-items-center gap-4 py-24 text-center"><h1 className="t-h2">We couldn’t find that project</h1><Link className="btn-primary" href="/studio">Back to Studio</Link></div>;
@@ -190,6 +228,7 @@ export function Editor({ projectId }: { projectId: string }) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {comp && <ScoreChip score={computeAdSafe(project, comp).score} />}
           <button className="btn-ghost h-10 w-10 p-0" onClick={undo} disabled={!past.length} aria-label="Undo"><Undo2 size={16} /></button>
           <button className="btn-ghost h-10 w-10 p-0" onClick={redo} disabled={!future.length} aria-label="Redo"><Redo2 size={16} /></button>
           <span className="mx-1 hidden h-6 w-px bg-line md:block" />
@@ -200,11 +239,14 @@ export function Editor({ projectId }: { projectId: string }) {
           <button className="btn-ghost" onClick={preview}><Play size={16} />Preview</button>
           <div className="group relative">
             <button className="btn-brand" disabled={missing.length > 0} onClick={done}>Done <Check size={16} /></button>
-            {missing.length > 0 && <div role="tooltip" className="pointer-events-none absolute right-0 top-12 z-20 w-60 rounded-xl border border-line bg-surface p-3 text-xs opacity-0 shadow-soft transition-opacity group-hover:opacity-100">Almost there — you still need {missing.join(" and ")}.</div>}
+            {missing.length > 0 && <div role="tooltip" className="pointer-events-none absolute right-0 top-12 z-20 w-60 rounded-xl border border-line bg-surface p-3 text-xs opacity-0 shadow-soft transition-opacity group-hover:opacity-100">Almost there, you still need {missing.join(" and ")}.</div>}
           </div>
         </div>
       </div>
 
+      {project.prefill && (
+        <div className="mb-5 flex flex-wrap items-center gap-2 rounded-2xl border border-brand/40 bg-brand/10 px-4 py-3 text-sm"><Sparkles size={14} className="text-brand" /><span>Drafted from a question your {project.prefill.source} audience keeps asking: <b>“{project.prefill.question}”</b>. Edit the opening and script freely. Nothing is published.</span></div>
+      )}
       <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)_320px]">
         {/* YOUR CONTENT */}
         <section className="order-2 overflow-hidden rounded-[24px] border border-text/10 bg-surface xl:order-1" aria-label="Your content">
@@ -224,7 +266,7 @@ export function Editor({ projectId }: { projectId: string }) {
                     <button className="btn-ghost py-2" onClick={() => { scriptService.write({ topic: project.title, groupId: project.groupId }).then((r) => setScript(r.lines.join("\n"))); toast("New version created"); }}><Sparkles size={14} />Generate new version</button>
                     <select aria-label="Adapt your story for a platform" className="input w-auto py-2 text-xs" onChange={(e) => {
                       const v = e.target.value; if (!v) return;
-                      setScript((s) => s.split("\n").map((l) => v === "x" ? l.slice(0, 140) : v === "linkedin" ? l.replace(/\.$/, "") + " — here’s what I learned." : "🔥 " + l).join("\n")); e.target.value = "";
+                      setScript((s) => s.split("\n").map((l) => v === "x" ? l.slice(0, 140) : v === "linkedin" ? l.replace(/\.$/, "") + ", here’s what I learned." : "🔥 " + l).join("\n")); e.target.value = "";
                     }}><option value="">Adapt for…</option><option value="ig_reel">Instagram Reel (punchy)</option><option value="linkedin">LinkedIn (professional)</option><option value="x">X (short)</option></select>
                   </div>
                 </div>
@@ -293,7 +335,7 @@ export function Editor({ projectId }: { projectId: string }) {
         <section className="order-1 xl:order-2" aria-label="Preview">
           <div className="grid place-items-center rounded-[28px] border border-text/10 bg-sunken p-4 md:p-8">
             <motion.div className="w-full overflow-hidden rounded-2xl border-[6px] border-text bg-surface shadow-soft" style={{ aspectRatio: ratio, maxWidth: ASPECT_W[project.aspect] }} animate={{ aspectRatio: ratio, maxWidth: ASPECT_W[project.aspect] }} transition={{ type: "spring", stiffness: 140, damping: 20 }}>
-              <EdlPlayerLazy props={edlProps} playerRef={playerRef} />
+              <div className="relative h-full w-full"><EdlPlayerLazy props={edlProps} playerRef={playerRef} />{comp && <PlayerOverlay c={comp} now={nowSec} />}</div>
             </motion.div>
             <p className="mt-4 text-sm text-muted">{PROFILES[platform].label}{project.platforms.length > 1 ? ` + ${project.platforms.length - 1} more` : ""} · {project.aspect}</p>
             <div className="mt-2 flex items-center gap-3">
@@ -307,12 +349,22 @@ export function Editor({ projectId }: { projectId: string }) {
               <div className="text-sm">{project.caption ? <><p>{project.caption.caption}</p><p className="mt-1 text-xs text-muted">{project.caption.cta} · {project.caption.hashtags.join(" ")}</p></> : <p className="text-muted">No caption chosen yet.</p>}</div>
             </div>
           )}
+          {comp && <GateRow project={project} g={gate(project)} title={title} />}
         </section>
 
         {/* ADJUST */}
-        <section className="order-3 rounded-[24px] border border-text/10 bg-surface p-4 text-sm" aria-label="Adjust">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">Adjust</h2>
-          {selected ? (
+        <section ref={checksRef} className="order-3 rounded-[24px] border border-text/10 bg-surface p-4 text-sm" aria-label="Inspector">
+          <div role="tablist" className="grid grid-cols-2 gap-1 text-xs font-semibold uppercase tracking-[0.1em]">
+            {(["adjust", "checks"] as const).map((t) => {
+              const n = comp ? computeAdSafe(project, comp).issues.filter((i) => i.status === "open").length + comp.pii.filter((p) => p.status === "open").length + comp.claims.filter((k) => k.status === "open").length + comp.people.filter((p) => p.status === "unknown").length : 0;
+              return <button key={t} role="tab" aria-selected={side === t} onClick={() => setSide(t)} className={clsx("flex items-center justify-center gap-1.5 rounded-xl py-2 transition-colors", side === t ? "bg-sunken text-text" : "text-muted hover:bg-sunken")}>{t === "adjust" ? "Adjust" : "Checks"}{t === "checks" && n > 0 && <span className="min-w-4 rounded-full bg-bad px-1 text-[10px] leading-4 text-bg">{n}</span>}</button>;
+            })}
+          </div>
+          {side === "checks" && comp ? (
+            <div className="mt-4 max-h-[600px] overflow-y-auto pr-1">
+              <ChecksPanel c={comp} apply={applyComp} issues={computeAdSafe(project, comp).issues} capIssues={capIss} fixCaptions={fixCaptions} lane={lane} setLane={setLane} focus={focus} setFocus={setFocus} jump={jump} adSafe={computeAdSafe(project, comp).score} />
+            </div>
+          ) : selected ? (
             <div className="mt-4 grid gap-4" key={selected.id}>
               <div>
                 <p className="font-display text-2xl tracking-tight">{nameOf(selected)}</p>
@@ -350,6 +402,7 @@ export function Editor({ projectId }: { projectId: string }) {
           <div className="mb-1 h-4 cursor-pointer text-[10px] text-muted" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); playerRef.current?.seekTo(Math.round(((e.clientX - r.left) / r.width) * total * FPS)); }} aria-hidden="true">
             <div className="flex justify-between">{Array.from({ length: Math.min(8, Math.ceil(total / 5) + 1) }, (_, i) => <span key={i}>{fmtTime((total / Math.max(1, Math.min(7, Math.ceil(total / 5)))) * i)}</span>)}</div>
           </div>
+          {comp && <><StrictBracket total={total} /><MonStrip issues={computeAdSafe(project, comp).issues} total={total} focus={focus} onPick={pick} /></>}
           <div ref={tlRef} className="relative flex h-20 gap-0.5 overflow-hidden rounded-xl bg-sunken">
             {tl.map((s) => (
               <motion.div key={s.id} layout="position" style={{ flexGrow: s.dur, flexBasis: 0 }} onClick={() => { setSel(s.id); playerRef.current?.seekTo(Math.round(s.at * FPS)); }}
@@ -372,8 +425,9 @@ export function Editor({ projectId }: { projectId: string }) {
               </div>
             </div>
             <div className="flex items-center gap-2"><span className="w-16 shrink-0">Music</span>
-              <div className="h-6 min-w-0 flex-1 overflow-hidden rounded-lg bg-sunken"><div className="h-full w-full bg-tan/40 px-2 text-[10px] normal-case leading-6 text-text">{music?.title}</div></div>
+              <div className="relative h-6 min-w-0 flex-1 rounded-lg bg-sunken"><div className="h-full w-full overflow-hidden rounded-lg bg-tan/40 px-2 text-[10px] normal-case leading-6 text-text">{music?.title}</div>{comp && <BleepMarks c={comp} total={total} />}</div>
             </div>
+            {comp && <ReviewLanes c={comp} total={total} focus={focus} onPick={pick} selectedBlur={selBlur} onSelectBlur={setSelBlur} onBlurChange={(id, a, b) => applyComp((x) => moveBlur(x, id, a, b))} />}
           </div>
         </div>
       </section>

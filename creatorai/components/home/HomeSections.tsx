@@ -105,7 +105,7 @@ export function Trends() {
 
       <section className="card mt-8 p-6" aria-labelledby="idea-h">
         <h2 id="idea-h" className="t-h2">Idea generator</h2>
-        <div className="mt-4 flex gap-2"><label htmlFor="idea-t" className="sr-only">Topic</label><input id="idea-t" className="input" placeholder="Type a topic — e.g. placement season" value={topic} onChange={(e) => setTopic(e.target.value)} onKeyDown={(e) => e.key === "Enter" && generate()} /><button className="btn-brand shrink-0" onClick={generate} disabled={busy}><Sparkles size={16} />{busy ? "Thinking…" : "Generate"}</button></div>
+        <div className="mt-4 flex gap-2"><label htmlFor="idea-t" className="sr-only">Topic</label><input id="idea-t" className="input" placeholder="Type a topic, e.g. placement season" value={topic} onChange={(e) => setTopic(e.target.value)} onKeyDown={(e) => e.key === "Enter" && generate()} /><button className="btn-brand shrink-0" onClick={generate} disabled={busy}><Sparkles size={16} />{busy ? "Thinking…" : "Generate"}</button></div>
         {gen && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-6 grid gap-4 md:grid-cols-3">
             {([["Meme concepts", gen.meme], ["Reel concepts", gen.reel], ["Hooks", gen.hooks], ["Formats", gen.formats], ["Story ideas", gen.story]] as [string, string[]][]).map(([h, l]) => (
@@ -150,7 +150,7 @@ export function Library() {
         ))}
         {items.length === 0 && <li className="col-span-full text-sm text-muted">No assets match.</li>}
       </ul>
-      <div className="card mt-8 p-5"><h3 className="t-label text-muted">Reuse suggestions</h3><ul className="mt-3 grid gap-2 text-sm"><li>• <b>ep12_final.mp4</b> has never been clipped — try the <Link href="/videos?type=Podcast" className="text-brand underline">podcast set</Link>.</li><li className="text-warn">• Repeat risk: you posted a “pitch tips” Reel 5 days ago — space similar topics ≥ 10 days apart.</li></ul></div>
+      <div className="card mt-8 p-5"><h3 className="t-label text-muted">Reuse suggestions</h3><ul className="mt-3 grid gap-2 text-sm"><li>• <b>ep12_final.mp4</b> has never been clipped, try the <Link href="/videos?type=Podcast" className="text-brand underline">podcast set</Link>.</li><li className="text-warn">• Repeat risk: you posted a “pitch tips” Reel 5 days ago, space similar topics ≥ 10 days apart.</li></ul></div>
     </div>
   );
 }

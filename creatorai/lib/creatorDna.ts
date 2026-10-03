@@ -34,7 +34,7 @@ export function preferredTone(d: CreatorDNA): "witty" | "pro" | "storytelling" {
   return "storytelling";
 }
 
-const CTA_TEXT = { soft: "Follow if this helped", direct: "Follow for more — link in bio", question: "What would you add?" } as const;
+const CTA_TEXT = { soft: "Follow if this helped", direct: "Follow for more, link in bio", question: "What would you add?" } as const;
 
 /** Adapts suggested captions to the creator's style. Pure and cheap. */
 export function personaliseCaptions<T extends { id: string; caption: string; cta: string }>(opts: T[], d: CreatorDNA): T[] {

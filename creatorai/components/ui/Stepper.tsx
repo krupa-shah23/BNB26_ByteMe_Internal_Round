@@ -6,9 +6,9 @@ import clsx from "clsx";
 export interface StepDef { id: string; label: string }
 
 /** Guided-journey indicator: numbered nodes joined by lines that fill as you progress. */
-export function StepIndicator({ steps, current, onJump }: { steps: StepDef[]; current: number; onJump?: (i: number) => void }) {
+export function StepIndicator({ steps, current, onJump, left = false }: { steps: StepDef[]; current: number; onJump?: (i: number) => void; left?: boolean }) {
   return (
-    <ol className="mx-auto flex w-full max-w-xl items-start" aria-label="Progress">
+    <ol className={clsx("flex w-full max-w-xl items-start", !left && "mx-auto")} aria-label="Progress">
       {steps.map((s, i) => {
         const done = i < current, on = i === current;
         return (

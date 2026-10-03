@@ -58,9 +58,9 @@ export const demoIdeaService: IdeaService = {
     await sleep(900);
     return { source: "demo", ideas: { topic: x,
       meme: [`"Me explaining ${x} vs. what the algorithm heard"`, `Two-paths meme: ${x} edition`],
-      reel: [`3 mistakes everyone makes with ${x}`, `${x} in 30 seconds — no jargon`],
+      reel: [`3 mistakes everyone makes with ${x}`, `${x} in 30 seconds, no jargon`],
       hooks: [`Nobody talks about this part of ${x}…`, `I tried ${x} for 7 days. Here's the truth.`, `Stop doing ${x} like this.`],
       formats: ["Green-screen explainer", "Split-screen reaction", "Carousel → Reel"],
-      story: [`Poll: ${x} — yes or no?`, `Ask me anything about ${x}`] } };
+      story: [`Poll: ${x}, yes or no?`, `Ask me anything about ${x}`] } };
   },
 };

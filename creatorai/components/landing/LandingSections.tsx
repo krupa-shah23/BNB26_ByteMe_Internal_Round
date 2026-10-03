@@ -23,7 +23,7 @@ export function Hero() {
           </div>
         </div>
         <Reveal delay={0.9} className="mt-16 max-w-xl text-lg text-muted md:text-xl">
-          Smart tools for creators big and small — from the first idea to the published post — so you can spend your time growing an audience, not juggling apps.
+          Smart tools for creators big and small, from the first idea to the published post, so you can spend your time growing an audience, not juggling apps.
         </Reveal>
       </div>
     </section>
@@ -42,7 +42,7 @@ function WorkCard({ g, onOpen }: { g: (typeof groups)[number]; onOpen: () => voi
   }, []);
   const isShort = g.format === "short";
   return (
-    <button ref={ref} onClick={onOpen} className="group relative block w-[72vw] shrink-0 text-left sm:w-[44vw] md:w-[30vw] lg:w-[24vw]" aria-label={`${g.title} — ${g.type}`}>
+    <button ref={ref} onClick={onOpen} className="group relative block w-[72vw] shrink-0 text-left sm:w-[44vw] md:w-[30vw] lg:w-[24vw]" aria-label={`${g.title}, ${g.type}`}>
       <Poster seed={g.hue} label={g.title} className={`${isShort ? "aspect-[4/5]" : "aspect-[4/3]"} w-full rounded-2xl border border-line transition-transform duration-500 group-hover:scale-[0.985]`}>
         {poster && g.media && <img src={`/demo/${g.id}/poster.jpg`} alt="" loading="lazy" onError={() => setPoster(false)} className="absolute inset-0 h-full w-full object-cover" />}
         {visible && video && g.media && <video src={`/demo/${g.id}/output.mp4`} muted loop autoPlay playsInline preload="none" onError={() => setVideo(false)} className="absolute inset-0 h-full w-full object-cover" />}
@@ -81,7 +81,7 @@ export function Statement() {
           <Reveal key={s} delay={i * 0.06} className="bg-bg p-6">
             <div className="t-label text-muted">0{i + 1}</div>
             <div className="mt-6 font-display text-3xl">{s}</div>
-            <p className="mt-3 text-sm text-muted">{["Trend-aware prompts and festival-ready ideas.", "Hooks and scripts matched to your footage.", "AI cuts you can trim, restyle and reset.", "Copyright, safe-zone and caption checks.", "One click to every platform — with hearts."][i]}</p>
+            <p className="mt-3 text-sm text-muted">{["Trend-aware prompts and festival-ready ideas.", "Hooks and scripts matched to your footage.", "AI cuts you can trim, restyle and reset.", "Copyright, safe-zone and caption checks.", "One click to every platform, with hearts."][i]}</p>
           </Reveal>
         ))}
       </div>

@@ -1,7 +1,7 @@
 "use client";
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, CalendarDays, ChevronDown, ChevronsLeft, ChevronsRight, Film, Home, LayoutDashboard, LogOut, Plus, Scissors, Search, Settings, Smartphone, UserCircle2 } from "lucide-react";
+import { Bell, CalendarDays, ChevronDown, ChevronsLeft, ChevronsRight, Film, Home, LayoutDashboard, LogOut, MessageCircle, Plus, Scissors, Search, Settings, Smartphone, UserCircle2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -20,6 +20,7 @@ const TABS = [
   { href: "/short-videos", label: "Short Videos", icon: Smartphone },
   { href: "/videos", label: "Videos", icon: Film },
   { href: "/studio", label: "Studio", icon: Scissors },
+  { href: "/messages", label: "Messages", icon: MessageCircle },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
 const isActive = (path: string, href: string) => (href === "/" ? path === "/" : path.startsWith(href));
@@ -49,7 +50,7 @@ function useAlarms(active: boolean) {
           if (now >= start) {
             st.patchCal(c.id, { fired: true });
             st.patchProject(c.projectId, { status: "Published" });
-            st.notify("Scheduled post published", `${c.title} (simulated publish job)`);
+            st.notify("Scheduled post published", `${c.title} (simulated publish job)`, { kind: "calendar" });
             st.toast("Scheduled post published", c.title);
           }
           continue;
@@ -59,7 +60,7 @@ function useAlarms(active: boolean) {
         if (now < fireAt) continue;
         const missed = first.current && now - fireAt > 10 * 60_000;
         st.patchCal(c.id, { fired: true, missed });
-        st.notify(missed ? `Missed: ${c.title}` : `⏰ ${c.title}`, missed ? "Snooze, reschedule or mark done in Calendar." : `Starts ${new Date(c.startsAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" })}`);
+        st.notify(missed ? `Missed: ${c.title}` : `⏰ ${c.title}`, missed ? "Snooze, reschedule or mark done in Calendar." : `Starts ${new Date(c.startsAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" })}`, { kind: "calendar" });
         if (!missed) {
           st.toast(`⏰ ${c.title}`, "Reminder");
           if (c.sound) beep();
@@ -74,7 +75,7 @@ function useAlarms(active: boolean) {
   }, [active, offset]);
 }
 
-function Menu({ label, button, children, align = "right" }: { label: string; button: React.ReactNode; children: (close: () => void) => React.ReactNode; align?: "left" | "right" }) {
+function Menu({ label, button, children, align = "right", wide = false }: { label: string; button: React.ReactNode; children: (close: () => void) => React.ReactNode; align?: "left" | "right"; wide?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -90,7 +91,7 @@ function Menu({ label, button, children, align = "right" }: { label: string; but
       <AnimatePresence>
         {open && (
           <motion.div role="menu" initial={{ opacity: 0, y: -6, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6 }}
-            className={clsx("absolute top-12 z-50 w-72 overflow-hidden rounded-2xl border border-line bg-surface shadow-soft", align === "right" ? "right-0" : "left-0")}>
+            className={clsx("absolute top-12 z-50 overflow-hidden rounded-2xl border border-line bg-surface shadow-soft", wide ? "w-[min(92vw,380px)]" : "w-72", align === "right" ? "right-0" : "left-0")}>
             {children(() => setOpen(false))}
           </motion.div>
         )}
@@ -102,7 +103,9 @@ function Menu({ label, button, children, align = "right" }: { label: string; but
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const path = usePathname();
-  const home = path === "/";
+  const home = path === "/" || path === "/messages";
+  // pages designed to fit one screen: no page scroll on desktop
+  const fit = /^\/(short-videos|videos)(\/|$)/.test(path);
   const [cal, setCal] = useState(false);
   const [railOpen, setRailOpen] = useState(true);
   useEffect(() => { try { setRailOpen(localStorage.getItem("creatorai-rail") !== "0"); } catch { /* storage unavailable */ } }, []);
@@ -112,6 +115,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const hydrated = useHydrated();
   const loggedIn = useStore((s) => s.loggedIn);
   const notices = useStore((s) => s.notices);
+  const messages = useStore((s) => s.messages);
   const toasts = useStore((s) => s.toasts);
   const dirty = useStore((s) => s.dirty);
   const [palette, setPalette] = useState(false);
@@ -154,9 +158,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (!hydrated || !loggedIn) {
-    return <div className="grid min-h-screen place-items-center"><div className="skeleton h-3 w-40 rounded-full" role="status" aria-label="Loading" /></div>;
+    return <div className="grid min-h-screen place-items-center" role="status" aria-label="Loading"><motion.div className="font-display text-3xl tracking-tight" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: [0.5, 1, 0.5], scale: 1 }} transition={{ opacity: { repeat: Infinity, duration: 1.6, ease: "easeInOut" }, scale: { duration: 0.4 } }}>Creator<span className="text-brand">Ai</span></motion.div></div>;
   }
   const unread = notices.filter((n) => !n.read).length;
+  const dmUnread = Object.values(messages).reduce((n, t) => n + t.filter((m) => m.from === "them" && !m.read).length, 0);
 
   const homeRail = (
     <aside aria-label="Sidebar" className={clsx("fixed bottom-0 left-0 top-20 z-20 hidden flex-col justify-between border-r border-line bg-bg px-3 pb-5 pt-4 transition-[width] duration-300 lg:flex", railOpen ? "w-56" : "w-[76px]")}>
@@ -167,7 +172,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             return (
               <Link key={href} href={href} title={label} aria-current={on ? "page" : undefined}
                 className={clsx("relative flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-colors", railOpen ? "" : "justify-center", on ? "bg-brand text-brand-ink" : "text-muted hover:bg-sunken hover:text-text")}>
-                <Icon size={19} className="shrink-0" />{railOpen && <span className="truncate">{label}</span>}
+                <span className="relative shrink-0"><Icon size={19} />{href === "/messages" && dmUnread > 0 && <span className="absolute -right-1.5 -top-1.5 h-2.5 w-2.5 rounded-full bg-brand-2 ring-2 ring-bg" />}</span>{railOpen && <span className="truncate">{label}</span>}
               </Link>
             );
           })}
@@ -182,15 +187,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const minimalHeader = (
     <header className="relative z-30 mx-auto flex h-20 max-w-[1500px] items-center justify-between gap-4 px-5 md:px-10">
-      <Link href="/" className="font-display text-[1.7rem] tracking-tight" aria-label="CreatorAi home">Creator<span className="text-brand">Ai</span></Link>
-      <div className="flex items-center gap-3 xl:gap-4">
+      <div className="flex min-w-0 items-center gap-4 xl:gap-6">
+        <Link href="/" className="font-display text-[1.7rem] tracking-tight" aria-label="CreatorAi home">Creator<span className="text-brand">Ai</span></Link>
         <button onClick={() => setPalette(true)} className="glow-border flex h-10 items-center gap-2 rounded-pill px-4 text-[0.95rem] text-muted hover:text-text md:w-56 xl:w-80" aria-label="Search (Ctrl K)"><Search size={16} /><span className="hidden md:inline">Search</span><kbd className="ml-auto hidden rounded border border-line px-1.5 text-[10px] md:inline">⌘K</kbd></button>
+      </div>
+      <div className="flex items-center gap-3 xl:gap-4">
         <RubberSegment size="sm" label="Calendar" value={null} onChange={() => setCal(true)} items={[{ id: "cal", label: <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><CalendarDays size={15} /><span className="hidden md:inline">Calendar</span></span> }]} />
-        <Menu label="Notifications" button={<span className="relative grid h-9 w-9 place-items-center rounded-full hover:bg-sunken"><Bell size={18} />{unread > 0 && <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-brand" />}</span>}>
-          {() => (
+        <Menu label="Notifications" wide button={<span className="relative grid h-9 w-9 place-items-center rounded-full hover:bg-sunken"><Bell size={18} />{unread > 0 && <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-brand" />}</span>}>
+          {(close) => (
             <div>
-              <div className="flex items-center justify-between border-b border-line px-4 py-3"><span className="text-sm font-semibold">Notifications</span><button className="text-xs text-brand" onClick={() => useStore.getState().markNoticesRead()}>Mark read</button></div>
-              <ul className="max-h-80 overflow-y-auto">{notices.map((n) => (<li key={n.id} className="border-b border-line px-4 py-3 text-sm last:border-0"><div className="font-medium">{n.title}</div><div className="text-xs text-muted">{n.body}</div></li>))}</ul>
+              <div className="flex items-center justify-between border-b border-line px-4 py-3"><span className="text-sm font-semibold">Notifications</span><button className="text-xs text-brand" onClick={() => useStore.getState().markNoticesRead()}>Mark all read</button></div>
+              <ul className="max-h-[420px] overflow-y-auto">
+                {notices.map((n) => {
+                  const Ico = n.kind === "calendar" ? CalendarDays : n.kind === "collab" ? MessageCircle : Bell;
+                  const go = () => { close(); useStore.setState((s) => ({ notices: s.notices.map((x) => (x.id === n.id ? { ...x, read: true } : x)) })); if (n.kind === "calendar") setCal(true); else if (n.href) router.push(n.href); };
+                  return (
+                    <li key={n.id} className="border-b border-line last:border-0">
+                      <button onClick={go} className={clsx("flex w-full items-start gap-3 px-4 py-3 text-left text-sm transition-colors hover:bg-sunken", !n.read && "bg-brand/5")}>
+                        <span className={clsx("mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full", n.kind === "collab" ? "bg-brand-2/25 text-brand-2" : n.kind === "calendar" ? "bg-accent/25 text-accent" : "bg-sunken text-muted")}><Ico size={15} /></span>
+                        <span className="min-w-0 flex-1"><span className="flex items-center justify-between gap-2"><span className="truncate font-medium">{n.title}</span>{!n.read && <span className="h-2 w-2 shrink-0 rounded-full bg-brand" />}</span><span className="line-clamp-2 block text-xs text-muted">{n.body}</span><span className="mt-0.5 block text-[10px] text-muted">{relTime(n.at)}</span></span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           )}
         </Menu>
@@ -269,16 +289,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>}
 
         {homeRail}
-        <main id="app-main" className={clsx("px-4 pb-28 pt-4 md:px-10 lg:pb-12 lg:transition-[padding] lg:duration-300", railOpen ? "lg:pl-[17rem]" : "lg:pl-[7rem]", home && "pt-2 lg:h-[calc(100dvh-5rem)] lg:overflow-hidden lg:pb-5")}>{children}</main>
+        <main id="app-main" className={clsx("px-4 pb-28 pt-4 md:px-10 lg:pb-12 lg:transition-[padding] lg:duration-300", railOpen ? "lg:pl-[17rem]" : "lg:pl-[7rem]", home && "pt-2 lg:h-[calc(100dvh-5rem)] lg:overflow-hidden lg:pb-5", fit && "no-scrollbar lg:h-[calc(100dvh-5rem)] lg:overflow-y-auto lg:pb-5 lg:pt-2")}>{children}</main>
       </div>
 
       {/* mobile bottom tab bar */}
-      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden">
+      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-6 border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden">
         {TABS.map(({ href, label, icon: Icon, ...rest }) => {
           const on = isActive(path, href);
           return (
             <Link key={href} href={href} aria-current={on ? "page" : undefined} className={clsx("flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium", on ? "text-brand" : "text-muted")}>
-              <Icon size={20} />{("short" in rest ? (rest as { short: string }).short : label.split(" ")[0])}
+              <span className="relative"><Icon size={20} />{href === "/messages" && dmUnread > 0 && <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-brand-2" />}</span>{("short" in rest ? (rest as { short: string }).short : label.split(" ")[0])}
             </Link>
           );
         })}

@@ -134,7 +134,7 @@ export function ReachOut({ open, onClose }: { open: boolean; onClose: () => void
             <motion.div key="done" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid min-h-[60vh] place-content-center gap-6 text-center">
               <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 14 }} className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-ok text-bg"><Check size={36} /></motion.div>
               <h2 id="reach-title" className="t-h1">Got it. We'll be in touch.</h2>
-              <p className="mx-auto max-w-sm text-muted">This is a demo — your answers are stored only in this browser. Try the product in the meantime.</p>
+              <p className="mx-auto max-w-sm text-muted">This is a demo, your answers are stored only in this browser. Try the product in the meantime.</p>
               <button onClick={onClose} className="btn-primary mx-auto">Back to the site</button>
             </motion.div>
           ) : (
@@ -225,7 +225,7 @@ export function SiteFooter() {
         </div>
         <div className="md:col-span-6">
           <form onSubmit={sub} noValidate>
-            <label htmlFor="nl" className="t-label opacity-60">Newsletter — one email a month</label>
+            <label htmlFor="nl" className="t-label opacity-60">Newsletter, one email a month</label>
             {state === "ok" ? (
               <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} role="status" className="mt-3 flex items-center gap-2 text-xl"><Check size={20} /> You're on the list.</motion.p>
             ) : (

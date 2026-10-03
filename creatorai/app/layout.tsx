@@ -7,7 +7,7 @@ const display = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-disp
 const text = Inter({ subsets: ["latin"], variable: "--font-text", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "CreatorAi — idea to published post, one workspace",
+  title: "CreatorAi, idea to published post, one workspace",
   description: "AI-powered content operations for creators: scripts, clips, editable AI edits, multi-platform publishing.",
 };
 

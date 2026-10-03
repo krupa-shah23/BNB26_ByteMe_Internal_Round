@@ -1,7 +1,7 @@
 {
   "groups": [
     {
-      "id": "g1", "title": "Startup pitch — behind the scenes", "topic": "startup-india", "format": "short", "type": "Reel", "preset": "Business/finance",
+      "id": "g1", "title": "Startup pitch, behind the scenes", "topic": "startup-india", "format": "short", "type": "Reel", "preset": "Business/finance",
       "media": false, "hue": 1,
       "inputs": [
         { "role": "A", "filenames": ["pitch_intro.mp4"], "sha256_first_1mb": "", "durationSec": 41.2 },
@@ -14,13 +14,13 @@
         { "at": 0, "dur": 4.2, "src": "A", "in": 12, "out": 16.2, "kind": "hook", "caption": "We pitched to 40 investors in 3 days…" },
         { "at": 4.2, "dur": 8, "src": "B", "in": 30, "out": 38, "kind": "demo", "caption": "This is the demo that got us the term sheet" },
         { "at": 12.2, "dur": 2, "photo": "p1", "anim": "kenburns", "kind": "photo", "caption": "The team behind it" },
-        { "at": 14.2, "dur": 6, "src": "C", "in": 5, "out": 11, "kind": "cta", "caption": "Follow for Part 2 — the pricing slide" }
+        { "at": 14.2, "dur": 6, "src": "C", "in": 5, "out": 11, "kind": "cta", "caption": "Follow for Part 2, the pricing slide" }
       ],
       "hashtags": ["#startupindia", "#pitchdeck", "#founderlife"],
       "chapters": []
     },
     {
-      "id": "g2", "title": "DSA lecture 3 — Binary search, finally clear", "topic": "education", "format": "video", "type": "Lecture", "preset": "Lecture/education",
+      "id": "g2", "title": "DSA lecture 3, Binary search, finally clear", "topic": "education", "format": "video", "type": "Lecture", "preset": "Lecture/education",
       "media": false, "hue": 2,
       "inputs": [
         { "role": "A", "filenames": ["dsa_lecture_3.mp4"], "sha256_first_1mb": "", "durationSec": 1812 },
@@ -32,7 +32,7 @@
       "timeline": [
         { "at": 0, "dur": 6, "src": "A", "in": 140, "out": 146, "kind": "hook", "caption": "Why does binary search need a sorted array?" },
         { "at": 6, "dur": 14, "src": "B", "in": 20, "out": 34, "kind": "explain", "caption": "Halve the search space every step" },
-        { "at": 20, "dur": 3, "photo": "p1", "anim": "kenburns", "kind": "photo", "caption": "O(log n) — the formula" },
+        { "at": 20, "dur": 3, "photo": "p1", "anim": "kenburns", "kind": "photo", "caption": "O(log n), the formula" },
         { "at": 23, "dur": 10, "src": "A", "in": 900, "out": 910, "kind": "explain", "caption": "Edge case: mid overflow" },
         { "at": 33, "dur": 7, "src": "C", "in": 10, "out": 17, "kind": "cta", "caption": "Next: two-pointer tricks" }
       ],
@@ -40,7 +40,7 @@
       "chapters": [{ "t": 0, "title": "Why sorted?" }, { "t": 6, "title": "Halving" }, { "t": 23, "title": "Edge cases" }]
     },
     {
-      "id": "g3", "title": "Goa in 48 hours — budget vlog", "topic": "travel", "format": "video", "type": "Vlog", "preset": "Vlog/travel",
+      "id": "g3", "title": "Goa in 48 hours, budget vlog", "topic": "travel", "format": "video", "type": "Vlog", "preset": "Vlog/travel",
       "media": false, "hue": 3,
       "inputs": [
         { "role": "A", "filenames": ["goa_vlog.mp4"], "sha256_first_1mb": "", "durationSec": 612 },
@@ -60,7 +60,7 @@
       "chapters": [{ "t": 0, "title": "The budget" }, { "t": 5, "title": "Day 1" }, { "t": 17, "title": "Food" }]
     },
     {
-      "id": "g4", "title": "Podcast Ep. 12 — Why college projects never ship", "topic": "startup-india", "format": "video", "type": "Podcast", "preset": "Podcast",
+      "id": "g4", "title": "Podcast Ep. 12, Why college projects never ship", "topic": "startup-india", "format": "video", "type": "Podcast", "preset": "Podcast",
       "media": false, "hue": 4,
       "inputs": [
         { "role": "A", "filenames": ["podcast_ep12.mp4", "ep12_final.mp4"], "sha256_first_1mb": "", "durationSec": 1812 },
@@ -72,14 +72,14 @@
       "timeline": [
         { "at": 0, "dur": 5, "src": "A", "in": 730, "out": 735, "kind": "hook", "caption": "\"Nobody ships because nobody owns it.\"" },
         { "at": 5, "dur": 12, "src": "B", "in": 731, "out": 743, "kind": "quote", "caption": "Guest: the 80% trap" },
-        { "at": 17, "dur": 3, "photo": "p1", "anim": "kenburns", "kind": "photo", "caption": "Ep. 12 — out now" },
+        { "at": 17, "dur": 3, "photo": "p1", "anim": "kenburns", "kind": "photo", "caption": "Ep. 12, out now" },
         { "at": 20, "dur": 8, "src": "A", "in": 1500, "out": 1508, "kind": "cta", "caption": "Full episode on YouTube" }
       ],
       "hashtags": ["#podcast", "#buildinpublic", "#students"],
       "chapters": [{ "t": 0, "title": "Cold open" }, { "t": 5, "title": "The 80% trap" }, { "t": 20, "title": "Where to listen" }]
     },
     {
-      "id": "g5", "title": "Hostel life memes — exam week edition", "topic": "comedy", "format": "short", "type": "Short", "preset": "Comedy/meme",
+      "id": "g5", "title": "Hostel life memes, exam week edition", "topic": "comedy", "format": "short", "type": "Short", "preset": "Comedy/meme",
       "media": false, "hue": 5,
       "inputs": [
         { "role": "A", "filenames": ["meme_setup.mp4"], "sha256_first_1mb": "", "durationSec": 18 },
@@ -99,7 +99,7 @@
     }
   ],
   "default": {
-    "id": "_default", "title": "Your upload — quick edit", "topic": "general", "format": "short", "type": "Short", "preset": "Vlog/travel",
+    "id": "_default", "title": "Your upload, quick edit", "topic": "general", "format": "short", "type": "Short", "preset": "Vlog/travel",
     "media": false, "hue": 0,
     "inputs": [],
     "photos": [],

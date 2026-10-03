@@ -1,10 +1,8 @@
 "use client";
 import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
 import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import clsx from "clsx";
-import creatorsFx from "@/fixtures/creators.json";
-import { RubberSegment } from "@/components/ui/RubberSegment";
 import { rank } from "./Collabs";
 import { useStore } from "@/lib/store";
 
@@ -63,7 +61,7 @@ function Discover() {
     swipe(t.c.id, d, t.c.vec);
     if (d === "right") {
       request(t.c.id);
-      toast(`✓ Collaboration message sent to ${t.c.handle}`, undefined, 20_000);
+      toast(`Collaboration message sent to ${t.c.handle}`, "Track it in Messages");
     }
   };
   useEffect(() => {
@@ -95,41 +93,13 @@ function Discover() {
   );
 }
 
-function Tracker() {
-  const requested = useStore((s) => s.requested);
-  const list = requested.map((id) => creatorsFx.creators.find((c) => c.id === id)).filter(Boolean) as typeof creatorsFx.creators;
-  return (
-    <div className="no-scrollbar mx-auto h-full max-w-xl overflow-y-auto">
-      <h3 className="mb-3 font-display text-xl tracking-tight">Tracker</h3>
-      {list.length === 0 ? (
-        <p className="rounded-[24px] border border-dashed border-line p-8 text-center text-sm text-muted">No requests yet. Swipe right on a creator (or press Collaborate) and they’ll show up here.</p>
-      ) : (
-        <ul className="grid gap-3">
-          <AnimatePresence initial>
-            {list.map((c, i) => (
-              <motion.li key={c.id} layout initial={{ opacity: 0, y: 24, scale: 0.94 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, x: -30 }} transition={{ type: "spring", stiffness: 300, damping: 24, delay: i * 0.06 }}
-                className="flex items-center gap-4 rounded-[24px] border border-text/10 bg-surface p-4">
-                <span className={clsx("grid h-12 w-12 shrink-0 place-items-center rounded-full font-display text-xl", toneOf(c.id))}>{c.name[0]}</span>
-                <div className="min-w-0"><div className="truncate font-display text-xl tracking-tight">{c.handle}</div><div className="text-sm text-muted">Collaboration Requested</div></div>
-              </motion.li>
-            ))}
-          </AnimatePresence>
-        </ul>
-      )}
-    </div>
-  );
-}
-
-export function Discovery({ sub, onSub: setSub }: { sub: "discover" | "tracker"; onSub: (s: "discover" | "tracker") => void }) {
+export function Discovery() {
   return (
     <section className="flex min-h-0 flex-1 flex-col" aria-labelledby="disc-h">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <h1 id="disc-h" className="font-display text-3xl tracking-tight md:text-4xl">Creator Discovery</h1>
-        <RubberSegment label="Creator discovery view" items={[{ id: "discover", label: "Discover" }, { id: "tracker", label: "Tracker" }]} value={sub} onChange={setSub} />
       </div>
-      <div className="min-h-0 flex-1">
-        {sub === "discover" ? <Discover /> : <Tracker />}
-      </div>
+      <div className="min-h-0 flex-1"><Discover /></div>
     </section>
   );
 }

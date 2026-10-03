@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Compliance } from "./compliance/types";
 
 export type PlatformId = "ig_reel" | "yt_short" | "yt_video" | "linkedin" | "x" | "facebook";
 export type Aspect = "9:16" | "1:1" | "16:9" | "4:5";
@@ -30,7 +31,12 @@ export interface Project {
   platforms: PlatformId[]; aspect: Aspect; timeline: Segment[]; audioId: string;
   files: string[]; photos: number; hashtags: string[];
   caption?: { id: string; caption: string; cta: string; tone: string; hashtags: string[] };
-  thumb?: ThumbSpec; clipId?: string; version: number; media: boolean; scheduledAt?: string;
+  thumb?: ThumbSpec; clipId?: string;
+  /** Studio review lanes (ad-safety, PII, claims, consent). Created on first open of the editor. */
+  compliance?: Compliance;
+  /** Set by Audience → "Create response"; the editor consumes it once to pre-fill hook + script. */
+  prefill?: { question: string; hook: string; script: string[]; source: string; applied?: boolean };
+  version: number; media: boolean; scheduledAt?: string;
 }
 export interface FileFingerprint { name: string; size: number; sha: string; durationSec: number; kind: "video" | "image" | "audio" | "other" }
 export interface MatchResult {
@@ -44,7 +50,9 @@ export interface CalendarItem {
   withHandle?: string; projectId?: string; platform?: string; notes?: string;
   remindMin?: number; sound?: boolean; fired?: boolean; missed?: boolean; done?: boolean;
 }
-export interface Notice { id: string; title: string; body: string; at: string; read: boolean }
+export interface Notice { id: string; title: string; body: string; at: string; read: boolean; kind?: "calendar" | "collab" | "system"; href?: string }
+/** A direct message in a collab thread (thread key = creator id). */
+export interface Msg { id: string; from: "me" | "them"; text: string; at: string; read?: boolean }
 
 export const leadSchema = z.object({
   first: z.string().min(1, "First name is required"),

@@ -86,7 +86,7 @@ export default function StudioList() {
 
         {!all ? (
           sorted.length === 0 ? (
-            <div className="rounded-[28px] border border-line bg-surface p-10 text-center text-muted">Nothing here yet — start a project above and it will show up with a timestamp.</div>
+            <div className="rounded-[28px] border border-line bg-surface p-10 text-center text-muted">Nothing here yet, start a project above and it will show up with a timestamp.</div>
           ) : (
             <>
               <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{sorted.slice(0, 3).map((p) => <li key={p.id}><Poster p={p} /></li>)}</ul>

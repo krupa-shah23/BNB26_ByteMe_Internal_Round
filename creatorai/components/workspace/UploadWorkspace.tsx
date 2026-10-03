@@ -1,9 +1,9 @@
 "use client";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, animate, motion, useMotionValue, useTransform } from "framer-motion";
 import { Check, FileVideo, ImageIcon, Sparkles, UploadCloud } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import { Poster, Reveal, SlidingNav } from "@/components/ui/bits";
 import { AiClipLab } from "@/components/workspace/AiClipLab";
@@ -23,14 +23,20 @@ const TABS = {
 } as const;
 const TARGETS: Record<string, PlatformId[]> = { Reels: ["ig_reel"], Shorts: ["yt_short"], Stories: ["ig_reel"], Ads: ["ig_reel", "yt_short"] };
 
+/** Progress ring that glides between steps instead of jumping. */
 function JobRing({ progress }: { progress: number }) {
   const r = 44, c = 2 * Math.PI * r;
+  const mv = useMotionValue(0);
+  useEffect(() => { const a = animate(mv, progress, { duration: 1.2, ease: [0.22, 1, 0.36, 1] }); return () => a.stop(); }, [progress, mv]);
+  const offset = useTransform(mv, (v) => c * (1 - v));
+  const label = useTransform(mv, (v) => `${Math.round(v * 100)}%`);
   return (
-    <div className="relative grid h-28 w-28 place-items-center">
-      <svg width="112" height="112" className="-rotate-90"><circle cx="56" cy="56" r={r} fill="none" stroke="rgb(var(--line))" strokeWidth="6" />
-        <circle cx="56" cy="56" r={r} fill="none" stroke="rgb(var(--brand))" strokeWidth="6" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - progress)} style={{ transition: "stroke-dashoffset .5s ease" }} /></svg>
-      <motion.div className="absolute h-3 w-3 rounded-full bg-accent" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2.2, ease: "linear" }} style={{ transformOrigin: "0 -56px", top: "50%", left: "50%" }} />
-      <span className="absolute font-display text-2xl">{Math.round(progress * 100)}%</span>
+    <div className="relative grid h-28 w-28 shrink-0 place-items-center">
+      <motion.span className="absolute inset-0 rounded-full bg-brand/15 blur-xl" animate={{ opacity: [0.4, 0.9, 0.4], scale: [0.9, 1.05, 0.9] }} transition={{ repeat: Infinity, duration: 2.4, ease: "easeInOut" }} aria-hidden="true" />
+      <svg width="112" height="112" className="relative -rotate-90" aria-hidden="true"><circle cx="56" cy="56" r={r} fill="none" stroke="rgb(var(--line))" strokeWidth="6" />
+        <motion.circle cx="56" cy="56" r={r} fill="none" stroke="rgb(var(--brand))" strokeWidth="6" strokeLinecap="round" strokeDasharray={c} style={{ strokeDashoffset: offset }} /></svg>
+      <motion.div className="absolute inset-0" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2.4, ease: "linear" }} aria-hidden="true"><span className="absolute left-1/2 top-[6px] h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-accent shadow-[0_0_10px_rgb(var(--accent))]" /></motion.div>
+      <motion.span className="absolute font-display text-2xl tabular-nums" role="status">{label}</motion.span>
     </div>
   );
 }
@@ -53,6 +59,8 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
   const [cta, setCta] = useState("Shop now");
   const [variant, setVariant] = useState<15 | 30>(15);
   const [safe, setSafe] = useState(true);
+  // on one-screen pages the drop zone gives way to the match / progress / result card instead of pushing it below the fold
+  const showDrop = !embedded || !(match || job || result || busy);
   const input = useRef<HTMLInputElement>(null);
 
   const gid = pick ?? match?.groupId;
@@ -129,21 +137,20 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
       {!embedded && <AiClipLab format={kind} />}
 
       {/* upload zone */}
-      <section aria-label="Upload" className={embedded ? "grid gap-4" : "grid gap-6 lg:grid-cols-5"}>
+      {showDrop && <section aria-label="Upload" className={embedded ? "grid gap-3" : "grid gap-6 lg:grid-cols-5"}>
         <div className={embedded ? "" : "lg:col-span-3"}>
           <motion.div
             onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
             onDrop={(e) => { e.preventDefault(); setDrag(false); onFiles(e.dataTransfer.files); }}
             animate={{ scale: drag ? 1.02 : 1 }} transition={{ type: "spring", stiffness: 400, damping: 14 }}
-            className={clsx("grain relative grid min-h-[300px] place-items-center rounded-3xl border-2 border-dashed p-8 text-center transition-colors", drag ? "border-brand bg-brand/10" : "border-line bg-surface")}>
-            <div className="relative z-10 grid justify-items-center gap-4">
-              <motion.div animate={{ y: drag ? -10 : [0, -6, 0] }} transition={drag ? undefined : { repeat: Infinity, duration: 2.6 }} className="grid h-16 w-16 place-items-center rounded-2xl bg-brand text-brand-ink"><UploadCloud /></motion.div>
-              <h2 className="t-h2">{dropTitle ?? "Drop your clips here"}</h2>
-              <p className="max-w-md text-sm text-muted">{dropHint ?? "Add a set of videos plus optional photos and audio — in any order. We recognise the set by fingerprint, not by upload order."}</p>
+            className={clsx("grain relative grid place-items-center rounded-3xl border-2 border-dashed text-center transition-colors", embedded ? "min-h-[190px] p-5" : "min-h-[300px] p-8", drag ? "border-brand bg-brand/10" : "border-line bg-surface")}>
+            <div className={clsx("relative z-10 grid justify-items-center", embedded ? "gap-2.5" : "gap-4")}>
+              <motion.div animate={{ y: drag ? -10 : [0, -6, 0] }} transition={drag ? undefined : { repeat: Infinity, duration: 2.6 }} className={clsx("grid place-items-center rounded-2xl bg-brand text-brand-ink", embedded ? "h-12 w-12" : "h-16 w-16")}><UploadCloud /></motion.div>
+              <h2 className={embedded ? "font-display text-2xl tracking-tight" : "t-h2"}>{dropTitle ?? "Drop your videos and photos here"}</h2>
+              <p className="max-w-md text-sm text-muted">{dropHint ?? "Add a set of videos plus photos and audio, in any order. We recognise the set by fingerprint, not by upload order."}</p>
               <input ref={input} type="file" multiple accept="video/*,image/*,audio/*" className="sr-only" aria-label="Choose files" onChange={(e) => e.target.files && onFiles(e.target.files)} />
               <div className="flex flex-wrap justify-center gap-2">
                 <button className="btn-primary" onClick={() => input.current?.click()}>Choose files</button>
-                <Link href="/?section=library" className="btn-ghost">Pick from library</Link>
               </div>
             </div>
           </motion.div>
@@ -187,7 +194,7 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
 </div>
           </div>
         )}
-      </section>
+      </section>}
 
       {!embedded && kind === "short" && tab === "Ads" && (
         <Reveal className="card mt-6 grid gap-4 p-6 sm:grid-cols-3">
@@ -200,15 +207,18 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
       {/* reading / match summary */}
       <AnimatePresence mode="wait">
         {busy === "reading" && (
-          <motion.div key="read" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="card mt-6 flex items-center gap-4 p-6" role="status">
-            <motion.div className="h-5 w-5 rounded-full border-2 border-brand border-t-transparent" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }} />Hashing first 1 MB of each file in a worker and matching to known sets…
+          <motion.div key="read" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="card grid gap-4 p-6" role="status">
+            <div className="flex items-center gap-3 text-sm font-medium">Reading your files
+              <span className="flex gap-1" aria-hidden="true">{[0, 1, 2].map((i) => <motion.span key={i} className="h-1.5 w-1.5 rounded-full bg-brand" animate={{ opacity: [0.25, 1, 0.25], y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.9, delay: i * 0.15 }} />)}</span></div>
+            <span className="relative h-1.5 overflow-hidden rounded-full bg-sunken"><motion.span className="absolute inset-y-0 w-1/3 rounded-full bg-gradient-to-r from-transparent via-brand to-transparent" animate={{ left: ["-33%", "100%"] }} transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }} /></span>
+            <p className="text-xs text-muted">Matching your clips to known sets.</p>
           </motion.div>
         )}
         {match && busy !== "reading" && !result && (
-          <motion.section key="match" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="card mt-6 p-6" aria-live="polite">
+          <motion.section key="match" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={clsx("card p-6", !embedded && "mt-6")} aria-live="polite">
             {match.isDefault ? (
               <>
-                <h2 className="font-display text-2xl">Didn't recognise this set — no problem</h2>
+                <h2 className="font-display text-2xl">Didn't recognise this set, no problem</h2>
                 <p className="mt-1 text-sm text-muted">We'll run a generic quick edit on {files.length} file(s): hook, story beat, CTA.</p>
               </>
             ) : (
@@ -225,7 +235,7 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
                 </ul>
                 {tie && <div className="mt-4"><p className="mb-2 text-sm">Which set did you mean?</p><div className="flex gap-2">{match.candidates.map((c) => <button key={c.groupId} className="chip px-4 py-2 text-sm hover:bg-sunken" onClick={() => setPick(c.groupId)}>{c.groupId.toUpperCase()} · {groupById(c.groupId).title}</button>)}</div></div>}
                 {missing > 0 && !tie && <p className="mt-4 rounded-xl border border-warn/40 bg-warn/10 p-3 text-sm">{missing} clip missing (role {match.missingRoles.join(", ")}). Add it, or generate with what you have.</p>}
-                {match.photosMatched.length === 0 && group?.photos.length ? <p className="mt-3 text-sm text-muted">No photo uploaded — using this set's default photo.</p> : null}
+                {match.photosMatched.length === 0 && group?.photos.length ? <p className="mt-3 text-sm text-muted">No photo uploaded, using this set's default photo.</p> : null}
               </>
             )}
             {existing && !tie && (
@@ -241,15 +251,15 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
 
       {/* job theatre */}
       {job && !result && (
-        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="card mt-6 grid gap-6 p-6 sm:grid-cols-[auto_1fr]" aria-live="polite" aria-label="Generation progress">
+        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }} className={clsx("card grid items-center gap-6 p-6 sm:grid-cols-[auto_1fr]", !embedded && "mt-6")} aria-live="polite" aria-label="Generation progress">
           <JobRing progress={job.progress} />
-          <ol className="grid gap-1.5 text-sm">
+          <ol className="grid grid-cols-1 gap-x-8 gap-y-1.5 text-sm md:grid-cols-2">
             {job.steps.map((s, i) => (
-              <li key={s.label} className={clsx("flex items-center gap-3", i > job.step && "text-muted")}>
-                <span className={clsx("grid h-5 w-5 place-items-center rounded-full border text-[10px]", i < job.step ? "border-ok bg-ok text-bg" : i === job.step ? "border-brand" : "border-line")}>
-                  {i < job.step ? <Check size={12} /> : i === job.step ? <motion.span className="h-2 w-2 rounded-full bg-brand" animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 1 }} /> : null}
+              <motion.li key={s.label} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }} className={clsx("flex items-center gap-3 transition-colors duration-500", i > job.step ? "text-muted" : i === job.step && "font-medium")}>
+                <span className={clsx("grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[10px] transition-colors duration-500", i < job.step ? "border-ok bg-ok text-bg" : i === job.step ? "border-brand" : "border-line")}>
+                  {i < job.step ? <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 22 }}><Check size={12} /></motion.span> : i === job.step ? <motion.span className="h-2 w-2 rounded-full bg-brand" animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 1 }} /> : null}
                 </span>{s.label}
-              </li>
+              </motion.li>
             ))}
           </ol>
         </motion.section>
@@ -257,8 +267,8 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
 
       {/* output */}
       {result && group && (
-        <motion.section initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="card mt-6 grid gap-6 p-6 md:grid-cols-[220px_1fr]" aria-label="Generated video">
-          <Poster seed={result.hue} label={result.title} className={clsx("w-full rounded-2xl border border-line", result.aspect === "9:16" ? "aspect-[9/16] max-w-[220px]" : "aspect-video md:w-[220px]")}>
+        <motion.section initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className={clsx("card grid gap-6 p-6", embedded ? "md:grid-cols-[120px_1fr]" : "mt-6 md:grid-cols-[220px_1fr]")} aria-label="Generated video">
+          <Poster seed={result.hue} label={result.title} className={clsx("w-full rounded-2xl border border-line", result.aspect === "9:16" ? (embedded ? "aspect-[9/16] max-w-[120px]" : "aspect-[9/16] max-w-[220px]") : (embedded ? "aspect-video md:w-[120px]" : "aspect-video md:w-[220px]"))}>
             <span className="absolute bottom-3 right-3 rounded-md bg-text/80 px-2 py-0.5 text-xs text-bg">{fmtTime(totalDur(result.timeline))}</span>
             <motion.span className="absolute right-3 top-3 text-brand-ink" animate={{ rotate: [0, 20, 0], scale: [1, 1.3, 1] }} transition={{ repeat: 3, duration: 0.8 }}><Sparkles size={18} /></motion.span>
           </Poster>
@@ -283,7 +293,7 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
       {/* previous projects */}
       {!embedded && <section className="mt-14" aria-labelledby="prev-h">
         <h2 id="prev-h" className="t-h2 mb-6">Previous projects</h2>
-        {visible.length === 0 ? <p className="text-sm text-muted">Nothing here yet — generate your first one above.</p> : (
+        {visible.length === 0 ? <p className="text-sm text-muted">Nothing here yet, generate your first one above.</p> : (
           <ul className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {visible.map((p) => (
               <li key={p.id}>

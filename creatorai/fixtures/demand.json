@@ -1,0 +1,24 @@
+{
+  "platforms": ["youtube", "twitch", "reddit"],
+  "items": {
+    "youtube": [
+      { "id": "yt1", "q": "What camera do you use?", "topic": "what camera I use", "kind": "gear", "count": 1842, "engagement": 87, "examples": ["Which camera is this?", "Can you share your camera setup?", "Is this a Sony or Canon?"] },
+      { "id": "yt2", "q": "Can you make a tutorial?", "topic": "for a step-by-step tutorial", "kind": "tutorial", "count": 1203, "engagement": 81, "examples": ["Please do a full tutorial on this", "Tutorial when? I'd watch the whole thing", "Can you break this down step by step?"] },
+      { "id": "yt3", "q": "How did you build this?", "topic": "how I built this", "kind": "process", "count": 847, "engagement": 74, "examples": ["How long did this take you to build?", "Walk us through the build process", "What did you start with?"] },
+      { "id": "yt4", "q": "Does this work on Windows?", "topic": "if this works on Windows", "kind": "general", "count": 623, "engagement": 66, "examples": ["Windows user here, will this work?", "Any Windows version of this?", "Tried on Windows 11 and got stuck"] },
+      { "id": "yt5", "q": "What editing software is this?", "topic": "what I edit with", "kind": "gear", "count": 412, "engagement": 59, "examples": ["Which editor do you use?", "Is that Premiere or DaVinci?", "What app are you cutting in?"] }
+    ],
+    "twitch": [
+      { "id": "tw1", "q": "What's your stream setup?", "topic": "what my stream setup looks like", "kind": "gear", "count": 964, "engagement": 83, "examples": ["Show us the desk setup!", "What mic is that?", "Full setup tour pls"] },
+      { "id": "tw2", "q": "When is the next stream?", "topic": "when the next stream is", "kind": "general", "count": 702, "engagement": 71, "examples": ["What time are you live tomorrow?", "Schedule for this week?", "Do you stream on weekends?"] },
+      { "id": "tw3", "q": "Can you play with viewers?", "topic": "playing with viewers", "kind": "general", "count": 511, "engagement": 68, "examples": ["Viewer games when?", "Can we join your lobby?", "Do a community night!"] },
+      { "id": "tw4", "q": "How do I get started streaming?", "topic": "how to start streaming", "kind": "tutorial", "count": 388, "engagement": 62, "examples": ["Total beginner, where do I start?", "What do I need to go live?", "Any tips for a first stream?"] }
+    ],
+    "reddit": [
+      { "id": "rd1", "q": "Is there a free alternative?", "topic": "free alternatives", "kind": "general", "count": 1310, "engagement": 79, "examples": ["Anything free that does the same?", "Open source option?", "Budget version of this?"] },
+      { "id": "rd2", "q": "Can you share the full workflow?", "topic": "my full workflow", "kind": "process", "count": 905, "engagement": 76, "examples": ["Please write up the whole workflow", "What's step one for you?", "Any template you can share?"] },
+      { "id": "rd3", "q": "What would you do differently?", "topic": "what I'd do differently", "kind": "general", "count": 540, "engagement": 64, "examples": ["Biggest mistake you made?", "What would you skip next time?", "Anything you'd redo?"] },
+      { "id": "rd4", "q": "How much did this cost?", "topic": "what this cost me", "kind": "gear", "count": 297, "engagement": 55, "examples": ["Ballpark budget?", "Total cost breakdown?", "Is this affordable for a student?"] }
+    ]
+  }
+}

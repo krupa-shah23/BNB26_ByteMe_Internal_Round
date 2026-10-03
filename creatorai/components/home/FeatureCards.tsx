@@ -8,6 +8,7 @@ import analytics from "@/fixtures/analytics.json";
 import { Glyph, type GlyphName } from "@/components/short/Glyphs";
 import { Overlay } from "@/components/ui/Overlay";
 import { useStore } from "@/lib/store";
+import { DemandCompact } from "@/components/audience/DemandEngine";
 
 type Id = "collabs" | "library" | "overview" | "trends";
 const CARDS: { id: Id; title: string; blurb: string; glyph: GlyphName; tone: string }[] = [
@@ -29,7 +30,7 @@ function Panel({ id, close }: { id: Id; close: () => void }) {
     return (
       <>
         <div className="grid grid-cols-3 gap-3"><Stat label="Requests sent" value={requested.length} /><Stat label="Passed" value={passed} /><Stat label="Creators seen" value={Object.keys(swiped).length} /></div>
-        <p className="mb-2 mt-6 text-xs font-semibold uppercase tracking-[0.12em] text-muted">Past collabs</p>
+        <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-[0.12em] text-muted">Past collabs</p>
         <ul className="grid gap-2">{analytics.collabLog.slice(0, 3).map((c) => <li key={c.id} className="flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-sm"><span className="truncate font-medium">{c.what}</span><span className="shrink-0 text-muted">{c.withWhom} · <span className="text-ok">+{c.gained}</span> followers</span></li>)}</ul>
       </>
     );
@@ -39,7 +40,7 @@ function Panel({ id, close }: { id: Id; close: () => void }) {
     return (
       <>
         <div className="grid grid-cols-3 gap-3"><Stat label="Files" value={home.library.length} /><Stat label="Not used yet" value={unused.length} /><Stat label="Unused clips" value={home.unusedClips.length} /></div>
-        <p className="mb-2 mt-6 text-xs font-semibold uppercase tracking-[0.12em] text-muted">Worth reusing</p>
+        <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-[0.12em] text-muted">Worth reusing</p>
         <ul className="grid gap-2">{home.unusedClips.slice(0, 3).map((c) => <li key={c.id} className="flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-sm"><span className="truncate font-medium">{c.title}</span><span className="shrink-0 font-mono text-xs text-muted">{c.range}</span></li>)}</ul>
       </>
     );
@@ -49,12 +50,13 @@ function Panel({ id, close }: { id: Id; close: () => void }) {
     return (
       <>
         <div className="grid grid-cols-3 gap-3"><Stat label="Followers" value={u.followers.toLocaleString("en-IN")} /><Stat label="7-day views" value={u.views7d.toLocaleString("en-IN")} /><Stat label="Engagement" value={`${u.engagement}%`} /></div>
-        <div className="mt-6 rounded-2xl bg-accent p-5 text-black">
+        <div className="mt-4 rounded-2xl bg-accent p-4 text-black">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] opacity-60">Today’s best idea</p>
           <p className="mt-2 font-display text-2xl leading-tight tracking-tight">“{best.title}”</p>
           <p className="mt-1 text-sm opacity-70">{best.why}</p>
           <button className="btn-primary mt-4" onClick={() => { close(); router.push(best.format === "Short" ? "/short-videos" : "/videos"); }}>Start now <ArrowUpRight size={16} /></button>
         </div>
+        <DemandCompact onNavigate={close} />
       </>
     );
   }
@@ -90,8 +92,8 @@ export function FeatureCards() {
       </section>
       <Overlay open={!!open} onClose={() => setOpen(null)} side="center" width="max-w-2xl" labelledBy="fc-h">
         {card && (
-          <div className="p-8 pt-16">
-            <div className="mb-6 flex items-center gap-4"><Glyph name={card.glyph} size={56} /><h2 id="fc-h" className="font-display text-4xl tracking-tight">{card.title}</h2></div>
+          <div className="p-6">
+            <div className="mb-4 flex items-center gap-3 pr-12"><Glyph name={card.glyph} size={40} /><h2 id="fc-h" className="font-display text-3xl tracking-tight">{card.title}</h2></div>
             <Panel id={card.id} close={() => setOpen(null)} />
           </div>
         )}

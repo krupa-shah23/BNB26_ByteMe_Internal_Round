@@ -7,6 +7,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import { Badge, Ring } from "@/components/ui/bits";
 import { ThumbCard } from "@/components/studio/Tools";
+import { ScoreChip } from "@/components/studio/compliance/ScoreChip";
+import { analyzeProject, computeAdSafe, openPii, unknownPeople } from "@/lib/compliance/analyze";
 import { DISCLAIMER, precheck, trackById, type PrecheckItem, type Severity } from "@/lib/precheck";
 import { fireHearts } from "@/lib/hearts";
 import { PROFILES, fmtTime, normalize, totalDur } from "@/lib/projects";
@@ -31,15 +33,21 @@ export default function Review() {
   const res = useMemo(() => (project ? precheck(project) : null), [project]);
   useEffect(() => { if (res && !open) { const first = res.items.find((i) => i.severity !== "pass"); if (first) setOpen(first.id); } /* eslint-disable-next-line */ }, [!!project]);
 
-  if (!project || !res) return <div className="grid place-items-center gap-4 py-24 text-center"><h1 className="t-h2">Clip not found</h1><Link href="/studio" className="btn-primary">Back to Studio</Link></div>;
+  const comp = useMemo(() => (project ? project.compliance ?? analyzeProject(project) : null), [project]);
+
+  if (!project || !res || !comp) return <div className="grid place-items-center gap-4 py-24 text-center"><h1 className="t-h2">Clip not found</h1><Link href="/studio" className="btn-primary">Back to Studio</Link></div>;
 
   const grouped = (["fail", "warn", "pass"] as Severity[]).map((s) => ({ s, items: res.items.filter((i) => i.severity === s) })).filter((g) => g.items.length);
-  const canPublish = res.summary.fail === 0 && (res.summary.warn === 0 || accepted);
+  const unknown = unknownPeople(comp);
+  const piiLeft = openPii(comp).length;
+  const ad = computeAdSafe(project, comp);
+  // unresolved consent blocks publishing; PII and claims are advisory
+  const canPublish = res.summary.fail === 0 && (res.summary.warn === 0 || accepted) && unknown.length === 0;
   const track = trackById(project.audioId);
 
   const fix = (i: PrecheckItem) => {
     if (!i.fix) return;
-    if (i.fix.action === "swap-audio") { const next = rules.swapAudio[0]; patchProject(project.id, { audioId: next }); toast("Audio swapped", `${trackById(next)?.title} — re-running checks`); }
+    if (i.fix.action === "swap-audio") { const next = rules.swapAudio[0]; patchProject(project.id, { audioId: next }); toast("Audio swapped", `${trackById(next)?.title}, re-running checks`); }
     if (i.fix.action === "add-cta") {
       const tl = normalize([...project.timeline, { id: `cta_${Date.now()}`, at: 0, dur: 3, kind: "cta", caption: "Follow for more", touched: true }]);
       patchProject(project.id, { timeline: tl }); toast("CTA slate added");
@@ -88,12 +96,21 @@ export default function Review() {
           <div className="card flex flex-wrap items-center gap-6 p-6">
             <Ring value={res.score} label="Readiness" />
             <div className="grid flex-1 gap-2">
-              <div className="flex flex-wrap gap-2"><Badge tone="bad">{res.summary.fail} fail</Badge><Badge tone="warn">{res.summary.warn} warn</Badge><Badge tone="ok">{res.summary.pass} pass</Badge></div>
-              <p className="text-sm text-muted">{res.summary.fail ? "Fix the failing checks to publish." : res.summary.warn ? "Warnings can be accepted — or fixed in one click." : "All clear. Nice work."}</p>
-              {res.summary.fail === 0 && res.summary.warn > 0 && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--brand))]" />I've read the warnings — publish anyway</label>}
+              <div className="flex flex-wrap gap-2"><ScoreChip score={ad.score} /><Badge tone="bad">{res.summary.fail} fail</Badge><Badge tone="warn">{res.summary.warn} warn</Badge><Badge tone="ok">{res.summary.pass} pass</Badge></div>
+              <p className="text-sm text-muted">{res.summary.fail ? "Fix the failing checks to publish." : res.summary.warn ? "Warnings can be accepted, or fixed in one click." : "All clear. Nice work."}</p>
+              {res.summary.fail === 0 && res.summary.warn > 0 && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--brand))]" />I've read the warnings, publish anyway</label>}
             </div>
             <button className="btn-brand h-14 px-8 text-base" disabled={!canPublish || phase !== "review"} onClick={publish}>Publish</button>
           </div>
+
+          {unknown.length > 0 && (
+            <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-2xl border border-bad/50 bg-bad/10 p-4" aria-label="Consent review">
+              <p className="text-sm font-semibold text-bad">⚠ {unknown.length} {unknown.length === 1 ? "person requires" : "people require"} consent review</p>
+              <ul className="mt-2 grid gap-1 text-sm">{unknown.map((p) => <li key={p.id} className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-bad" />{p.name || p.label}, Unknown</li>)}</ul>
+              <div className="mt-3 flex flex-wrap items-center gap-3"><button className="btn-brand py-2" onClick={() => router.push(`/studio/${project.id}?check=people`)}>Review people</button><span className="text-xs text-muted">Publishing stays off until these are resolved.</span></div>
+            </motion.section>
+          )}
+          {unknown.length === 0 && piiLeft > 0 && <p className="mt-4 rounded-2xl border border-warn/40 bg-warn/10 p-3 text-sm text-warn">🔒 {piiLeft} personal-info {piiLeft === 1 ? "item is" : "items are"} still visible. <Link className="underline" href={`/studio/${project.id}?check=pii`}>Review in Studio</Link></p>}
 
           <div className="mt-6 grid gap-6">
             {grouped.map((g) => (
@@ -127,7 +144,7 @@ export default function Review() {
               </section>
             ))}
           </div>
-          <p className="mt-6 text-xs text-muted">{DISCLAIMER} A Content ID claim is not a copyright strike; royalty-free does not mean claim-free; Meta uses a separate system (Rights Manager).</p>
+          <p className="mt-6 text-xs text-muted">Ad-safe score and claims review are estimates, not legal advice. {DISCLAIMER} A Content ID claim is not a copyright strike; royalty-free does not mean claim-free; Meta uses a separate system (Rights Manager).</p>
         </div>
       </div>
 

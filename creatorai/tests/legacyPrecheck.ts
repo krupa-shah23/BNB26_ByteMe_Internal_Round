@@ -37,7 +37,7 @@ export function legacyPrecheck(p: Project): { summary: Record<Severity, number>;
       const hasCaps = p.timeline.some((s) => s.caption);
       add(hasCaps
         ? { id: `cap-${pl}`, platform: pl, severity: "pass", title: "Burned-in captions present", detail: "Muted autoplay is covered.", policyUrl: policy }
-        : { id: `cap-${pl}`, platform: pl, severity: "warn", title: "No captions on screen", detail: "This platform autoplays muted — add captions.", policyUrl: policy });
+        : { id: `cap-${pl}`, platform: pl, severity: "warn", title: "No captions on screen", detail: "This platform autoplays muted, add captions.", policyUrl: policy });
     }
 
     const tags = p.caption?.hashtags ?? p.hashtags;
@@ -55,13 +55,13 @@ export function legacyPrecheck(p: Project): { summary: Record<Severity, number>;
       if (track.risk === "high") {
         add({ id: `aud-${pl}`, platform: pl, severity: yt ? "fail" : "warn", title: `High risk of a claim on ${yt ? "YouTube" : "Meta"}`,
           detail: `“${track.title}” is a commercial track and likely fingerprinted by ${sys}. Likely effect: revenue goes to the rights holder, or the video is muted/blocked. This is a claim, not a strike. Swap in a platform-library or owned track.`,
-          policyUrl: yt ? rules.policy.contentId : rules.policy.meta, fix: { label: "Fix it — swap audio", action: "swap-audio" } });
+          policyUrl: yt ? rules.policy.contentId : rules.policy.meta, fix: { label: "Fix it, swap audio", action: "swap-audio" } });
       } else if (track.risk === "medium") {
         add({ id: `aud-${pl}`, platform: pl, severity: "warn", title: "Possible claim on library music",
           detail: `“${track.title}” (${track.source}). Royalty-free does not mean claim-free; ${sys} can still match it. Keep the license receipt handy.`,
           policyUrl: yt ? rules.policy.contentId : rules.policy.meta, fix: { label: "Swap to a safer track", action: "swap-audio" } });
       } else {
-        add({ id: `aud-${pl}`, platform: pl, severity: "pass", title: "Low audio risk", detail: `“${track.title}” — ${track.notes}.`, policyUrl: yt ? rules.policy.contentId : rules.policy.meta });
+        add({ id: `aud-${pl}`, platform: pl, severity: "pass", title: "Low audio risk", detail: `“${track.title}”, ${track.notes}.`, policyUrl: yt ? rules.policy.contentId : rules.policy.meta });
       }
     }
   }

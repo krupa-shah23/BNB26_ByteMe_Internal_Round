@@ -8,6 +8,7 @@ import analytics from "@/fixtures/analytics.json";
 import audience from "@/fixtures/audience.json";
 import { Badge, Count, Reveal, Skeleton, SlidingNav, useDemoDelay } from "@/components/ui/bits";
 import { ThumbCard } from "@/components/studio/Tools";
+import { DemandEngine } from "@/components/audience/DemandEngine";
 import { useSection } from "@/lib/useSection";
 import { fmtTime, totalDur } from "@/lib/projects";
 import { useStore, type Permissions } from "@/lib/store";
@@ -17,7 +18,7 @@ type Section = (typeof SECTIONS)[number];
 const NAV = [{ id: "overview", label: "Overview" }, { id: "earnings", label: "Earnings" }, { id: "audience", label: "Audience" }, { id: "collabs", label: "Collab log" }] as { id: Section; label: string }[];
 
 const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
-const NA = <span className="text-muted" title="The platform doesn't expose this yet — shown as not available, never 0">n/a</span>;
+const NA = <span className="text-muted" title="The platform doesn't expose this yet, shown as not available, never 0">n/a</span>;
 
 function Locked({ what, children, onAllow }: { what: string; children: React.ReactNode; onAllow: () => void }) {
   return (
@@ -42,7 +43,7 @@ function ConsentCard() {
   return (
     <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card mb-8 border-brand p-6" aria-labelledby="consent-h">
       <h2 id="consent-h" className="t-h2">Allow CreatorAi to read your analytics?</h2>
-      <p className="mt-1 text-sm text-muted">Exactly what will be read — switch off anything you'd rather not share. Revoke any time in Settings → Data permissions.</p>
+      <p className="mt-1 text-sm text-muted">Exactly what will be read, switch off anything you'd rather not share. Revoke any time in Settings → Data permissions.</p>
       <ul className="mt-5 grid gap-2">
         {items.map((it) => (
           <li key={it.k}><label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-line p-4"><span><span className="block text-sm font-medium">{it.t}</span><span className="text-xs text-muted">{it.d}</span></span>
@@ -178,14 +179,15 @@ function Audience() {
         <ul className="mt-4 grid gap-3 sm:grid-cols-2">{audience.faqs.map((f) => (
           <li key={f.id} className="rounded-xl border border-line p-4"><p className="text-sm font-medium">{f.q}</p><p className="mt-1 text-xs text-muted">{f.count} similar comments</p>
             <Link href="/short-videos" className="btn-ghost mt-3 w-full py-1.5 text-xs">Turn into content idea: {f.idea}</Link></li>))}</ul></div>
-      <div className="card p-6 lg:col-span-3"><h2 className="t-label text-muted">Content-gap map — what they ask vs what you've posted</h2>
+      <div className="card p-6 lg:col-span-3"><h2 className="t-label text-muted">Content-gap map, what they ask vs what you've posted</h2>
         <ul className="mt-4 grid gap-3">{audience.topics.map((t) => (
           <li key={t.name} className="grid items-center gap-3 text-sm sm:grid-cols-[160px_1fr_90px]"><span>{t.name}</span>
             <div className="relative h-3 overflow-hidden rounded-full bg-sunken"><motion.div className="h-full rounded-full bg-accent" initial={{ width: 0 }} animate={{ width: `${t.popularity}%` }} transition={{ duration: 0.8 }} /></div>
             <span className={clsx("text-xs", t.posted < 5 && "font-semibold text-warn")}>{t.posted} posts{t.posted < 5 ? " · gap" : ""}</span></li>))}</ul></div>
     </div>
   );
-  return permissions.audience ? body : <Locked what="audience insights" onAllow={() => setPermissions({ audience: true, comments: true, decided: true })}>{body}</Locked>;
+  const gated = permissions.audience ? body : <Locked what="audience insights" onAllow={() => setPermissions({ audience: true, comments: true, decided: true })}>{body}</Locked>;
+  return <><DemandEngine />{gated}</>;
 }
 
 function CollabLog() {
@@ -197,7 +199,7 @@ function CollabLog() {
 
 function DashboardInner() {
   const [section, setSection] = useSection(SECTIONS, "overview");
-  const ready = useDemoDelay(500);
+  const ready = useDemoDelay(120);
   return (
     <div className="mx-auto max-w-[1400px]">
       <Reveal className="mb-8 flex flex-wrap items-end justify-between gap-4">

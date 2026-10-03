@@ -2,7 +2,9 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { useEffect, useState } from "react";
-import type { CalendarItem, CreatorDNA, CreatorFeedback, Lead, Notice, Project } from "./types";
+import type { CalendarItem, CreatorDNA, CreatorFeedback, Lead, Msg, Notice, Project } from "./types";
+import creatorsFx from "@/fixtures/creators.json";
+import { OPENER, replyFor, seedMessages } from "./messaging";
 import { applyFeedback, defaultDNA } from "./creatorDna";
 import { seedProjects } from "./seed";
 import { uid } from "./projects";
@@ -16,7 +18,7 @@ function seedCalendar(): CalendarItem[] {
   const at = (d: number, h = 18) => { const x = new Date(now + d * day); x.setHours(h, 0, 0, 0); return x.toISOString(); };
   return [
     { id: "cal1", type: "collab", title: "Collab shoot with @mock.meera", startsAt: at(6, 16), withHandle: "@mock.meera", platform: "Instagram", stage: "Scheduled", remindMin: 60, sound: true },
-    { id: "cal2", type: "event", title: "Navratri — garba reel", startsAt: at(8, 10), stage: "Idea" },
+    { id: "cal2", type: "event", title: "Navratri, garba reel", startsAt: at(8, 10), stage: "Idea" },
     { id: "cal3", type: "deadline", title: "Ep. 13 script locked", startsAt: at(3, 21), stage: "Scripted", remindMin: 1440 },
     { id: "cal4", type: "reminder", title: "Reply to brand email", startsAt: at(0, 23), stage: "Idea", remindMin: 15, sound: true },
     { id: "cal5", type: "post", title: "Post: DSA lecture 3 short", startsAt: at(2, 19), platform: "YouTube", stage: "Editing" },
@@ -31,7 +33,8 @@ interface State {
   permissions: Permissions;
   creatorDNA: CreatorDNA;     // current distilled style profile
   creatorFeedback: CreatorFeedback[]; // persistent history of corrections
-  requested: string[];       // creators we sent a collaboration message to (Tracker)
+  requested: string[];       // creators we sent a collaboration message to
+  messages: Record<string, Msg[]>; // DM threads keyed by creator id
   pref: number[];            // collab preference vector
   swiped: Record<string, "right" | "left" | "up">;
   leads: (Lead & { at: string })[];
@@ -45,7 +48,8 @@ interface State {
   login(): void; logout(): void;
   upsertProject(p: Project): void; patchProject(id: string, patch: Partial<Project>): void; removeProject(id: string): void;
   addCal(i: Omit<CalendarItem, "id">): void; patchCal(id: string, patch: Partial<CalendarItem>): void; removeCal(id: string): void;
-  notify(title: string, body: string): void; markNoticesRead(): void;
+  notify(title: string, body: string, extra?: Pick<Notice, "kind" | "href">): void; markNoticesRead(): void;
+  sendMessage(creatorId: string, text: string): void; markThreadRead(creatorId: string): void;
   setPermissions(p: Partial<Permissions>): void;
   swipe(id: string, dir: "right" | "left" | "up", vec: number[]): void;
   addLead(l: Lead): void; addNewsletter(e: string): void;
@@ -55,11 +59,24 @@ interface State {
   reset(): void;
 }
 
+const handleOf = (id: string) => creatorsFx.creators.find((c) => c.id === id)?.handle ?? "a creator";
+function seedNotices(): Notice[] {
+  const ago = (m: number) => new Date(Date.now() - m * 60_000).toISOString();
+  return [
+    { id: "n_dm1", kind: "collab", href: "/messages?c=c3", title: `New collab message from ${handleOf("c3")}`, body: "Hey Aarav! Loved your pitch reel. Want to do a joint video?", at: ago(22), read: false },
+    { id: "n_dm2", kind: "collab", href: "/messages?c=c7", title: `${handleOf("c7")} replied`, body: "Yes! Are you free for a collab shoot next week?", at: ago(180), read: false },
+    { id: "n_cal1", kind: "calendar", title: "Reminder: Reply to brand email", body: "Due today at 11:00 PM", at: ago(45), read: false },
+    { id: "n_cal2", kind: "calendar", title: "Deadline: Ep. 13 script locked", body: "In 3 days", at: ago(600), read: true },
+    { id: "n0", kind: "system", title: "Welcome to CreatorAi", body: "Drop a group of clips in Short Videos to see the magic.", at: ago(1440), read: true },
+  ];
+}
+
 const initial = () => ({
   loggedIn: false,
   projects: seedProjects(),
   calendar: seedCalendar(),
-  notices: [{ id: "n0", title: "Welcome to CreatorAi", body: "Drop a group of clips in Short Videos to see the magic.", at: new Date().toISOString(), read: false }] as Notice[],
+  notices: seedNotices(),
+  messages: seedMessages(),
   permissions: { earnings: false, reach: false, audience: false, comments: false, decided: false },
   requested: [] as string[],
   creatorDNA: defaultDNA,
@@ -89,7 +106,23 @@ export const useStore = create<State>()(
       addCal: (i) => set((s) => ({ calendar: [...s.calendar, { ...i, id: uid("cal") }] })),
       patchCal: (id, patch) => set((s) => ({ calendar: s.calendar.map((c) => (c.id === id ? { ...c, ...patch } : c)) })),
       removeCal: (id) => set((s) => ({ calendar: s.calendar.filter((c) => c.id !== id) })),
-      notify: (title, body) => set((s) => ({ notices: [{ id: uid("n"), title, body, at: new Date().toISOString(), read: false }, ...s.notices].slice(0, 40) })),
+      notify: (title, body, extra) => set((s) => ({ notices: [{ id: uid("n"), title, body, ...extra, at: new Date().toISOString(), read: false }, ...s.notices].slice(0, 40) })),
+      sendMessage: (cid, text) => {
+        const t = text.trim();
+        if (!t) return;
+        const mk = (from: Msg["from"], body: string): Msg => ({ id: uid("m"), from, text: body, at: new Date().toISOString(), read: from === "me" });
+        set((s) => ({ messages: { ...s.messages, [cid]: [...(s.messages[cid] ?? []), mk("me", t)] } }));
+        // simulated creator: replies a few seconds later (BACKEND-SLOT(messages))
+        setTimeout(() => {
+          const replies = (get().messages[cid] ?? []).filter((m) => m.from === "them").length;
+          if (replies >= 4) return;
+          const reply = replyFor(Math.max(0, replies - (cid in seedMessages() ? 1 : 0)));
+          set((s) => ({ messages: { ...s.messages, [cid]: [...(s.messages[cid] ?? []), mk("them", reply)] } }));
+          get().notify(`${handleOf(cid)} replied`, reply, { kind: "collab", href: `/messages?c=${cid}` });
+          get().toast(`${handleOf(cid)} replied`, reply);
+        }, 7000);
+      },
+      markThreadRead: (cid) => set((s) => (s.messages[cid]?.some((m) => m.from === "them" && !m.read) ? { messages: { ...s.messages, [cid]: s.messages[cid].map((m) => ({ ...m, read: true })) } } : s)),
       markNoticesRead: () => set((s) => ({ notices: s.notices.map((n) => ({ ...n, read: true })) })),
       setPermissions: (p) => set((s) => ({ permissions: { ...s.permissions, ...p } })),
       swipe: (id, dir, vec) => {
@@ -100,11 +133,15 @@ export const useStore = create<State>()(
       addLead: (l) => set((s) => ({ leads: [...s.leads, { ...l, at: new Date().toISOString() }] })),
       addNewsletter: (e) => set((s) => ({ newsletter: [...s.newsletter, e] })),
       setDirty: (v) => set({ dirty: v }),
-      request: (id) => set((s) => ({ requested: s.requested.includes(id) ? s.requested : [id, ...s.requested] })),
+      request: (id) => {
+        if (get().requested.includes(id)) return;
+        set((s) => ({ requested: [id, ...s.requested] }));
+        if (!(get().messages[id]?.length)) get().sendMessage(id, OPENER);
+      },
       toast: (title, body, ms) => {
         const id = uid("t");
-        set((s) => ({ toasts: [...s.toasts, { id, title, body, ms: ms ?? 5200 }] }));
-        setTimeout(() => get().dismissToast(id), ms ?? 5200);
+        set((s) => ({ toasts: [...s.toasts, { id, title, body, ms: ms ?? 12_000 }] }));
+        setTimeout(() => get().dismissToast(id), ms ?? 12_000);
       },
       setDNA: (d) => set({ creatorDNA: { ...d, version: d.version + 1, updatedAt: new Date().toISOString() } }),
       addFeedback: (f) => set((s) => {
@@ -128,6 +165,13 @@ export const useStore = create<State>()(
         return Object.fromEntries(Object.entries(rest).filter(([, v]) => typeof v !== "function"));
       },
       skipHydration: true,
+      // older saved sessions have no typed notifications: add the new ones once, keep everything else
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<State>;
+        const merged = { ...current, ...p } as State;
+        if (!p.notices?.some((n) => n.kind)) merged.notices = [...seedNotices().filter((n) => n.id !== "n0"), ...(p.notices ?? seedNotices())];
+        return merged;
+      },
     },
   ),
 );

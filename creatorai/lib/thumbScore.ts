@@ -10,7 +10,7 @@ export interface ThumbCheck { id: string; pass: boolean; tip: string; pts: numbe
 export function clickReadiness(o: ThumbScoreInput): { score: number; checks: ThumbCheck[] } {
   const words = o.text.trim().split(/\s+/).filter(Boolean).length;
   const checks: ThumbCheck[] = [
-    { id: "face", pass: o.cutout, tip: "Cut out the subject — faces lift attention", pts: 18 },
+    { id: "face", pass: o.cutout, tip: "Cut out the subject, faces lift attention", pts: 18 },
     { id: "words", pass: words > 0 && words <= 4, tip: `Use ≤ 4 words (now ${words})`, pts: 22 },
     { id: "contrast", pass: o.template !== "blur", tip: "Blur template lowers text contrast", pts: 12 },
     { id: "frame", pass: o.frameFace >= 75, tip: "Pick a frame with an open-eyed, expressive face", pts: 16 },

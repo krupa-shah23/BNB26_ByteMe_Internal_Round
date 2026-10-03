@@ -42,10 +42,10 @@ export function CalendarOverlay({ open, onClose }: { open: boolean; onClose: () 
 
   return (
     <Overlay open={open} onClose={onClose} side="center" width="max-w-md" labelledBy="cal-h">
-      <div className="p-6 pt-16 md:p-8 md:pt-16">
-        <h2 id="cal-h" className="font-display text-3xl tracking-tight">Calendar</h2>
+      <div className="p-5 md:p-6">
+        <h2 id="cal-h" className="font-display text-2xl tracking-tight">Calendar</h2>
 
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
           <div className="inline-flex items-center rounded-pill border border-line bg-surface p-1">
             <motion.button whileTap={{ scale: 0.8, scaleX: 1.2 }} transition={{ type: "spring", stiffness: 500, damping: 10 }} onClick={() => go(-1)} aria-label="Previous month" className="grid h-8 w-8 place-items-center rounded-pill hover:bg-accent hover:text-black"><ChevronLeft size={16} /></motion.button>
             <select aria-label="Month" value={month} onChange={(e) => setCursor(new Date(year, +e.target.value, 1))} className="cursor-pointer bg-transparent px-2 py-1 text-sm font-medium outline-none">{MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}</select>
@@ -55,14 +55,14 @@ export function CalendarOverlay({ open, onClose }: { open: boolean; onClose: () 
           <RubberSegment size="sm" label="Jump" value={null} onChange={() => { const n = new Date(nowMs()); setCursor(new Date(n.getFullYear(), n.getMonth(), 1)); setDay(n); }} items={[{ id: "today", label: "Today" }]} />
         </div>
 
-        <div className="mt-4 grid grid-cols-7 gap-1 text-center" role="grid" aria-label={`${MONTHS[month]} ${year}`}>
+        <div className="mt-3 grid grid-cols-7 gap-0.5 text-center" role="grid" aria-label={`${MONTHS[month]} ${year}`}>
           {DOW.map((d) => <div key={d} className="py-1 text-xs font-semibold text-muted">{d}</div>)}
           {cells.map((d) => {
             const inMonth = d.getMonth() === month, on = same(d, day), today = same(d, new Date(nowMs()));
             const n = calendar.filter((c) => same(new Date(c.startsAt), d)).length;
             return (
               <button key={d.toISOString()} role="gridcell" aria-selected={on} onClick={() => { setDay(d); if (!inMonth) setCursor(new Date(d.getFullYear(), d.getMonth(), 1)); }}
-                className={clsx("relative grid aspect-square place-items-center rounded-xl text-sm transition-colors", on ? "bg-brand text-brand-ink" : "hover:bg-sunken", !inMonth && !on && "text-muted/50", today && !on && "ring-1 ring-brand")}>
+                className={clsx("relative grid h-9 place-items-center rounded-xl text-sm transition-colors", on ? "bg-brand text-brand-ink" : "hover:bg-sunken", !inMonth && !on && "text-muted/50", today && !on && "ring-1 ring-brand")}>
                 {d.getDate()}
                 {n > 0 && <span className={clsx("absolute bottom-1 h-1.5 w-1.5 rounded-full", on ? "bg-accent" : "bg-brand")} />}
               </button>
@@ -70,13 +70,13 @@ export function CalendarOverlay({ open, onClose }: { open: boolean; onClose: () 
           })}
         </div>
 
-        <div className="mt-5 border-t border-line pt-4">
+        <div className="mt-3 border-t border-line pt-3">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted">{day.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}</p>
           {dayItems.length === 0 && !adding && <p className="text-sm text-muted">Nothing planned.</p>}
-          <ul className="grid gap-2">
+          <ul className="grid max-h-[104px] gap-1.5 overflow-hidden">
             <AnimatePresence initial={false}>
               {dayItems.map((c) => (
-                <motion.li key={c.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }} className="flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-2.5 text-sm">
+                <motion.li key={c.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }} className="flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-1.5 text-sm">
                   <span className="min-w-0"><span className="block truncate font-medium">{c.title}</span><span className="text-xs capitalize text-muted">{c.type} · {time(c.startsAt)}</span></span>
                   <button aria-label={`Delete ${c.title}`} onClick={() => { removeCal(c.id); toast("Event deleted", c.title); }} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-bad hover:bg-bad/10"><Trash2 size={15} /></button>
                 </motion.li>
@@ -94,7 +94,7 @@ export function CalendarOverlay({ open, onClose }: { open: boolean; onClose: () 
               <div className="flex gap-2"><button className="btn-primary">Add event</button><button type="button" className="btn-ghost" onClick={() => setAdding(false)}>Cancel</button></div>
             </form>
           ) : (
-            <div className="mt-3 flex justify-center"><RubberSegment size="md" label="Add" value={null} onChange={() => setAdding(true)} items={[{ id: "add", label: <span className="inline-flex items-center gap-2"><Plus size={16} />Add Event</span> }]} /></div>
+            <div className="mt-2 flex justify-center"><RubberSegment size="md" label="Add" value={null} onChange={() => setAdding(true)} items={[{ id: "add", label: <span className="inline-flex items-center gap-2"><Plus size={16} />Add Event</span> }]} /></div>
           )}
         </div>
       </div>

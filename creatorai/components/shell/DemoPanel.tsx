@@ -33,7 +33,7 @@ export function DemoPanel({ open, onClose }: { open: boolean; onClose: () => voi
           <input type="checkbox" checked={slowNetwork} onChange={(e) => set({ slowNetwork: e.target.checked })} className="h-4 w-4 accent-[rgb(var(--brand))]" /></label>
 
         <h3 className="t-label mt-8 text-muted">Time travel</h3>
-        <p className="mt-1 text-xs text-muted">Offset now: {(timeOffsetMs / 3_600_000).toFixed(1)} h — triggers calendar alarms.</p>
+        <p className="mt-1 text-xs text-muted">Offset now: {(timeOffsetMs / 3_600_000).toFixed(1)} h, triggers calendar alarms.</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {[["+1 h", 3_600_000], ["+1 day", 86_400_000], ["+3 days", 3 * 86_400_000]].map(([l, ms]) => (
             <button key={l as string} className="btn-ghost py-2" onClick={() => { set({ timeOffsetMs: timeOffsetMs + (ms as number) }); toast("Time fast-forwarded", l as string); }}>{l as string}</button>

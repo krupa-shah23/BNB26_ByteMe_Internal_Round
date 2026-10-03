@@ -67,11 +67,11 @@ function Choice({ opt, selected, onPick, multi }: { opt: Opt; selected: boolean;
   const peak = opt.ratio ? Math.max(...opt.ratio) : 1;
   return (
     <motion.button type="button" role={multi ? "checkbox" : "radio"} aria-checked={selected} onClick={onPick} whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }}
-      className={clsx("relative flex min-h-[132px] flex-col items-center justify-center gap-2 rounded-3xl border p-5 text-center transition-colors", selected ? "border-brand bg-brand text-brand-ink" : "border-line bg-surface hover:border-text/40")}>
+      className={clsx("relative flex min-h-[104px] flex-col items-center justify-center gap-1.5 rounded-3xl border p-4 text-center transition-colors", selected ? "border-brand bg-brand text-brand-ink" : "border-line bg-surface hover:border-text/40")}>
       {opt.ratio && (
         <span className={clsx("mb-1 block rounded-md border-2", selected ? "border-accent bg-accent/25" : "border-text/50")} style={{ width: 30 * (opt.ratio[0] / peak) + 6, height: 30 * (opt.ratio[1] / peak) + 6 }} />
       )}
-      <span className="font-display text-2xl tracking-tight">{opt.title}</span>
+      <span className="font-display text-xl tracking-tight">{opt.title}</span>
       {opt.sub && <span className={clsx("text-sm", selected ? "opacity-80" : "text-muted")}>{opt.sub}</span>}
       {selected && <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute right-3 top-3 grid h-6 w-6 place-items-center rounded-full bg-accent text-black"><Check size={14} /></motion.span>}
     </motion.button>
@@ -102,41 +102,41 @@ export function CreateFlow({ format }: { format: FormatKey }) {
   ];
 
   return (
-    <div className="mx-auto max-w-[900px] pb-16">
-      <div className="flex items-center justify-between py-2">
-        <Link href={m.kind === "video" ? "/videos" : "/short-videos"} className="inline-flex items-center gap-2 text-sm hover:opacity-60"><ArrowLeft size={16} />Back</Link>
-      </div>
+    <div className="flex max-w-5xl flex-col gap-4 pb-4 lg:h-full">
+      <Link href={m.kind === "video" ? "/videos" : "/short-videos"} className="inline-flex w-fit items-center gap-2 text-sm hover:opacity-60"><ArrowLeft size={16} />Back</Link>
 
-      <header className="mt-6 text-center">
-        <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="mx-auto mb-4 w-fit"><Glyph name={m.glyph} size={64} /></motion.div>
-        <h1 className="font-display text-[clamp(2.2rem,6vw,4.2rem)] font-medium leading-none tracking-[-0.04em]">Create {m.article} {m.noun}</h1>
-        <p className="mt-3 text-muted">{phase === "steps" ? "Let’s shape your video before we make it." : "Now add your clips — we’ll take it from here."}</p>
+      <header className="flex items-center gap-4">
+        <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="shrink-0"><Glyph name={m.glyph} size={48} /></motion.div>
+        <div>
+          <h1 className="font-display text-[clamp(1.8rem,3.4vw,2.8rem)] font-medium leading-none tracking-[-0.04em]">Create {m.article} {m.noun}</h1>
+          <p className="mt-1.5 text-sm text-muted">{phase === "steps" ? "Let’s shape your video before we make it." : "Now add your clips and we’ll take it from here."}</p>
+        </div>
       </header>
 
       {phase === "steps" ? (
         <>
-          <div className="mt-12 pb-8"><StepIndicator steps={steps} current={i} onJump={go} /></div>
-          <div className="mx-auto mt-10 min-h-[320px] max-w-3xl">
+          <div className="pb-7 pt-1"><StepIndicator steps={steps} current={i} onJump={go} left /></div>
+          <div className="min-h-0 flex-1">
             <StepPanel index={i} direction={dir}>
               {cur.finish ? (
-                <div className="mx-auto max-w-md text-center">
-                  <h2 className="t-h2">Your {m.kind === "video" ? "video" : "short"} is ready to be created.</h2>
-                  <dl className="mt-6 divide-y divide-line rounded-3xl border border-line bg-surface text-left">
-                    {summary.map(([k, v]) => (<div key={k} className="flex justify-between px-5 py-3 text-sm"><dt className="text-muted">{k}</dt><dd className="font-medium">{v}</dd></div>))}
+                <div className="max-w-md">
+                  <h2 className="font-display text-2xl tracking-tight">Your {m.kind === "video" ? "video" : "short"} is ready to be created.</h2>
+                  <dl className="mt-4 divide-y divide-line rounded-3xl border border-line bg-surface text-left">
+                    {summary.map(([k, v]) => (<div key={k} className="flex justify-between px-5 py-2 text-sm"><dt className="text-muted">{k}</dt><dd className="font-medium">{v}</dd></div>))}
                   </dl>
                 </div>
               ) : (
                 <>
-                  <h2 className="mb-6 text-center font-display text-2xl tracking-tight">{cur.heading}</h2>
-                  {cur.multi && <p className="-mt-3 mb-5 text-center text-sm text-muted">Pick as many as you like.</p>}
-                  <div role={cur.multi ? "group" : "radiogroup"} aria-label={cur.heading} className={clsx("mx-auto grid gap-4", cur.options!.length === 2 ? "max-w-xl grid-cols-2" : cur.options!.length === 4 ? "max-w-2xl grid-cols-2" : "grid-cols-2 sm:grid-cols-3")}>
+                  <h2 className="mb-1 font-display text-2xl tracking-tight">{cur.heading}</h2>
+                  <p className="mb-4 text-sm text-muted">{cur.multi ? "Pick as many as you like." : "Pick one to continue."}</p>
+                  <div role={cur.multi ? "group" : "radiogroup"} aria-label={cur.heading} className={clsx("grid gap-3", cur.options!.length === 2 ? "max-w-2xl grid-cols-2" : cur.options!.length === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3")}>
                     {cur.options!.map((o) => <Choice key={o.id} opt={o} selected={!!ans[cur.id]?.includes(o.id)} multi={cur.multi} onPick={() => pick(cur, o.id)} />)}
                   </div>
                 </>
               )}
             </StepPanel>
           </div>
-          <div className="mt-10 flex items-center justify-center gap-3">
+          <div className="flex items-center gap-3">
             {i > 0 && <button className="btn-ghost" onClick={() => go(i - 1)}><ArrowLeft size={16} />Previous</button>}
             <button className="btn-primary px-7 py-3" disabled={!ready} onClick={next}>
               {last ? (format === "ads" ? "Create Ad" : m.kind === "video" ? "Create Video" : `Create my ${m.noun}`) : "Continue"}<ArrowRight size={16} />
@@ -144,13 +144,13 @@ export function CreateFlow({ format }: { format: FormatKey }) {
           </div>
         </>
       ) : (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-10">
-          <div className="mx-auto mb-6 flex max-w-3xl flex-wrap items-center justify-center gap-2">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="grid gap-4">
+          <div className="flex flex-wrap items-center gap-2">
             {summary.map(([k, v]) => <span key={k} className="chip bg-surface py-1.5"><span className="text-muted">{k}</span> {v}</span>)}
             <button className="text-sm underline underline-offset-4 hover:opacity-60" onClick={() => { setPhase("steps"); go(0); }}>Edit</button>
           </div>
-          <div className="mx-auto max-w-3xl">
-            <UploadWorkspace kind={m.kind} embedded forcedTab={m.tab} dropTitle={m.kind === "video" ? "+ Upload video" : "+ Upload clips"} dropHint={`Drop the clips for your ${m.noun.toLowerCase()} — any order. Photos and audio welcome.`} />
+          <div className="max-w-3xl">
+            <UploadWorkspace kind={m.kind} embedded forcedTab={m.tab} dropTitle={m.kind === "video" ? "+ Upload videos and photos" : "+ Upload videos and photos"} dropHint={`Drop the clips and photos for your ${m.noun.toLowerCase()}, in any order. Audio is welcome too.`} />
           </div>
         </motion.div>
       )}

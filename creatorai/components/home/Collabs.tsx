@@ -99,7 +99,7 @@ export function Collabs({ compact = false }: { compact?: boolean }) {
             <button onClick={() => act("up")} aria-label="Super interest" className="grid h-12 w-12 place-items-center rounded-full border border-line bg-surface text-brand hover:bg-sunken"><Star size={20} /></button>
             <button onClick={() => act("right")} aria-label="Collab" className="grid h-14 w-14 place-items-center rounded-full bg-ok text-bg hover:opacity-90"><Heart fill="currentColor" /></button>
           </div>
-          <p className="mt-3 text-center text-xs text-muted">Drag or use ← → ↑. Each swipe updates a preference vector and re-ranks the rest — in your browser, for real.</p>
+          <p className="mt-3 text-center text-xs text-muted">Drag or use ← → ↑. Each swipe updates a preference vector and re-ranks the rest, in your browser, for real.</p>
         </div>
       ) : (
         <div className="card overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="t-label text-muted"><tr className="border-b border-line">{["What", "When", "With whom", "Platform", "Views / Reach", "Followers +/−"].map((h) => <th scope="col" key={h} className="px-4 py-3">{h}</th>)}</tr></thead>
