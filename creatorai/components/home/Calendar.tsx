@@ -21,10 +21,17 @@ function countdown(iso: string) {
   return h >= 24 ? `in ${Math.floor(h / 24)}d ${h % 24}h` : `in ${h}h ${Math.floor((ms % 3_600_000) / 60_000)}m`;
 }
 
-function QuickAdd({ open, onClose, date }: { open: boolean; onClose: () => void; date: Date }) {
+export function QuickAdd({ open, onClose, date }: { open: boolean; onClose: () => void; date: Date }) {
   const { addCal, projects, calendar, toast } = useStore();
   const [f, setF] = useState({ title: "", type: "reminder" as CalType, when: toLocalInput(date), withHandle: "", projectId: "", platform: "Instagram", remind: "15", sound: true, repeat: "none" });
-  useEffect(() => { if (open) { const d = new Date(date); d.setHours(18, 0, 0, 0); setF((x) => ({ ...x, when: toLocalInput(d) })); } }, [open, date]);
+  useEffect(() => {
+    if (!open) return;
+    const d = new Date(date);
+    const now = new Date(nowMs());
+    if (same(d, now)) { const h = now.getHours(); d.setHours(Math.min(h + 1, 23), h >= 23 ? 59 : 0, 0, 0); } // today: next full hour, never in the past
+    else d.setHours(18, 0, 0, 0);
+    setF((x) => ({ ...x, when: toLocalInput(d) }));
+  }, [open, date]);
   const past = new Date(f.when).getTime() < nowMs();
   const conflict = calendar.find((c) => c.type === "post" && same(new Date(c.startsAt), new Date(f.when)));
   const dupe = f.type === "post" && calendar.some((c) => c.type === "post" && c.title.toLowerCase() === f.title.toLowerCase());

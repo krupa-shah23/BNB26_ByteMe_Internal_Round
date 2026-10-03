@@ -7,7 +7,6 @@ import { useMemo, useState } from "react";
 import clsx from "clsx";
 import home from "@/fixtures/home.json";
 import { Badge, Count, Reveal, Sparkline } from "@/components/ui/bits";
-import { Collabs } from "./Collabs";
 import { useStore } from "@/lib/store";
 
 const riskTone = { low: "ok", medium: "warn", high: "bad" } as const;
@@ -67,7 +66,7 @@ export function Overview({ go }: { go: (s: "trends" | "library" | "collabs" | "c
           <ul className="mt-4 grid gap-3">{home.unusedClips.map((c) => <li key={c.id} className="flex items-center justify-between gap-3"><span><span className="block text-sm font-medium">{c.title}</span><span className="text-xs text-muted">{c.range}</span></span><Badge tone="ok">{c.score}</Badge></li>)}</ul></section>
       </div>
 
-      <section className="card p-6" aria-labelledby="cd-h"><div className="mb-4 flex items-center justify-between"><h2 id="cd-h" className="t-h2">Collab Deck</h2><button className="btn-ghost py-2" onClick={() => go("collabs")}>Open full deck</button></div><Collabs compact /></section>
+      <section className="card flex flex-wrap items-center justify-between gap-4 p-6" aria-labelledby="cd-h"><div><h2 id="cd-h" className="t-h2">Creator Discovery</h2><p className="mt-1 text-sm text-muted">Find creators who fit your audience and send a collaboration request.</p></div><button className="btn-brand" onClick={() => go("collabs")}>Open Creator Discovery</button></section>
     </div>
   );
 }
@@ -156,7 +155,6 @@ export function Library() {
         ))}
         {items.length === 0 && <li className="col-span-full text-sm text-muted">No assets match.</li>}
       </ul>
-      <div className="card mt-8 p-5"><h3 className="t-label text-muted">Reuse suggestions</h3><ul className="mt-3 grid gap-2 text-sm"><li>• <b>ep12_final.mp4</b> has never been clipped — try the <Link href="/video-studio?type=Podcast" className="text-brand underline">podcast set</Link>.</li><li className="text-warn">• Repeat risk: you posted a “pitch tips” Reel 5 days ago — space similar topics ≥ 10 days apart.</li></ul></div>
     </div>
   );
 }

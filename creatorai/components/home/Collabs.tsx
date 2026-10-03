@@ -1,13 +1,15 @@
 "use client";
-import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
-import { Heart, RotateCcw, Star, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, ArrowRight, RotateCcw, Check } from "lucide-react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import creatorsFx from "@/fixtures/creators.json";
-import analytics from "@/fixtures/analytics.json";
 import { Badge, Poster } from "@/components/ui/bits";
+import AnimatedList from "@/components/reactbits/AnimatedList";
+import DepthCarousel, { type DepthCarouselHandle } from "@/components/reactbits/DepthCarousel";
+import RubberSegment from "@/components/reactbits/RubberSegment";
 import { fireHearts } from "@/lib/hearts";
-import { useStore } from "@/lib/store";
+import { relTime } from "@/lib/projects";
+import { useStore, type CollabRequest } from "@/lib/store";
 
 interface Creator { id: string; name: string; handle: string; niche: string; followers: number; topics: string[]; vec: number[] }
 const creators = creatorsFx.creators as Creator[];
@@ -19,10 +21,12 @@ const cosine = (a: number[], b: number[]) => {
 };
 const band = (f: number) => (f < 25_000 ? 0 : f < 60_000 ? 1 : f < 120_000 ? 2 : 3);
 
+type Ranked = { c: Creator; score: number; overlap: number; shared: string[]; why: string[] };
+
 /** score = 0.5·cosine(audience) + 0.3·topicJaccard + 0.2·followerBandCloseness, against the creator's *learned* preference vector. */
-export function rank(pref: number[], swiped: Record<string, string>) {
+export function rank(pref: number[], swiped: Record<string, string>, skip: Set<string> = new Set()): Ranked[] {
   const target = USER.vec.map((v, i) => v + (pref[i] ?? 0));
-  return creators.filter((c) => !swiped[c.id]).map((c) => {
+  return creators.filter((c) => !swiped[c.id] && !skip.has(c.id)).map((c) => {
     const inter = c.topics.filter((t) => USER.topics.includes(t)).length;
     const jac = inter / (new Set([...c.topics, ...USER.topics]).size);
     const closeness = 1 - Math.abs(band(c.followers) - band(USER.followers)) / 3;
@@ -31,82 +35,157 @@ export function rank(pref: number[], swiped: Record<string, string>) {
   }).sort((a, b) => b.score - a.score);
 }
 
-function Card({ item, top, onSwipe }: { item: ReturnType<typeof rank>[number]; top: boolean; onSwipe: (d: "right" | "left" | "up") => void }) {
-  const x = useMotionValue(0), y = useMotionValue(0);
-  const rot = useTransform(x, [-220, 220], [-14, 14]);
-  const yes = useTransform(x, [20, 140], [0, 1]), no = useTransform(x, [-140, -20], [1, 0]), up = useTransform(y, [-140, -20], [1, 0]);
+function CreatorCardBody({ item, requested }: { item: Ranked; requested: boolean }) {
   const { c } = item;
   return (
-    <motion.div drag={top} dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }} dragElastic={0.9} style={{ x, y, rotate: rot, zIndex: top ? 2 : 1 }}
-      onDragEnd={(_, i) => { if (i.offset.x > 120) onSwipe("right"); else if (i.offset.x < -120) onSwipe("left"); else if (i.offset.y < -120) onSwipe("up"); }}
-      initial={{ scale: top ? 1 : 0.94, y: top ? 0 : 16, opacity: 0 }} animate={{ scale: top ? 1 : 0.94, opacity: 1, y: top ? 0 : 16 }}
-      variants={{ out: (d: string) => ({ x: d === "right" ? 600 : d === "left" ? -600 : 0, y: d === "up" ? -600 : 0, opacity: 0, rotate: d === "right" ? 20 : d === "left" ? -20 : 0, transition: { duration: 0.35 } }) }} exit="out"
-      className="absolute inset-0 cursor-grab touch-none overflow-hidden rounded-3xl border border-line bg-surface shadow-soft active:cursor-grabbing">
-      <Poster seed={+c.id.slice(1) * 7} className="h-[42%]"><div className="absolute -bottom-10 left-6 grid h-20 w-20 place-items-center rounded-full border-4 border-surface bg-brand font-display text-3xl text-brand-ink">{c.name[0]}</div></Poster>
-      <div className="p-6 pt-12">
-        <div className="flex items-center justify-between"><div><h3 className="font-display text-2xl">{c.name}</h3><p className="text-sm text-muted">{c.handle} · {c.niche}</p></div><Badge tone="brand">{item.overlap}% overlap <span className="opacity-60">Est.</span></Badge></div>
-        <p className="mt-3 text-sm">{(c.followers / 1000).toFixed(0)}K followers · topics: {c.topics.join(", ")}</p>
-        <div className="mt-4 flex flex-wrap gap-1.5">{item.why.map((w) => <span key={w} className="chip">{w}</span>)}</div>
-        <p className="mt-4 text-[11px] text-muted">Fictional demo creator. Overlap is estimated from public signals.</p>
+    <div className="flex h-full flex-col text-left">
+      <Poster seed={+c.id.slice(1) * 7} className="h-[38%] shrink-0">
+        <div className="absolute -bottom-9 left-5 grid h-[72px] w-[72px] place-items-center rounded-full border-4 border-surface bg-brand font-display text-3xl text-brand-ink">{c.name[0]}</div>
+        {requested && <span className="chip absolute right-3 top-3 border-transparent bg-bg/90 text-ok"><Check size={12} />Requested</span>}
+      </Poster>
+      <div className="flex-1 p-5 pt-12">
+        <div className="flex items-start justify-between gap-2"><div className="min-w-0"><h3 className="truncate font-display text-2xl">{c.name}</h3><p className="truncate text-sm text-muted">{c.handle} · {c.niche}</p></div><Badge tone="brand">{item.overlap}% <span className="opacity-60">Est.</span></Badge></div>
+        <p className="mt-3 text-sm">{(c.followers / 1000).toFixed(0)}K followers · {c.topics.join(", ")}</p>
+        <div className="mt-3 flex flex-wrap gap-1.5">{item.why.map((w) => <span key={w} className="chip">{w}</span>)}</div>
+        <p className="mt-3 text-[11px] text-muted">Fictional demo creator. Overlap is estimated from public signals.</p>
       </div>
-      <motion.div style={{ opacity: yes }} className="pointer-events-none absolute left-6 top-6 -rotate-12 rounded-xl border-4 border-ok px-3 py-1 font-display text-2xl text-ok">COLLAB 💚</motion.div>
-      <motion.div style={{ opacity: no }} className="pointer-events-none absolute right-6 top-6 rotate-12 rounded-xl border-4 border-bad px-3 py-1 font-display text-2xl text-bad">PASS</motion.div>
-      <motion.div style={{ opacity: up }} className="pointer-events-none absolute left-1/2 top-24 -translate-x-1/2 rounded-xl border-4 border-brand px-3 py-1 font-display text-2xl text-brand">SUPER ★</motion.div>
-    </motion.div>
+    </div>
   );
 }
 
-export function Collabs({ compact = false }: { compact?: boolean }) {
-  const { pref, swiped, swipe, calendar, addCal, toast } = useStore();
-  const [sub, setSub] = useState<"discover" | "tracker">("discover");
-  const [last, setLast] = useState<"right" | "left" | "up">("right");
-  const queue = useMemo(() => rank(pref, swiped), [pref, swiped]);
-  const stack = queue.slice(0, 3);
-  const act = (d: "right" | "left" | "up") => {
-    const t = queue[0]; if (!t) return;
-    setLast(d); swipe(t.c.id, d, t.c.vec);
-    if (d !== "left") { fireHearts({ count: 22, origin: { x: innerWidth / 2, y: innerHeight * 0.55 } }); }
-    if (d === "up" || (d === "right" && t.overlap > 70)) toast(`It's a match with ${t.c.handle}!`, "Added to your Collab tracker");
-    if (d !== "left") addCal({ type: "collab", title: `Collab idea with ${t.c.handle}`, startsAt: new Date(Date.now() + 7 * 86_400_000).toISOString(), withHandle: t.c.handle, stage: "Idea" });
-  };
-  useEffect(() => {
-    if (sub !== "discover" || compact) return;
-    const k = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement).tagName; if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      if (e.key === "ArrowRight") act("right"); if (e.key === "ArrowLeft") act("left"); if (e.key === "ArrowUp") act("up");
-    };
-    window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k);
-  });
+const SWIPE_PX = 70;
 
-  const rows = [...analytics.collabLog.map((c) => ({ id: c.id, what: c.what, when: c.when, who: c.withWhom, platform: c.platform, views: c.views, reach: c.reach, gained: c.gained, lost: c.lost })),
-    ...calendar.filter((c) => c.type === "collab").map((c) => ({ id: c.id, what: c.title, when: c.startsAt, who: c.withHandle ?? "—", platform: c.platform ?? "—", views: null, reach: null, gained: null, lost: null }))];
+export function Collabs() {
+  const { pref, swiped, swipe, requests, requestCollab, addCal, toast } = useStore();
+  const [sub, setSub] = useState<"discover" | "tracker">("discover");
+  // the deck is fixed for this visit (creators you already passed on / requested are not shown again)
+  const [deckKey, setDeckKey] = useState(0);
+  const list = useMemo(() => rank(pref, swiped, new Set(useStore.getState().requests.map((r) => r.creatorId))),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [deckKey]);
+  const [active, setActive] = useState(0);
+  const activeRef = useRef(0);
+  const carousel = useRef<DepthCarouselHandle>(null);
+  const start = useRef<{ x: number; y: number } | null>(null);
+
+  const requestedIds = useMemo(() => new Set(requests.map((r) => r.creatorId)), [requests]);
+  const current = list[active];
+  const currentRequested = !!current && requestedIds.has(current.c.id);
+
+  /** Both the desktop arrows and the mobile swipe call exactly these two functions. */
+  const collaborate = useCallback(() => {
+    const t = list[activeRef.current];
+    if (!t) return;
+    try {
+      const res = requestCollab({ creatorId: t.c.id, name: t.c.name, handle: t.c.handle, niche: t.c.niche });
+      if (res === "duplicate") {
+        toast("Already requested", `You've already sent a collaboration request to ${t.c.handle}.`, { kind: "info" });
+      } else {
+        swipe(t.c.id, "right", t.c.vec);
+        addCal({ type: "collab", title: `Collab with ${t.c.handle}`, startsAt: new Date(Date.now() + 7 * 86_400_000).toISOString(), withHandle: t.c.handle, stage: "Idea" });
+        toast(`Collaboration message sent to ${t.c.handle}`, "Added to your Tracker", { duration: 20_000, kind: "success" });
+        fireHearts({ count: 18, origin: { x: innerWidth / 2, y: innerHeight * 0.55 } });
+      }
+      carousel.current?.next();
+    } catch {
+      toast("Couldn't send the request", "Something went wrong — please try again.", { kind: "error" });
+    }
+  }, [list, requestCollab, swipe, addCal, toast]);
+
+  const pass = useCallback(() => {
+    const t = list[activeRef.current];
+    if (!t) return;
+    if (!requestedIds.has(t.c.id)) swipe(t.c.id, "left", t.c.vec); // learns a negative preference; no request, no tracker entry
+    carousel.current?.next();
+  }, [list, swipe, requestedIds]);
+
+  const onPointerDown = (e: React.PointerEvent) => { start.current = { x: e.clientX, y: e.clientY }; };
+  const onPointerUp = (e: React.PointerEvent) => {
+    const s = start.current; start.current = null;
+    if (!s) return;
+    const dx = e.clientX - s.x, dy = e.clientY - s.y;
+    if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (dx > 0) collaborate(); else pass();
+  };
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowRight") { e.preventDefault(); collaborate(); }
+    if (e.key === "ArrowLeft") { e.preventDefault(); pass(); }
+  };
+
+  const items = useMemo(() => list.map((it) => ({ alt: it.c.name, content: <CreatorCardBody item={it} requested={requestedIds.has(it.c.id)} /> })), [list, requestedIds]);
+
+  const arrow = (kind: "pass" | "collab", extra = "") => (
+    <button onClick={kind === "pass" ? pass : collaborate} disabled={kind === "collab" && currentRequested}
+      aria-label={kind === "pass" ? "Pass" : currentRequested ? "Already requested" : "Collaborate"}
+      className={clsx("grid h-14 w-14 shrink-0 place-items-center rounded-full border transition-transform hover:scale-105 active:scale-95 disabled:opacity-40 disabled:hover:scale-100",
+        kind === "pass" ? "border-line bg-surface text-bad hover:bg-sunken" : "border-transparent bg-ok text-bg", extra)}>
+      {kind === "pass" ? <ArrowLeft /> : currentRequested ? <Check /> : <ArrowRight />}
+    </button>
+  );
 
   return (
-    <div>
-      {!compact && <div className="mb-6 flex gap-2" role="tablist">{(["discover", "tracker"] as const).map((s) => <button key={s} role="tab" aria-selected={sub === s} onClick={() => setSub(s)} className={clsx("chip px-5 py-2 text-sm capitalize", sub === s && "border-brand bg-brand text-brand-ink")}>{s}</button>)}</div>}
+    <section aria-labelledby="cd-title">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <h2 id="cd-title" className="t-h1">Creator Discovery</h2>
+        <RubberSegment
+          aria-label="Discovery view"
+          items={[{ value: "discover", label: "Discover" }, { value: "tracker", label: <>Tracker{requests.length > 0 && <span className="ml-1.5 rounded-full bg-brand-2 px-1.5 py-0.5 text-[10px] font-bold text-brand-ink">{requests.length}</span>}</> }]}
+          value={sub} onChange={(v) => setSub(v as "discover" | "tracker")}
+          size="lg" radius={22}
+          trackColor="rgb(var(--sunken))" thumbColor="rgb(var(--brand))" textColor="rgb(var(--text))" activeTextColor="rgb(var(--brand-ink))"
+        />
+      </header>
+
       {sub === "discover" ? (
-        <div className="mx-auto max-w-sm">
-          <div className="relative h-[480px]" aria-live="polite">
-            {queue.length === 0 ? (
-              <div className="card grid h-full place-items-center p-8 text-center"><div><p className="font-display text-3xl">You've seen everyone</p><p className="mt-2 text-sm text-muted">Your swipes already re-ranked the deck.</p>
-                <button className="btn-primary mt-5" onClick={() => useStore.setState({ swiped: {} })}><RotateCcw size={16} />Reshuffle</button></div></div>
-            ) : (
-              <AnimatePresence custom={last}>{[...stack].reverse().map((it, i, arr) => <Card key={it.c.id} item={it} top={i === arr.length - 1} onSwipe={act} />)}</AnimatePresence>
-            )}
-          </div>
-          <div className="mt-5 flex items-center justify-center gap-4">
-            <button onClick={() => act("left")} aria-label="Pass" className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface text-bad hover:bg-sunken"><X /></button>
-            <button onClick={() => act("up")} aria-label="Super interest" className="grid h-12 w-12 place-items-center rounded-full border border-line bg-surface text-brand hover:bg-sunken"><Star size={20} /></button>
-            <button onClick={() => act("right")} aria-label="Collab" className="grid h-14 w-14 place-items-center rounded-full bg-ok text-bg hover:opacity-90"><Heart fill="currentColor" /></button>
-          </div>
-          <p className="mt-3 text-center text-xs text-muted">Drag or use ← → ↑. Each swipe updates a preference vector and re-ranks the rest — in your browser, for real.</p>
+        <div className="mt-4">
+          {list.length === 0 ? (
+            <div className="card grid min-h-[360px] place-items-center p-8 text-center"><div><p className="font-display text-3xl">You've seen everyone</p><p className="mt-2 text-sm text-muted">Creators you requested are in the Tracker. Passed creators can be reshuffled.</p>
+              <button className="btn-primary mt-5" onClick={() => { useStore.setState({ swiped: {} }); setActive(0); activeRef.current = 0; setDeckKey((k) => k + 1); }}><RotateCcw size={16} />Reshuffle</button></div></div>
+          ) : (
+            <>
+              <div className="flex items-center justify-center gap-2 lg:gap-6" onKeyDown={onKeyDown}>
+                {arrow("pass", "hidden md:grid")}
+                <div className="h-[440px] w-full max-w-[640px] touch-pan-y" onPointerDown={onPointerDown} onPointerUp={onPointerUp} onPointerCancel={() => (start.current = null)}>
+                  <DepthCarousel
+                    ref={carousel}
+                    items={items}
+                    cardWidth={300} cardHeight={400} radius={22}
+                    depth={170} spread={64} tilt={16} perspective={1200} visibleCards={3} falloff={0.22} blur={4} duration={600}
+                    tint="rgb(var(--brand))"
+                    showControls={false} showIndicators={false}
+                    draggable={false} wheel={false} keyboard={false}
+                    onChange={(i) => { setActive(i); activeRef.current = i; }}
+                    className="!cursor-default"
+                  />
+                </div>
+                {arrow("collab", "hidden md:grid")}
+              </div>
+              <div className="mt-2 flex items-center justify-center gap-6 md:hidden">{arrow("pass")}{arrow("collab")}</div>
+              <p className="mt-3 text-center text-xs text-muted" aria-live="polite">
+                {current ? <><b className="text-text">{current.c.name}</b> · swipe or use ← Pass / Collaborate →</> : null}
+              </p>
+            </>
+          )}
         </div>
       ) : (
-        <div className="card overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="t-label text-muted"><tr className="border-b border-line">{["What", "When", "With whom", "Platform", "Views / Reach", "Followers +/−"].map((h) => <th scope="col" key={h} className="px-4 py-3">{h}</th>)}</tr></thead>
-          <tbody>{rows.map((r) => (<tr key={r.id} className="border-b border-line last:border-0"><td className="px-4 py-4 font-medium">{r.what}</td><td className="px-4">{new Date(r.when).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</td><td className="px-4">{r.who}</td><td className="px-4">{r.platform}</td>
-            <td className="px-4">{r.views ? `${r.views.toLocaleString("en-IN")} / ${r.reach ? r.reach.toLocaleString("en-IN") : "n/a"}` : <span className="text-muted">Upcoming</span>}</td>
-            <td className="px-4">{r.gained != null ? <><span className="text-ok">+{r.gained}</span> / <span className="text-bad">−{r.lost}</span></> : "—"}</td></tr>))}</tbody></table></div>
+        <div className="mt-6">
+          {requests.length === 0 ? (
+            <div className="card grid place-items-center gap-3 p-10 text-center"><p className="font-display text-2xl">No collaboration requests yet</p><p className="max-w-sm text-sm text-muted">Creators you collaborate with appear here. Passing a creator never adds them.</p><button className="btn-primary" onClick={() => setSub("discover")}>Discover creators</button></div>
+          ) : (
+            <AnimatedList<CollabRequest>
+              items={requests}
+              getKey={(r) => r.creatorId}
+              renderItem={(r) => (
+                <div className="flex items-center gap-4">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-brand font-display text-lg text-brand-ink">{r.name[0]}</span>
+                  <div className="min-w-0 flex-1"><p className="truncate font-medium">{r.name} <span className="font-normal text-muted">{r.handle}</span></p><p className="truncate text-xs text-muted">{r.niche} · {relTime(r.at)}</p></div>
+                  <Badge tone="ok"><Check size={12} />Collaboration Requested</Badge>
+                </div>
+              )}
+            />
+          )}
+        </div>
       )}
-    </div>
+    </section>
   );
 }

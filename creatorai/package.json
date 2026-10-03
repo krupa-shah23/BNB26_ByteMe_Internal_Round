@@ -11,11 +11,15 @@
     "hash-demo": "node scripts/hash-demo.mjs"
   },
   "dependencies": {
+    "@hugeicons/core-free-icons": "^4.3.5",
+    "@hugeicons/react": "^1.1.10",
     "@remotion/player": "4.0.532",
     "@tanstack/react-query": "^5.104.1",
     "clsx": "^2.1.1",
     "framer-motion": "^11.18.2",
+    "gsap": "^3.15.0",
     "lucide-react": "^1.51.0",
+    "motion": "^14.0.0",
     "next": "^14.2.35",
     "next-themes": "^0.4.6",
     "react": "^18.3.1",

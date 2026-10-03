@@ -1,6 +1,11 @@
 "use client";
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import BorderGlow from "@/components/reactbits/BorderGlow";
+import RubberSegment from "@/components/reactbits/RubberSegment";
+import { ToastHost } from "./ToastHost";
+import { useTokenColors } from "@/lib/useTokens";
 import { Bell, CalendarDays, ChevronDown, Film, Home, LayoutDashboard, LogOut, Plus, Search, Settings, Smartphone, UserCircle2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -18,7 +23,6 @@ const TABS = [
   { href: "/short-videos", label: "Short Videos", icon: Smartphone },
   { href: "/video-studio", label: "Video Studio", icon: Film },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/calendar", label: "Calendar", icon: CalendarDays },
 ];
 // the editor/history/review routes belong to the Video Studio tab
 const isActive = (path: string, href: string) =>
@@ -106,14 +110,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const hydrated = useHydrated();
   const loggedIn = useStore((s) => s.loggedIn);
   const notices = useStore((s) => s.notices);
-  const toasts = useStore((s) => s.toasts);
   const dirty = useStore((s) => s.dirty);
   const [palette, setPalette] = useState(false);
   const [create, setCreate] = useState(false);
   const [settings, setSettings] = useState(false);
   const [demo, setDemo] = useState(false);
   const [confirmOut, setConfirmOut] = useState(false);
+  const tokens = useTokenColors();
+  const [collapsed, setCollapsed] = useState(false);
   const bc = useRef<BroadcastChannel | null>(null);
+
+  // left rail collapse is a per-device preference
+  useEffect(() => { try { setCollapsed(localStorage.getItem("creatorai-rail") === "1"); } catch { /* storage unavailable */ } }, []);
+  const toggleRail = () => setCollapsed((c) => { try { localStorage.setItem("creatorai-rail", c ? "0" : "1"); } catch { /* ignore */ } return !c; });
+  const fixedPage = path === "/home"; // Home is a single non-scrolling screen
 
   useAlarms(hydrated && loggedIn);
 
@@ -157,34 +167,70 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <a href="#app-main" className="sr-only z-[200] rounded-pill bg-text px-4 py-2 text-bg focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Skip to content</a>
 
       {/* left rail */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[84px] flex-col items-center justify-between border-r border-line bg-bg py-5 lg:flex xl:w-60 xl:items-stretch xl:px-4">
-        <div>
-          <Link href="/home" className="mb-8 flex items-center justify-center font-display text-2xl xl:justify-start xl:px-3" aria-label="CreatorAi">
-            <span className="xl:hidden">C<span className="text-brand">A</span></span><span className="hidden xl:inline">Creator<span className="text-brand">Ai</span></span>
-          </Link>
+      <aside className={clsx("fixed inset-y-0 left-0 z-30 hidden flex-col justify-between overflow-hidden border-r border-line bg-bg py-5 transition-[width] duration-300 lg:flex", collapsed ? "w-[84px] items-center" : "w-60 px-4")} aria-label="Sidebar">
+        <div className={collapsed ? "grid justify-items-center" : ""}>
+          <div className={clsx("mb-8 flex items-center", collapsed ? "flex-col gap-4" : "justify-between px-3")}>
+            <Link href="/home" className="font-display text-2xl" aria-label="CreatorAi">
+              {collapsed ? <>C<span className="text-brand">A</span></> : <>Creator<span className="text-brand">Ai</span></>}
+            </Link>
+            <button onClick={toggleRail} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} aria-expanded={!collapsed} className="grid h-9 w-9 place-items-center rounded-full border border-line text-muted hover:bg-sunken hover:text-text">
+              {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+            </button>
+          </div>
           <nav aria-label="Main" className="grid gap-1">
             {TABS.map(({ href, label, icon: Icon }) => {
               const on = isActive(path, href);
               return (
                 <Link key={href} href={href} aria-current={on ? "page" : undefined} title={label}
-                  className={clsx("relative flex items-center justify-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors xl:justify-start", on ? "text-brand-ink" : "text-muted hover:bg-sunken hover:text-text")}>
+                  className={clsx("relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors", collapsed && "justify-center", on ? "text-brand-ink" : "text-muted hover:bg-sunken hover:text-text")}>
                   {on && <motion.span layoutId="rail-pill" className="absolute inset-0 rounded-xl bg-brand" transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
-                  <Icon size={20} className="relative" /><span className="relative hidden xl:inline">{label}</span>
+                  <Icon size={20} className="relative shrink-0" />{!collapsed && <span className="relative whitespace-nowrap">{label}</span>}
                 </Link>
               );
             })}
           </nav>
         </div>
-        <button onClick={() => setCreate(true)} className="btn-primary mx-auto xl:mx-0 xl:w-full" aria-label="Create"><Plus size={18} /><span className="hidden xl:inline">Create</span></button>
+        <button onClick={() => setCreate(true)} className={clsx("btn-primary", collapsed ? "mx-auto" : "w-full")} aria-label="Create"><Plus size={18} />{!collapsed && <span>Create</span>}</button>
       </aside>
 
-      <div className="lg:pl-[84px] xl:pl-60">
+      <div className={clsx("transition-[padding] duration-300", collapsed ? "lg:pl-[84px]" : "lg:pl-60")}>
         {/* navbar */}
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-line bg-bg/85 px-4 backdrop-blur-md md:px-8">
-          <button onClick={() => setPalette(true)} className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-pill border border-line bg-surface px-4 text-sm text-muted hover:bg-sunken md:max-w-sm md:flex-none md:basis-80" aria-label="Search (Ctrl K)">
-            <Search size={16} /><span className="truncate">Search</span><kbd className="ml-auto hidden rounded border border-line px-1.5 text-[10px] md:inline">⌘K</kbd>
-          </button>
+          <div className="min-w-0 flex-1 md:max-w-sm md:flex-none md:basis-80">
+            <BorderGlow
+              className="w-full"
+              borderRadius={20}
+              backgroundColor={tokens.surfaceHex}
+              light={tokens.light}
+              glowColor={tokens.glowHsl}
+              glowIntensity={0.55}
+              glowRadius={22}
+              fillOpacity={0.18}
+              coneSpread={22}
+              animated
+              colors={["rgb(var(--brand))", "rgb(var(--brand-2))", "rgb(var(--accent))"]}
+            >
+              <button onClick={() => setPalette(true)} className="flex h-10 w-full min-w-0 items-center gap-3 rounded-pill px-4 text-sm text-muted transition-colors hover:text-text" aria-label="Search (Ctrl K)">
+                <Search size={16} /><span className="truncate">Search</span><kbd className="ml-auto hidden rounded border border-line px-1.5 text-[10px] md:inline">⌘K</kbd>
+              </button>
+            </BorderGlow>
+          </div>
           <div className="flex items-center gap-2">
+            <div onClick={() => router.push("/calendar")} title="Calendar">
+              <RubberSegment
+                aria-label="Calendar"
+                items={[{ value: "calendar", icon: <CalendarDays size={16} />, label: <span className="hidden md:inline">Calendar</span> }]}
+                value="calendar"
+                size="lg"
+                radius={22}
+                inset={3}
+                draggable={false}
+                trackColor="rgb(var(--sunken))"
+                thumbColor={path.startsWith("/calendar") ? "rgb(var(--brand))" : "rgb(var(--surface))"}
+                textColor="rgb(var(--text))"
+                activeTextColor={path.startsWith("/calendar") ? "rgb(var(--brand-ink))" : "rgb(var(--text))"}
+              />
+            </div>
             <Menu label="Notifications" button={<span className="relative grid h-10 w-10 place-items-center rounded-full border border-line bg-surface hover:bg-sunken"><Bell size={18} />{unread > 0 && <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-brand-2 px-1 text-[10px] font-bold text-brand-ink">{unread}</span>}</span>}>
               {() => (
                 <div>
@@ -210,11 +256,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main id="app-main" className="px-4 pb-28 pt-6 md:px-8 lg:pb-16">{children}</main>
+        <main id="app-main" className={fixedPage ? "h-[calc(100dvh-4rem)] overflow-hidden px-4 pb-[4.75rem] pt-4 md:px-8 lg:pb-6" : "px-4 pb-28 pt-6 md:px-8 lg:pb-16"}>{children}</main>
       </div>
 
       {/* mobile bottom tab bar */}
-      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden">
+      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden">
         {TABS.map(({ href, label, icon: Icon }) => {
           const on = isActive(path, href);
           return (
@@ -243,15 +289,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </Overlay>
 
-      <div className="pointer-events-none fixed bottom-24 left-1/2 z-[150] grid w-[min(92vw,380px)] -translate-x-1/2 gap-2 lg:bottom-8 lg:left-auto lg:right-8 lg:translate-x-0" aria-live="polite">
-        <AnimatePresence>
-          {toasts.map((t) => (
-            <motion.div key={t.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: 40 }} className="pointer-events-auto rounded-2xl border border-line bg-text px-4 py-3 text-bg shadow-soft">
-              <div className="text-sm font-medium">{t.title}</div>{t.body && <div className="text-xs opacity-70">{t.body}</div>}
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
+      <ToastHost />
     </div>
   );
 }
