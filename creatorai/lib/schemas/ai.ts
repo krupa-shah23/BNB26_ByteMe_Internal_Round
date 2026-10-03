@@ -8,6 +8,7 @@ export const captionsBody = z.strictObject({
   platform: z.string().max(40).default("ig_reel"),
   topic: z.string().max(200).default("creator"),
   text: z.string().max(1000).default(""),
+  style: z.string().max(400).optional(),
 });
 export const hooksBody = z.strictObject({ topic: z.string().min(1).max(200), tone, language: lang.optional(), count: z.number().int().min(1).max(10).default(5) });
 export const scriptBody = z.strictObject({ topic: z.string().min(1).max(200), groupId: z.string().optional(), lengthSec: z.number().int().min(10).max(900).default(45), tone });

@@ -12,7 +12,7 @@
     "hash-demo": "node scripts/hash-demo.mjs"
   },
   "dependencies": {
-    "@remotion/player": "4.0.532",
+    "@remotion/player": "^4.0.532",
     "@tanstack/react-query": "^5.104.1",
     "clsx": "^2.1.1",
     "framer-motion": "^11.18.2",
@@ -21,7 +21,7 @@
     "next-themes": "^0.4.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "remotion": "4.0.532",
+    "remotion": "^4.0.532",
     "zod": "^4.6.5",
     "zustand": "^5.0.15"
   },

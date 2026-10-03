@@ -19,7 +19,7 @@ export function suggestCaptions(i: In<typeof captionsBody>, tags: string[] = [])
   const language = i.language ?? (i.tone === "Hinglish" ? "hinglish" : "en");
   return generateJson({
     route: "captions", input: i, schema: captionOut,
-    prompt: `Write 3 social captions for ${i.platform}. Topic: ${i.topic}. ${i.text ? `Context: ${i.text}.` : ""} Tone: ${i.tone}.${lang(language)} Return JSON: {"options":[{"id":"1","caption":"...","cta":"...","hashtags":["#a"]}]}. Each caption under ${limit} characters.`,
+    prompt: `Write 3 social captions for ${i.platform}. Topic: ${i.topic}. ${i.text ? `Context: ${i.text}.` : ""} Tone: ${i.tone}.${i.style ? ` Match this creator's style: ${i.style}.` : ""}${lang(language)} Return JSON: {"options":[{"id":"1","caption":"...","cta":"...","hashtags":["#a"]}]}. Each caption under ${limit} characters.`,
     shape: (o) => o.options.slice(0, 3).map((x, n) => ({ id: `l${n}`, caption: clip(x.caption, limit), cta: clip(x.cta, 80), hashtags: tidyTags(x.hashtags.length ? x.hashtags : fallbackTags) })),
     fixture: () => captionFixture(i.tone).map((o) => ({ ...o, hashtags: fallbackTags })),
   }).then((r) => ({ options: r.data, language, source: r.source }));

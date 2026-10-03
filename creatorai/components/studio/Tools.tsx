@@ -1,5 +1,7 @@
 "use client";
 import { AnimatePresence, motion } from "framer-motion";
+import { useStore } from "@/lib/store";
+import { personaliseCaptions, preferredTone, styleBrief } from "@/lib/creatorDna";
 import { Check, Copy, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import clsx from "clsx";
@@ -35,7 +37,6 @@ export function ThumbCard({ hue, frame, text, template, cutout = true, badge, cl
 // Shared with POST /api/v1/thumbnails/score (BACKEND-SLOT(thumb-score)): one heuristic, same numbers in browser and server.
 export { clickReadiness } from "@/lib/thumbScore";
 import { clickReadiness } from "@/lib/thumbScore";
-
 /* ───────────── Thumbnail modal ───────────── */
 export function ThumbnailModal({ open, onClose, project, onUse }: { open: boolean; onClose: () => void; project: Project; onUse: (t: ThumbSpec) => void }) {
   const frames = Array.from({ length: 6 }, (_, i) => ({ i, t: +((totalDur(project.timeline) / 6) * i + 0.5).toFixed(1), face: [92, 71, 84, 63, 88, 77][i], sharp: [88, 80, 91, 70, 85, 82][i] }));
@@ -52,21 +53,21 @@ export function ThumbnailModal({ open, onClose, project, onUse }: { open: boolea
   }, [cutout]);
 
   const r = clickReadiness({ text, frameFace: frames[frame].face, cutout: cutout === "done" || !!project.thumb, template });
-  const steps = ["Frame", "Cutout", "Template", "Text"];
+  const steps = ["Pick a frame", "Cut out", "Style", "Words"];
   const dur = fmtTime(totalDur(project.timeline));
   const showCut = cutout === "done" || !!project.thumb;
   return (
     <Overlay open={open} onClose={onClose} full labelledBy="th-h">
       <div className="mx-auto grid max-w-6xl gap-8 px-5 pb-16 pt-20 md:px-10 lg:grid-cols-5">
         <div className="lg:col-span-3">
-          <h2 id="th-h" className="t-h1">Thumbnail</h2>
+          <h2 id="th-h" className="t-h1">Make a thumbnail</h2>
           <ol className="mt-6 flex gap-2" aria-label="Steps">
             {steps.map((s, i) => (<li key={s}><button onClick={() => setStep(i)} aria-current={step === i} className={clsx("chip px-4 py-1.5", step === i && "border-brand bg-brand text-brand-ink", i < step && "border-ok text-ok")}>{i < step && <Check size={12} />}{i + 1}. {s}</button></li>))}
           </ol>
           <div className="mt-6">
             {step === 0 && (
               <div>
-                <p className="mb-3 text-sm text-muted">Frames mined from your own video (every 0.5 s, scored for face, eyes, sharpness). Real frames keep the click honest.</p>
+                <p className="mb-3 text-sm text-muted">We picked the sharpest, most expressive moments from your own video. Real frames keep the click honest.</p>
                 <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {frames.map((f) => (
                     <li key={f.i}>
@@ -81,7 +82,7 @@ export function ThumbnailModal({ open, onClose, project, onUse }: { open: boolea
             )}
             {step === 1 && (
               <div className="grid gap-4">
-                <p className="text-sm text-muted">Cut out the subject in the browser (no upload). The background stays a graded still from the same video; we never generate the face.</p>
+                <p className="text-sm text-muted">We lift you out of the frame right here on your device. The background stays a still from your video, and we never invent your face.</p>
                 <div className="relative max-w-xl overflow-hidden rounded-2xl">
                   <ThumbCard hue={project.hue} frame={frame} text="" template="blur" cutout={cutout === "done"} />
                   {cutout === "working" && <motion.div className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-brand/60 to-transparent" initial={{ left: "-33%" }} animate={{ left: "100%" }} transition={{ repeat: Infinity, duration: 0.9, ease: "linear" }} />}
@@ -91,7 +92,7 @@ export function ThumbnailModal({ open, onClose, project, onUse }: { open: boolea
             )}
             {step === 2 && (
               <div>
-                <p className="mb-3 text-sm text-muted">Brand-kit templates keep ~80% fixed (font, colour, logo corner) and vary ~20% per video.</p>
+                <p className="mb-3 text-sm text-muted">Pick a look. Your fonts, colours and logo stay the same so people start to recognise you.</p>
                 <ul className="grid gap-3 sm:grid-cols-3">
                   {(["brand", "blur", "bold"] as const).map((t) => (
                     <li key={t}><button onClick={() => setTemplate(t)} aria-pressed={template === t} className={clsx("block w-full overflow-hidden rounded-xl border-2", template === t ? "border-brand" : "border-transparent")}>
@@ -102,7 +103,7 @@ export function ThumbnailModal({ open, onClose, project, onUse }: { open: boolea
             )}
             {step === 3 && (
               <div className="grid gap-4">
-                <label htmlFor="th-text" className="t-label text-muted">Overlay text (3–4 words works best)</label>
+                <label htmlFor="th-text" className="t-label text-muted">Words on the thumbnail (3–4 words works best)</label>
                 <input id="th-text" className="input" value={text} onChange={(e) => setText(e.target.value.toUpperCase())} maxLength={40} />
                 <div className="flex flex-wrap gap-2">{captionsFx.thumbText.map((t) => <button key={t} className="chip px-3 py-1.5 hover:bg-sunken" onClick={() => setText(t)}><Sparkles size={12} />{t}</button>)}</div>
               </div>
@@ -118,14 +119,14 @@ export function ThumbnailModal({ open, onClose, project, onUse }: { open: boolea
           <div className="sticky top-6 grid gap-5">
             <ThumbCard hue={project.hue} frame={frame} text={text} template={template} cutout={showCut} badge={dur} className="rounded-2xl border border-line" />
             <div className="card p-5">
-              <div className="flex items-center justify-between"><span className="t-label text-muted">Click-readiness <span className="normal-case">(heuristic)</span></span><span className="font-display text-3xl">{r.score}</span></div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-sunken" role="meter" aria-valuenow={r.score} aria-valuemin={0} aria-valuemax={100} aria-label="Click-readiness">
+              <div className="flex items-center justify-between"><span className="t-label text-muted">Click appeal <span className="normal-case">(our estimate)</span></span><span className="font-display text-3xl">{r.score}</span></div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-sunken" role="meter" aria-valuenow={r.score} aria-valuemin={0} aria-valuemax={100} aria-label="Click appeal">
                 <motion.div className={clsx("h-full rounded-full", r.score >= 80 ? "bg-ok" : r.score >= 60 ? "bg-warn" : "bg-bad")} animate={{ width: `${r.score}%` }} />
               </div>
               <ul className="mt-4 grid gap-1.5 text-xs">{r.checks.map((c) => <li key={c.id} className={c.pass ? "text-muted" : "text-warn"}>{c.pass ? "✓" : "!"} {c.tip}</li>)}</ul>
             </div>
             <div className="card p-5">
-              <p className="t-label mb-3 text-muted">Mobile feed · 120 px</p>
+              <p className="t-label mb-3 text-muted">How it looks on a phone</p>
               <div className="flex gap-4">
                 <div className="rounded-lg bg-bg p-2"><div className="w-[120px]"><ThumbCard hue={project.hue} frame={frame} text={text} template={template} cutout={showCut} badge={dur} className="rounded-md" /></div></div>
                 <div className="rounded-lg bg-text p-2"><div className="w-[120px]"><ThumbCard hue={project.hue} frame={frame} text={text} template={template} cutout={showCut} badge={dur} className="rounded-md" /></div></div>
@@ -142,7 +143,8 @@ export function ThumbnailModal({ open, onClose, project, onUse }: { open: boolea
 
 /* ───────────── Captions drawer ───────────── */
 export function CaptionsDrawer({ open, onClose, project, onUse }: { open: boolean; onClose: () => void; project: Project; onUse: (c: NonNullable<Project["caption"]>) => void }) {
-  const [tone, setTone] = useState("witty");
+  const dna = useStore((s) => s.creatorDNA);
+  const [tone, setTone] = useState<string>(() => preferredTone(useStore.getState().creatorDNA));
   const [platform, setPlatform] = useState("ig_reel");
   const [opts, setOpts] = useState<CaptionOption[] | null>(null);
   const [source, setSource] = useState<"live" | "demo">("demo");
@@ -153,9 +155,9 @@ export function CaptionsDrawer({ open, onClose, project, onUse }: { open: boolea
     if (!open) return;
     let alive = true;
     setOpts(null);
-    captionService.suggest({ tone, platform, topic: project.title }).then((r) => { if (alive) { setOpts(r.options); setSource(r.source); } });
+    captionService.suggest({ tone, platform, topic: project.title, style: styleBrief(dna) }).then((r) => { if (alive) { setOpts(personaliseCaptions(r.options, dna)); setSource(r.source); } });
     return () => { alive = false; };
-  }, [open, tone, platform, project.title]);
+  }, [open, tone, platform, project.title, dna]);
 
   const limit = platform === "x" ? 280 : platform === "linkedin" ? 3000 : 2200;
   const copy = (id: string, text: string) => { navigator.clipboard?.writeText(text).catch(() => undefined); setCopied(id); setTimeout(() => setCopied(null), 1400); };
@@ -163,15 +165,16 @@ export function CaptionsDrawer({ open, onClose, project, onUse }: { open: boolea
   return (
     <Overlay open={open} onClose={onClose} labelledBy="cap-h" width="max-w-lg">
       <div className="p-6 pt-20 md:p-8 md:pt-20">
-        <h2 id="cap-h" className="t-h2">Suggest captions</h2>
+        <h2 id="cap-h" className="t-h2">Captions</h2>
+        <p className="mt-1 text-sm text-muted">Choose a style, then pick the one you like. Matched to your Creator DNA.</p>
         <div className="mt-5 flex flex-wrap gap-2" role="radiogroup" aria-label="Tone">
-          {captionsFx.tones.map((t) => <button key={t} role="radio" aria-checked={tone === t} onClick={() => setTone(t)} className={clsx("chip px-4 py-1.5 text-sm capitalize", tone === t && "border-brand bg-brand text-brand-ink")}>{t}</button>)}
+          {captionsFx.tones.map((t) => <button key={t} role="radio" aria-checked={tone === t} onClick={() => setTone(t)} className={clsx("chip px-4 py-1.5 text-sm capitalize", tone === t && "border-brand bg-brand text-brand-ink")}>{t === "pro" ? "professional" : t}</button>)}
         </div>
-        <label className="t-label mt-5 block text-muted" htmlFor="cap-pl">Platform</label>
+        <label className="t-label mt-5 block text-muted" htmlFor="cap-pl">Where it’s going</label>
         <select id="cap-pl" className="input mt-2" value={platform} onChange={(e) => setPlatform(e.target.value)}>
           <option value="ig_reel">Instagram Reel</option><option value="yt_short">YouTube Short</option><option value="linkedin">LinkedIn</option><option value="x">X</option>
         </select>
-        <div className="mt-6 flex items-center justify-between"><h3 className="t-label text-muted">3 options</h3>{opts && <Badge tone={source === "live" ? "brand" : "muted"}>{source === "live" ? "AI · live" : "AI · sample"}</Badge>}</div>
+        <div className="mt-6 flex items-center justify-between"><h3 className="t-label text-muted">Pick one</h3>{opts && <Badge tone={source === "live" ? "brand" : "muted"}>Suggested by CreatorAI</Badge>}</div>
         <ul className="mt-3 grid gap-3" aria-live="polite">
           {!opts && [0, 1, 2].map((i) => <li key={i}><Skeleton className="h-28" /></li>)}
           {opts?.map((o) => {
@@ -180,7 +183,7 @@ export function CaptionsDrawer({ open, onClose, project, onUse }: { open: boolea
             return (
               <motion.li key={o.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={clsx("card p-4", on && "border-brand")}>
                 <p className="text-sm leading-relaxed">{o.caption}</p>
-                <p className="mt-2 text-xs text-muted">CTA: {o.cta}</p>
+                <p className="mt-2 text-xs text-muted">Ending line: {o.cta}</p>
                 <div className="mt-3 flex items-center justify-between gap-2">
                   <span className={clsx("text-xs", o.caption.length > limit ? "text-bad" : "text-muted")}>{o.caption.length}/{limit}</span>
                   <div className="flex gap-2">
@@ -194,7 +197,7 @@ export function CaptionsDrawer({ open, onClose, project, onUse }: { open: boolea
             );
           })}
         </ul>
-        <h3 className="t-label mt-8 text-muted">Hook lines</h3>
+        <h3 className="t-label mt-8 text-muted">Opening ideas</h3>
         <ul className="mt-3 grid gap-1.5">{captionsFx.hooks.slice(0, 3).map((h) => <li key={h.text} className="flex items-center justify-between rounded-xl border border-line px-3 py-2 text-sm"><span>{h.text}</span><span className="chip py-0.5">{h.style} · {h.score}</span></li>)}</ul>
         <h3 className="t-label mt-8 text-muted">Hashtags</h3>
         {(["niche", "broad", "trending"] as const).map((k) => (

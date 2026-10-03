@@ -1,4 +1,5 @@
 "use client";
+import { ideaService } from "@/lib/services";
 import { motion } from "framer-motion";
 import { ArrowUpRight, Grid2x2, List, Pause, Play, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -9,7 +10,6 @@ import home from "@/fixtures/home.json";
 import { Badge, Count, Reveal, Sparkline } from "@/components/ui/bits";
 import { Collabs } from "./Collabs";
 import { useStore } from "@/lib/store";
-import { ideaService } from "@/lib/services";
 
 const riskTone = { low: "ok", medium: "warn", high: "bad" } as const;
 const riskLabel = { low: "Low claim risk", medium: "Check license", high: "High claim risk" } as const;

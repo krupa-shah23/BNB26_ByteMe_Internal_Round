@@ -45,3 +45,18 @@ export const relTime = (iso: string) => {
   return `${Math.floor(d / 86400)} d ago`;
 };
 export const absTime = (iso: string) => new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
+/** Creator-facing name: drops "Quick edit —", the file extension and camera/WhatsApp timestamps. */
+export function friendlyTitle(raw: string) {
+  let t = raw.replace(/^Quick edit\s*[—-]\s*/i, "").replace(/\.(mp4|mov|mkv|webm|m4v|avi)$/i, "");
+  t = t.replace(/[\s_-]*\d{4}-\d{2}-\d{2}.*$/, "").replace(/[_]+/g, " ").trim();
+  return t || "Untitled video";
+}
+
+const SEGMENT_NAMES: Record<string, string> = { hook: "Opening", cta: "Ending", demo: "Main point", explain: "Main point", story: "Main point", quote: "Quote", punch: "Punchline", photo: "Photo" };
+/** Plain-language name for a timeline section. */
+export function segmentName(kind: string, index: number, count: number) {
+  if (index === 0) return "Opening";
+  if (index === count - 1 && count > 1) return "Ending";
+  return SEGMENT_NAMES[kind] ?? kind.charAt(0).toUpperCase() + kind.slice(1);
+}

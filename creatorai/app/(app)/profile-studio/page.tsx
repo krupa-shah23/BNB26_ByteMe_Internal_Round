@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { Reveal } from "@/components/ui/bits";
-import { useStore } from "@/lib/store";
+import { CreatorDNA } from "@/components/profile/CreatorDNA";
 import { bioService } from "@/lib/services";
+import { useStore } from "@/lib/store";
 
 const token = (n: string) => `rgb(${getComputedStyle(document.documentElement).getPropertyValue(`--${n}`).trim().split(" ").join(" ")})`;
 const LIMITS = { Instagram: 150, YouTube: 1000, LinkedIn: 220, X: 160 } as const;
@@ -106,7 +107,9 @@ function BrandKit() {
 export default function ProfileStudio() {
   return (
     <div className="mx-auto grid max-w-[1100px] gap-6">
-      <Reveal><Link href="/dashboard" className="t-label text-muted hover:text-text">← Dashboard</Link><h1 className="t-h1 mt-2">Profile Studio</h1></Reveal>
+      <Reveal><Link href="/dashboard" className="text-sm text-muted hover:text-text">← Dashboard</Link><h1 className="sr-only">Profile Studio</h1></Reveal>
+      <CreatorDNA />
+      <h2 className="mt-6 font-display text-3xl tracking-tight">Your profile</h2>
       <PfpEditor /><BioGen /><BrandKit />
     </div>
   );

@@ -18,6 +18,7 @@ const config: Config = {
         "brand-ink": token("brand-ink"),
         "brand-2": token("brand-2"),
         accent: token("accent"),
+        tan: token("tan"),
         ok: token("ok"),
         warn: token("warn"),
         bad: token("bad"),

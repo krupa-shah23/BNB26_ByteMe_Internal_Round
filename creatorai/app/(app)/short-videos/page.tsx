@@ -1,7 +1,6 @@
-import { Suspense } from "react";
-import { UploadWorkspace } from "@/components/workspace/UploadWorkspace";
+import { ShortsLanding } from "@/components/short/ShortsLanding";
 
 export const metadata = { title: "Short Videos — CreatorAi" };
 export default function Page() {
-  return <Suspense><UploadWorkspace kind="short" /></Suspense>;
+  return <ShortsLanding />;
 }

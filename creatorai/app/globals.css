@@ -17,6 +17,7 @@
   --warn: 161 72 8;
   --bad: 185 28 28;
   --shadow: 0 10px 40px rgb(20 20 30 / 0.08);
+  --tan: 168 155 107;
   --grain: 0.06;
   color-scheme: light;
 }
@@ -35,6 +36,7 @@
   --warn: 251 191 36;
   --bad: 248 113 113;
   --shadow: 0 10px 40px rgb(0 0 0 / 0.5);
+  --tan: 168 155 107;
   --grain: 0.09;
   color-scheme: dark;
 }
@@ -111,3 +113,32 @@ body {
   .card { @apply rounded-2xl border border-line bg-surface; }
   .input { @apply w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm placeholder:text-muted focus:border-brand; }
 }
+
+/* Short Videos palette: cream, ink, deep green, lime, pale teal, tan */
+.sv-theme {
+  --bg: 248 245 238; --surface: 252 250 245; --sunken: 238 234 222;
+  --text: 14 14 14; --muted: 96 94 84; --line: 218 213 196;
+  --brand: 11 93 79; --brand-ink: 248 245 238; --brand-2: 181 217 214; --accent: 217 229 107; --tan: 168 155 107;
+  --shadow: 0 10px 40px rgb(11 60 50 / 0.08);
+}
+[data-theme="dark"] .sv-theme {
+  --bg: 11 20 18; --surface: 17 30 27; --sunken: 24 40 36;
+  --text: 244 241 230; --muted: 160 168 158; --line: 40 58 52;
+  --brand: 217 229 107; --brand-ink: 11 40 34; --brand-2: 90 160 150; --accent: 217 229 107; --tan: 168 155 107;
+  --shadow: 0 10px 40px rgb(0 0 0 / 0.5);
+}
+@property --ang { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@keyframes spin-ang { to { --ang: 360deg; } }
+/* subtle animated border for the search pill */
+.glow-border {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(rgb(var(--bg)), rgb(var(--bg))) padding-box,
+    conic-gradient(from var(--ang), rgb(var(--line)) 0 62%, rgb(var(--brand) / 0.7) 80%, rgb(var(--accent)) 92%, rgb(var(--line)) 100%) border-box;
+  animation: spin-ang 7s linear infinite;
+  box-shadow: 0 0 14px -4px rgb(var(--accent) / 0.35);
+}
+@media (prefers-reduced-motion: reduce) { .glow-border { animation: none; } }
+@keyframes orbit-bob { 0%,100% { transform: translateY(0) rotate(var(--r,0deg)); } 50% { transform: translateY(-10px) rotate(calc(var(--r,0deg) + 4deg)); } }
+.orbit-bob { animation: orbit-bob var(--d,6s) ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .orbit-bob { animation: none; } }

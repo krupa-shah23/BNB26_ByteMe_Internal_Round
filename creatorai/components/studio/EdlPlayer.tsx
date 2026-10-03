@@ -10,6 +10,7 @@ export const FPS = 30;
 export default function EdlPlayer({ props, controls = true, playerRef }: { props: EdlProps; controls?: boolean; playerRef?: MutableRefObject<PlayerRef | null> }) {
   const d = aspectDims[props.aspect];
   const frames = useMemo(() => Math.max(FPS, Math.ceil(totalDur(props.timeline) * FPS)), [props.timeline]);
+
   return (
     <Player ref={playerRef} component={EdlComposition} inputProps={props} durationInFrames={frames} compositionWidth={d.w} compositionHeight={d.h} fps={FPS}
       controls={controls} loop clickToPlay style={{ width: "100%", height: "100%" }} acknowledgeRemotionLicense />
