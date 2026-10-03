@@ -19,6 +19,7 @@ const config: Config = {
         "brand-2": token("brand-2"),
         accent: token("accent"),
         tan: token("tan"),
+        sage: token("sage"),
         ok: token("ok"),
         warn: token("warn"),
         bad: token("bad"),

@@ -12,7 +12,7 @@ import { DemandCompact } from "@/components/audience/DemandEngine";
 
 type Id = "collabs" | "library" | "overview" | "trends";
 const CARDS: { id: Id; title: string; blurb: string; glyph: GlyphName; tone: string }[] = [
-  { id: "overview", title: "Overview", blurb: "Your channel at a glance", glyph: "orb", tone: "bg-tan/40 text-text" },
+  { id: "overview", title: "Overview", blurb: "Your channel at a glance", glyph: "orb", tone: "bg-sage text-text" },
   { id: "library", title: "Library", blurb: "Your files and unused clips", glyph: "shorts", tone: "bg-brand-2 text-black" },
   { id: "collabs", title: "Collabs", blurb: "Who you’ve reached out to", glyph: "stories", tone: "bg-accent text-black" },
   { id: "trends", title: "Trends", blurb: "What’s rising right now", glyph: "diamond", tone: "bg-brand text-brand-ink" },

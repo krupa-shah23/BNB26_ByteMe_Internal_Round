@@ -9,7 +9,7 @@ import { tickOf, type Tick } from "@/lib/messaging";
 import { useStore } from "@/lib/store";
 import type { Msg } from "@/lib/types";
 
-const TONES = ["bg-accent text-black", "bg-brand-2 text-black", "bg-tan/40 text-text", "bg-brand text-brand-ink"];
+const TONES = ["bg-accent text-black", "bg-brand-2 text-black", "bg-sage text-text", "bg-brand text-brand-ink"];
 const toneOf = (id: string) => TONES[(+id.replace(/\D/g, "") || 0) % TONES.length];
 const byId = (id: string) => allCreators.find((c) => c.id === id) as Creator;
 const clock = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" });

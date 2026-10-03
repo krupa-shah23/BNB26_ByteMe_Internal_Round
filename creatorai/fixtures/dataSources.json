@@ -1,0 +1,9 @@
+{
+  "platforms": [
+    { "id": "youtube", "name": "YouTube", "analytics": "YouTube Analytics API · reports.query", "metrics": "views, watch time, subscribers gained/lost, retention curve", "scope": "yt-analytics.readonly", "earnings": "api", "earningsHow": "estimatedRevenue via the monetary scope (YouTube Partner Program channels only)" },
+    { "id": "instagram", "name": "Instagram", "analytics": "Instagram Graph API · /insights", "metrics": "reach, views, shares, saves, profile visits", "scope": "instagram_manage_insights (Business/Creator accounts)", "earnings": "manual", "earningsHow": "No public revenue API: import a payout CSV or log brand deals" },
+    { "id": "facebook", "name": "Facebook", "analytics": "Meta Graph API · page & video insights", "metrics": "impressions, engagements, video views, average watch time", "scope": "read_insights (Pages / Professional mode)", "earnings": "manual", "earningsHow": "Payout API is partner-only: import a payout CSV" },
+    { "id": "linkedin", "name": "LinkedIn", "analytics": "Community Management API · share statistics", "metrics": "unique impressions, clicks, reactions, shares", "scope": "r_member_social / r_member_socialAnalytics (stricter review)", "earnings": "manual", "earningsHow": "No creator revenue: log sponsorships, gigs and newsletter income" },
+    { "id": "x", "name": "X", "analytics": "X API v2 · public/organic metrics", "metrics": "impressions, likes, reposts, replies, link clicks", "scope": "paid API tier (rate-limited)", "earnings": "manual", "earningsHow": "No public endpoint: log payout disbursements" }
+  ]
+}

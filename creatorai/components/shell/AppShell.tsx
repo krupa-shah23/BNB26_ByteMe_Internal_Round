@@ -187,9 +187,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const minimalHeader = (
     <header className="relative z-30 mx-auto flex h-20 max-w-[1500px] items-center justify-between gap-4 px-5 md:px-10">
-      <div className="flex min-w-0 items-center gap-4 xl:gap-6">
-        <Link href="/" className="font-display text-[1.7rem] tracking-tight" aria-label="CreatorAi home">Creator<span className="text-brand">Ai</span></Link>
-        <button onClick={() => setPalette(true)} className="glow-border flex h-10 items-center gap-2 rounded-pill px-4 text-[0.95rem] text-muted hover:text-text md:w-56 xl:w-80" aria-label="Search (Ctrl K)"><Search size={16} /><span className="hidden md:inline">Search</span><kbd className="ml-auto hidden rounded border border-line px-1.5 text-[10px] md:inline">⌘K</kbd></button>
+      <div className="flex min-w-0 items-center">
+        <Link href="/" className={clsx("mr-4 shrink-0 font-display text-[1.7rem] tracking-tight xl:mr-6", railOpen && "lg:mr-0 xl:mr-0 lg:min-w-[calc(17rem_-_2.5rem_-_max(0px,(100vw_-_1500px)/2))]")} aria-label="CreatorAi home">Creator<span className="text-brand">Ai</span></Link>
+        <button onClick={() => setPalette(true)} className="glow-border flex h-10 items-center gap-2 rounded-pill px-4 text-[0.95rem] text-muted hover:text-text md:w-56 xl:w-80" aria-label="Search (Ctrl K)"><Search size={16} /><span className="hidden md:inline">Search</span></button>
       </div>
       <div className="flex items-center gap-3 xl:gap-4">
         <RubberSegment size="sm" label="Calendar" value={null} onChange={() => setCal(true)} items={[{ id: "cal", label: <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><CalendarDays size={15} /><span className="hidden md:inline">Calendar</span></span> }]} />

@@ -118,13 +118,13 @@ body {
 .sv-theme {
   --bg: 248 245 238; --surface: 252 250 245; --sunken: 238 234 222;
   --text: 14 14 14; --muted: 96 94 84; --line: 218 213 196;
-  --brand: 11 93 79; --brand-ink: 248 245 238; --brand-2: 181 217 214; --accent: 217 229 107; --tan: 168 155 107;
+  --brand: 11 93 79; --brand-ink: 248 245 238; --brand-2: 181 217 214; --accent: 217 229 107; --tan: 168 155 107; --sage: 163 201 170;
   --shadow: 0 10px 40px rgb(11 60 50 / 0.08);
 }
 [data-theme="dark"] .sv-theme {
   --bg: 11 20 18; --surface: 17 30 27; --sunken: 24 40 36;
   --text: 244 241 230; --muted: 160 168 158; --line: 40 58 52;
-  --brand: 217 229 107; --brand-ink: 11 40 34; --brand-2: 90 160 150; --accent: 217 229 107; --tan: 168 155 107;
+  --brand: 217 229 107; --brand-ink: 11 40 34; --brand-2: 90 160 150; --accent: 217 229 107; --tan: 168 155 107; --sage: 62 118 98;
   --shadow: 0 10px 40px rgb(0 0 0 / 0.5);
 }
 @property --ang { syntax: "<angle>"; inherits: false; initial-value: 0deg; }

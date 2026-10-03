@@ -9,7 +9,7 @@ import { Glyph, type GlyphName } from "./Glyphs";
 const FORMATS: { href: string; title: string; platform: string; glyph: GlyphName; tone: string }[] = [
   { href: "/short-videos/reels", title: "Reels", platform: "Instagram", glyph: "reels", tone: "bg-accent text-black" },
   { href: "/short-videos/shorts", title: "Shorts", platform: "YouTube", glyph: "shorts", tone: "bg-brand-2 text-black" },
-  { href: "/short-videos/stories", title: "Stories", platform: "Instagram", glyph: "stories", tone: "bg-tan/35 text-text" },
+  { href: "/short-videos/stories", title: "Stories", platform: "Instagram", glyph: "stories", tone: "bg-sage text-text" },
 ];
 
 export function FormatCard({ href, title, platform, glyph, tone, wide }: (typeof FORMATS)[number] & { wide?: boolean }) {

@@ -7,7 +7,7 @@ import { Glyph, type GlyphName } from "./Glyphs";
 const TYPES = [
   { href: "/videos/podcast", title: "Podcast", platform: "Long-form conversation", glyph: "podcast" as GlyphName, tone: "bg-accent text-black" },
   { href: "/videos/lecture", title: "Lecture", platform: "Teach and explain", glyph: "lecture" as GlyphName, tone: "bg-brand-2 text-black" },
-  { href: "/videos/vlog", title: "Vlog", platform: "Your day, your story", glyph: "vlog" as GlyphName, tone: "bg-tan/35 text-text" },
+  { href: "/videos/vlog", title: "Vlog", platform: "Your day, your story", glyph: "vlog" as GlyphName, tone: "bg-sage text-text" },
 ];
 
 const ORBIT: { g: GlyphName; x: string; y: string; r: string; d: string }[] = [

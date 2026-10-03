@@ -9,8 +9,8 @@ import { Badge, Poster } from "@/components/ui/bits";
 import { fireHearts } from "@/lib/hearts";
 import { useStore } from "@/lib/store";
 
-interface Creator { id: string; name: string; handle: string; niche: string; followers: number; topics: string[]; vec: number[] }
-const creators = creatorsFx.creators as Creator[];
+interface Creator { id: string; name: string; handle: string; niche: string; followers: number; topics: string[]; vec: number[]; bio?: string; city?: string; languages?: string[]; content?: string[]; platforms?: Record<string, string> }
+const creators = creatorsFx.creators as unknown as Creator[];
 const USER = { vec: [0.8, 0.3, 0.2, 0.8, 0.4, 0.7, 0.3, 0.4], topics: ["startup-india", "education", "comedy", "career"], followers: 48200 };
 
 const cosine = (a: number[], b: number[]) => {
