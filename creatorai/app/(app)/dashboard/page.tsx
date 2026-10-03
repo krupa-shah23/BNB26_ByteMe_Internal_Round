@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, IndianRupee, Lock, Sparkles, TrendingUp } from "lucide-react";
+import { Activity, ArrowLeft, ArrowRight, Bell, FilePlus2, IndianRupee, Lock, PenLine, Send, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { Suspense, useState } from "react";
 import clsx from "clsx";
@@ -9,13 +9,12 @@ import audience from "@/fixtures/audience.json";
 import { Badge, Count, Reveal, Skeleton, SlidingNav, useDemoDelay } from "@/components/ui/bits";
 import { ThumbCard } from "@/components/studio/Tools";
 import { DemandEngine } from "@/components/audience/DemandEngine";
-import { CreatorDNA } from "@/components/profile/CreatorDNA";
 import sources from "@/fixtures/dataSources.json";
 import { useSection } from "@/lib/useSection";
 import { fmtTime, totalDur } from "@/lib/projects";
 import { useStore, type Permissions } from "@/lib/store";
 
-const SECTIONS = ["hub", "analytics", "dna", "earnings"] as const;
+const SECTIONS = ["hub", "analytics", "activity", "earnings"] as const;
 type Section = (typeof SECTIONS)[number];
 const NAV = [{ id: "overview", label: "Overview" }, { id: "earnings", label: "Earnings" }, { id: "audience", label: "Audience" }, { id: "collabs", label: "Collab log" }] as { id: Section; label: string }[];
 
@@ -78,14 +77,14 @@ function Overview() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 className="t-h2">Content</h2>
         <div role="tablist" className="flex gap-2">{(["All", "Instagram", "YouTube"] as const).map((n) => <button key={n} role="tab" aria-selected={net === n} onClick={() => setNet(n)} className={clsx("chip px-4 py-1.5", net === n && "border-brand bg-brand text-brand-ink")}>{n}</button>)}</div></div>
       <div className="card overflow-x-auto">
-        <table className="w-full min-w-[980px] text-left text-sm">
-          <thead className="t-label text-muted"><tr className="border-b border-line">{["Thumbnail", "Title", "Platform", "Posted", "Views", "Reach", "Likes / Comments / Shares", "Followers gained (Est.)", "Earnings", "Link"].map((h) => <th key={h} scope="col" className="px-4 py-3 font-semibold">{h}</th>)}</tr></thead>
+        <table className="w-full min-w-[560px] text-left text-sm">
+          <thead className="t-label text-muted"><tr className="border-b border-line">{["Thumbnail", "Title", "Views", "Followers gained (Est.)"].map((h) => <th key={h} scope="col" className="px-4 py-3 font-semibold">{h}</th>)}</tr></thead>
           <tbody>
             {net !== "YouTube" && published.map((p) => (
               <motion.tr key={p.id} initial={{ opacity: 0, backgroundColor: "rgb(var(--brand) / .2)" }} animate={{ opacity: 1, backgroundColor: "rgb(var(--brand) / 0)" }} transition={{ duration: 2 }} className="border-b border-line">
                 <td className="w-32 p-3"><ThumbCard hue={p.hue} frame={p.thumb?.frame ?? 0} text={p.thumb?.text ?? ""} template={p.thumb?.template ?? "brand"} badge={fmtTime(totalDur(p.timeline))} className="rounded-md" /></td>
-                <td className="px-4 font-medium">{p.title} <Badge tone="brand">New</Badge></td><td className="px-4">{p.platforms.map((x) => x.startsWith("yt") ? "YouTube" : "Instagram")[0]}</td><td className="px-4">Just now</td>
-                <td className="px-4">{NA}</td><td className="px-4">{NA}</td><td className="px-4">{NA}</td><td className="px-4">{NA}</td><td className="px-4">{NA}</td><td className="px-4">—</td>
+                <td className="px-4 font-medium">{p.title} <Badge tone="brand">New</Badge><span className="mt-0.5 block text-xs font-normal text-muted">{p.platforms.map((x) => (x.startsWith("yt") ? "YouTube" : "Instagram"))[0]} · just now</span></td>
+                <td className="px-4">{NA}</td><td className="px-4">{NA}</td>
               </motion.tr>
             ))}
             {rows.map((r) => (
@@ -94,12 +93,7 @@ function Overview() {
           </tbody>
         </table>
       </div>
-      <p className="mt-3 text-xs text-muted">Est. = follower-count delta in the window after posting minus the pre-post trend; Instagram offers no per-post attribution. Instagram has no public revenue API, so earnings there are manual/CSV.</p>
 
-      <div className="mt-8 grid gap-4 md:grid-cols-3">
-        <div className="card p-5"><h3 className="t-label text-muted">Best times to post (IST)</h3><ul className="mt-3 grid gap-2 text-sm">{analytics.bestTimes.map((b) => <li key={b.day} className="flex justify-between"><span>{b.day}</span><b>{b.time}</b></li>)}</ul></div>
-        <div className="card p-5 md:col-span-2"><h3 className="t-label text-muted">Collabs</h3><ul className="mt-3 grid gap-2 text-sm">{analytics.collabLog.slice(0, 2).map((c) => <li key={c.id} className="flex justify-between gap-4"><span>{c.what} · {c.withWhom}</span><span className="text-ok">+{c.gained}</span></li>)}</ul></div>
-      </div>
     </>
   );
 }
@@ -109,17 +103,13 @@ function FragmentRow({ r, open, toggle, permissions, allow }: { r: (typeof analy
     <>
       <tr className="cursor-pointer border-b border-line hover:bg-sunken/60" onClick={toggle} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && toggle()} aria-expanded={open}>
         <td className="w-32 p-3"><ThumbCard hue={r.hue} frame={r.hue} text={r.title.split(" ").slice(0, 3).join(" ")} template="brand" className="rounded-md" /></td>
-        <td className="max-w-[240px] px-4 font-medium">{r.title}</td><td className="px-4">{r.platform} · {r.kind}</td><td className="px-4">{new Date(r.postedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</td>
+        <td className="max-w-[320px] px-4 font-medium">{r.title}<span className="mt-0.5 block text-xs font-normal text-muted">{r.platform} · {r.kind} · {new Date(r.postedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span></td>
         <td className="px-4 tabular-nums">{r.views.toLocaleString("en-IN")}</td>
-        <td className="px-4 tabular-nums">{permissions.reach ? (r.reach ? r.reach.toLocaleString("en-IN") : NA) : <button className="chip blur-[3px]" onClick={(e) => { e.stopPropagation(); allow("reach"); }} aria-label="Allow reach access">000,000</button>}</td>
-        <td className="px-4 tabular-nums">{r.likes.toLocaleString("en-IN")} / {r.comments} / {r.shares.toLocaleString("en-IN")}</td>
         <td className="px-4 tabular-nums">+{r.gained} <span className="text-xs text-muted">Est.</span></td>
-        <td className="px-4 tabular-nums">{permissions.earnings ? (r.earnings ? inr(r.earnings) : NA) : <button className="chip blur-[3px]" onClick={(e) => { e.stopPropagation(); allow("earnings"); }} aria-label="Allow earnings access">₹0,000</button>}</td>
-        <td className="px-4"><a href={r.link} onClick={(e) => e.stopPropagation()} className="text-brand underline">Open</a></td>
       </tr>
       <AnimatePresence>
         {open && (
-          <tr><td colSpan={10} className="p-0">
+          <tr><td colSpan={4} className="p-0">
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden bg-sunken/50">
               <div className="grid gap-6 p-6 md:grid-cols-[1fr_320px]">
                 <div><Badge tone="brand">Creator Intelligence</Badge><p className="mt-3 font-display text-2xl leading-tight">{r.insight.headline}</p><div className="mt-5"><HeatStrip data={r.insight.heat} /><div className="mt-1 flex justify-between text-[10px] text-muted"><span>0:00</span><span>retention + shares by section</span><span>end</span></div></div></div>
@@ -201,19 +191,11 @@ function Audience() {
           {segs.map((g, i) => { const len = (g.v / 100) * circ; const el = <circle key={i} cx="70" cy="70" r="52" fill="none" stroke={`rgb(var(--${g.c}))`} strokeWidth="18" strokeDasharray={`${len} ${circ - len}`} strokeDashoffset={-acc} />; acc += len; return el; })}
         </svg>
         <p className="mt-2 text-center text-sm text-muted">{s.positive}% positive · {s.neutral}% neutral · {s.negative}% negative</p></div>
-      <div className="card p-6 lg:col-span-2"><h2 className="t-label text-muted">Top questions</h2>
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2">{audience.faqs.map((f) => (
-          <li key={f.id} className="rounded-xl border border-line p-4"><p className="text-sm font-medium">{f.q}</p><p className="mt-1 text-xs text-muted">{f.count} similar comments</p>
-            <Link href="/short-videos" className="btn-ghost mt-3 w-full py-1.5 text-xs">Turn into content idea: {f.idea}</Link></li>))}</ul></div>
-      <div className="card p-6 lg:col-span-3"><h2 className="t-label text-muted">Content-gap map, what they ask vs what you've posted</h2>
-        <ul className="mt-4 grid gap-3">{audience.topics.map((t) => (
-          <li key={t.name} className="grid items-center gap-3 text-sm sm:grid-cols-[160px_1fr_90px]"><span>{t.name}</span>
-            <div className="relative h-3 overflow-hidden rounded-full bg-sunken"><motion.div className="h-full rounded-full bg-accent" initial={{ width: 0 }} animate={{ width: `${t.popularity}%` }} transition={{ duration: 0.8 }} /></div>
-            <span className={clsx("text-xs", t.posted < 5 && "font-semibold text-warn")}>{t.posted} posts{t.posted < 5 ? " · gap" : ""}</span></li>))}</ul></div>
+      <div className="min-w-0 lg:col-span-2"><DemandEngine /></div>
     </div>
   );
   const gated = permissions.audience ? body : <Locked what="audience insights" onAllow={() => setPermissions({ audience: true, comments: true, decided: true })}>{body}</Locked>;
-  return <><DemandEngine />{gated}</>;
+  return gated;
 }
 
 function CollabLog() {
@@ -225,7 +207,7 @@ function CollabLog() {
 
 const CARDS = [
   { id: "analytics", label: "Analytics", icon: TrendingUp, blurb: "See how your content is performing", cta: "View analytics", tone: "bg-brand-2 text-black" },
-  { id: "dna", label: "Creator DNA", icon: Sparkles, blurb: "Manage the style CreatorAI learns from you", cta: "Explore your DNA", tone: "bg-accent text-black" },
+  { id: "activity", label: "Activity", icon: Activity, blurb: "See your recent actions and updates", cta: "View activity", tone: "bg-accent text-black" },
   { id: "earnings", label: "Earnings", icon: IndianRupee, blurb: "Track your creator earnings and revenue", cta: "View earnings", tone: "bg-sage text-text" },
 ] as const;
 
@@ -287,6 +269,51 @@ function DataSources({ kind }: { kind: "analytics" | "earnings" }) {
   );
 }
 
+const ago = (iso: string) => {
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return "just now";
+  if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)} h ago`;
+  return `${Math.floor(s / 86400)} d ago`;
+};
+
+/** Recent actions and updates, newest first: generated / edited / published projects plus notifications (collab replies, reminders). */
+function ActivityFeed() {
+  const projects = useStore((s) => s.projects);
+  const notices = useStore((s) => s.notices);
+  type Row = { id: string; at: string; title: string; body: string; href?: string; icon: typeof Bell };
+  const rows: Row[] = [
+    ...projects.flatMap((p): Row[] => {
+      const href = `/studio/${p.id}`;
+      const out: Row[] = [{ id: `g-${p.id}`, at: p.createdAt, title: `Generated “${p.title}”`, body: `${p.type} created in Studio`, href, icon: FilePlus2 }];
+      if (p.status === "Published") out.push({ id: `p-${p.id}`, at: p.updatedAt, title: `Published “${p.title}”`, body: "Live on your connected platforms", href, icon: Send });
+      else if (p.updatedAt !== p.createdAt) out.push({ id: `e-${p.id}`, at: p.updatedAt, title: `Edited “${p.title}”`, body: `Status: ${p.status}`, href, icon: PenLine });
+      return out;
+    }),
+    ...notices.map((n): Row => ({ id: n.id, at: n.at, title: n.title, body: n.body, href: n.href, icon: Bell })),
+  ].sort((x, y) => +new Date(y.at) - +new Date(x.at)).slice(0, 30);
+  if (!rows.length) return <p className="card p-8 text-center text-sm text-muted">No activity yet. Create something in Short Videos or Videos.</p>;
+  return (
+    <ol className="grid gap-2" aria-label="Recent activity">
+      {rows.map((r) => {
+        const inner = (
+          <>
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sunken"><r.icon size={18} /></span>
+            <span className="min-w-0 flex-1"><span className="block truncate font-medium">{r.title}</span><span className="block truncate text-sm text-muted">{r.body}</span></span>
+            <time dateTime={r.at} className="shrink-0 text-xs text-muted">{ago(r.at)}</time>
+          </>
+        );
+        return (
+          <li key={r.id}>{r.href
+            ? <Link href={r.href} className="card flex items-center gap-4 px-4 py-3 transition-colors hover:bg-sunken">{inner}</Link>
+            : <div className="card flex items-center gap-4 px-4 py-3">{inner}</div>}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 function DashboardInner() {
   const [section] = useSection(SECTIONS, "hub");
   const ready = useDemoDelay(120);
@@ -297,7 +324,7 @@ function DashboardInner() {
           {section === "hub" && <Hub />}
           {section === "analytics" && <><Back title="Analytics" /><ConsentCard /><Overview /><div className="mt-10"><Audience /></div></>}
           {section === "earnings" && <><Back title="Earnings" /><ConsentCard /><Earnings /><DataSources kind="earnings" /></>}
-          {section === "dna" && <><Back title="Creator DNA" /><CreatorDNA /></>}
+          {section === "activity" && <><Back title="Activity" /><ActivityFeed /></>}
         </motion.div></AnimatePresence>
       )}
     </div>

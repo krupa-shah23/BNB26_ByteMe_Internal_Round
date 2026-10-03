@@ -27,7 +27,7 @@ export function rank(pref: number[], swiped: Record<string, string>) {
     const jac = inter / (new Set([...c.topics, ...USER.topics]).size);
     const closeness = 1 - Math.abs(band(c.followers) - band(USER.followers)) / 3;
     const score = 0.5 * cosine(c.vec, target) + 0.3 * jac + 0.2 * closeness;
-    return { c, score, overlap: Math.round(Math.min(0.97, score) * 100), shared: c.topics.filter((t) => USER.topics.includes(t)), why: [inter ? `${inter} shared topic${inter > 1 ? "s" : ""}` : "Fresh audience", band(c.followers) === band(USER.followers) ? "Similar size" : "Bigger reach", cosine(c.vec, target) > 0.9 ? "High audience overlap" : "Complementary audience"] };
+    return { c, score, overlap: Math.round(Math.max(0.08, Math.min(0.97, score)) * 100), shared: c.topics.filter((t) => USER.topics.includes(t)), why: [inter ? `${inter} shared topic${inter > 1 ? "s" : ""}` : "Fresh audience", band(c.followers) === band(USER.followers) ? "Similar size" : "Bigger reach", cosine(c.vec, target) > 0.9 ? "High audience overlap" : "Complementary audience"] };
   }).sort((a, b) => b.score - a.score);
 }
 

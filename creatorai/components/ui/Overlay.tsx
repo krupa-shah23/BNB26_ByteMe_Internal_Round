@@ -40,7 +40,7 @@ export function Overlay({ open, onClose, title, side = "right", width = "max-w-x
   return createPortal(
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[100]">
+        <div className="fixed inset-0 z-[100] sv-theme">
           <motion.div className="absolute inset-0 bg-text/40 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
           <motion.div
             ref={ref} role="dialog" aria-modal="true" aria-label={labelledBy ? undefined : title} aria-labelledby={labelledBy}
