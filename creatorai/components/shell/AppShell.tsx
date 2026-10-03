@@ -1,7 +1,7 @@
 "use client";
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, ChevronDown, Film, Home, LayoutDashboard, LogOut, Plus, Scissors, Search, Settings, Smartphone, UserCircle2 } from "lucide-react";
+import { Bell, CalendarDays, ChevronDown, Film, Home, LayoutDashboard, LogOut, Plus, Search, Settings, Smartphone, UserCircle2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,13 +14,15 @@ import { DemoPanel } from "./DemoPanel";
 import { relTime } from "@/lib/projects";
 
 const TABS = [
-  { href: "/", label: "Home", icon: Home },
+  { href: "/home", label: "Home", icon: Home },
   { href: "/short-videos", label: "Short Videos", icon: Smartphone },
-  { href: "/videos", label: "Videos", icon: Film },
-  { href: "/studio", label: "Studio", icon: Scissors },
+  { href: "/video-studio", label: "Video Studio", icon: Film },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/calendar", label: "Calendar", icon: CalendarDays },
 ];
-const isActive = (path: string, href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+// the editor/history/review routes belong to the Video Studio tab
+const isActive = (path: string, href: string) =>
+  href === "/video-studio" ? ["/video-studio", "/studio", "/review"].some((p) => path.startsWith(p)) : path.startsWith(href);
 
 function beep() {
   try {
@@ -115,14 +117,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useAlarms(hydrated && loggedIn);
 
-  // auth gate
-  useEffect(() => { if (hydrated && !loggedIn) router.replace("/welcome"); }, [hydrated, loggedIn, router]);
+  // demo mode: every app URL works when opened directly — start the demo-creator session on first load
+  useEffect(() => { if (hydrated && !useStore.getState().loggedIn) useStore.getState().login(); }, [hydrated]);
 
   // cross-tab logout
   useEffect(() => {
     if (typeof BroadcastChannel === "undefined") return;
     bc.current = new BroadcastChannel("creatorai-auth");
-    bc.current.onmessage = (e) => { if (e.data === "logout") { useStore.setState({ loggedIn: false }); router.replace("/welcome"); } };
+    bc.current.onmessage = (e) => { if (e.data === "logout") { useStore.setState({ loggedIn: false }); router.replace("/"); } };
     return () => bc.current?.close();
   }, [router]);
 
@@ -131,7 +133,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     qc.clear();
     bc.current?.postMessage("logout");
     setConfirmOut(false);
-    router.push("/welcome");
+    router.push("/");
   }, [qc, router]);
   const requestLogout = () => (useStore.getState().dirty ? setConfirmOut(true) : doLogout());
 
@@ -157,7 +159,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* left rail */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[84px] flex-col items-center justify-between border-r border-line bg-bg py-5 lg:flex xl:w-60 xl:items-stretch xl:px-4">
         <div>
-          <Link href="/" className="mb-8 flex items-center justify-center font-display text-2xl xl:justify-start xl:px-3" aria-label="CreatorAi">
+          <Link href="/home" className="mb-8 flex items-center justify-center font-display text-2xl xl:justify-start xl:px-3" aria-label="CreatorAi">
             <span className="xl:hidden">C<span className="text-brand">A</span></span><span className="hidden xl:inline">Creator<span className="text-brand">Ai</span></span>
           </Link>
           <nav aria-label="Main" className="grid gap-1">

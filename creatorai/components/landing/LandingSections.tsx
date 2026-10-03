@@ -65,7 +65,7 @@ export function SelectedWork({ onEnter }: { onEnter: Enter }) {
         <p className="hidden max-w-xs text-sm text-muted md:block">Five prepared sample sets from the demo. Tap one to open the upload flow.</p>
       </div>
       <Marquee duration={70} gap="gap-6" label="Selected work" className="px-5">
-        {groups.map((g) => <WorkCard key={g.id} g={g} onOpen={() => onEnter(g.format === "short" ? "/short-videos" : "/videos")} />)}
+        {groups.map((g) => <WorkCard key={g.id} g={g} onOpen={() => onEnter(g.format === "short" ? "/short-videos" : "/video-studio")} />)}
       </Marquee>
     </section>
   );
@@ -113,9 +113,9 @@ export function Counters() {
 }
 
 const NICHES = [
-  { l: "Podcasts", q: "/videos?type=Podcast" }, { l: "Lectures", q: "/videos?type=Lecture" }, { l: "Vlogs", q: "/videos?type=Vlog" },
-  { l: "Comedy & Memes", q: "/short-videos?type=Comedy" }, { l: "Tech Tutorials", q: "/videos?type=Tutorial" }, { l: "Business & Finance", q: "/short-videos?type=Business" },
-  { l: "Education", q: "/videos?type=Lecture" }, { l: "Travel", q: "/videos?type=Vlog" },
+  { l: "Podcasts", q: "/video-studio?type=Podcast" }, { l: "Lectures", q: "/video-studio?type=Lecture" }, { l: "Vlogs", q: "/video-studio?type=Vlog" },
+  { l: "Comedy & Memes", q: "/short-videos?type=Comedy" }, { l: "Tech Tutorials", q: "/video-studio?type=Tutorial" }, { l: "Business & Finance", q: "/short-videos?type=Business" },
+  { l: "Education", q: "/video-studio?type=Lecture" }, { l: "Travel", q: "/video-studio?type=Vlog" },
 ];
 export function Niches({ onEnter }: { onEnter: Enter }) {
   return (
@@ -133,7 +133,7 @@ export function Niches({ onEnter }: { onEnter: Enter }) {
 export function Services({ onEnter }: { onEnter: Enter }) {
   const rows = [
     { l: "Short Videos", href: "/short-videos", sub: "Reels · Shorts · Stories · Ads", seed: 1 },
-    { l: "Videos", href: "/videos", sub: "Podcasts · Lectures · Vlogs", seed: 3 },
+    { l: "Videos", href: "/video-studio", sub: "Podcasts · Lectures · Vlogs", seed: 3 },
   ];
   const [hover, setHover] = useState<number | null>(null);
   const x = useMotionValue(0), y = useMotionValue(0);

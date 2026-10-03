@@ -129,7 +129,7 @@ function FragmentRow({ r, open, toggle, permissions, allow }: { r: (typeof analy
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden bg-sunken/50">
               <div className="grid gap-6 p-6 md:grid-cols-[1fr_320px]">
                 <div><Badge tone="brand">Creator Intelligence</Badge><p className="mt-3 font-display text-2xl leading-tight">{r.insight.headline}</p><div className="mt-5"><HeatStrip data={r.insight.heat} /><div className="mt-1 flex justify-between text-[10px] text-muted"><span>0:00</span><span>retention + shares by section</span><span>end</span></div></div></div>
-                <div className="text-sm"><p className="t-label text-muted">Top topic</p><p className="mt-1">{r.insight.topTopic}</p><p className="t-label mt-4 text-muted">Next actions</p><ul className="mt-1 grid gap-1">{r.insight.nextActions.map((a) => <li key={a}>→ {a}</li>)}</ul><Link href="/?section=library" className="mt-3 inline-block text-xs text-brand underline">3 unused clips in your Library</Link></div>
+                <div className="text-sm"><p className="t-label text-muted">Top topic</p><p className="mt-1">{r.insight.topTopic}</p><p className="t-label mt-4 text-muted">Next actions</p><ul className="mt-1 grid gap-1">{r.insight.nextActions.map((a) => <li key={a}>→ {a}</li>)}</ul><Link href="/home#library" className="mt-3 inline-block text-xs text-brand underline">3 unused clips in your Library</Link></div>
               </div>
             </motion.div>
           </td></tr>

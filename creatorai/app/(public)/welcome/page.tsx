@@ -1,8 +1,6 @@
-import type { Metadata } from "next";
-import { Landing } from "@/components/landing/Landing";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "CreatorAi — turn raw footage into posts that work everywhere" };
-
+// Legacy URL: the landing page now lives at "/".
 export default function Welcome() {
-  return <Landing />;
+  redirect("/");
 }

@@ -28,7 +28,7 @@ export function Overview({ go }: { go: (s: "trends" | "library" | "collabs" | "c
           <p className="t-label text-brand">{hi}, {u.name}</p>
           <h2 className="t-h1 mt-4 max-w-4xl">Today's best idea: “{best.title}”</h2>
           <div className="mt-5 flex flex-wrap items-center gap-3"><Badge tone="brand">{best.why}</Badge><span className="chip">{best.format}</span></div>
-          <button className="btn-primary mt-8" onClick={() => router.push(best.format === "Short" ? "/short-videos" : "/videos")}>Start in Studio <ArrowUpRight size={16} /></button>
+          <button className="btn-primary mt-8" onClick={() => router.push(best.format === "Short" ? "/short-videos" : "/video-studio")}>Start in Studio <ArrowUpRight size={16} /></button>
         </div>
       </section>
 
@@ -44,7 +44,7 @@ export function Overview({ go }: { go: (s: "trends" | "library" | "collabs" | "c
           {home.ideas.map((i, n) => (
             <Reveal as="li" key={i.id} delay={n * 0.06} className="card flex flex-col justify-between gap-6 p-5 transition-colors hover:border-brand">
               <div><div className="flex flex-wrap gap-2"><Badge tone="brand">{i.why}</Badge><span className="chip">{i.format}</span></div><h3 className="mt-4 font-display text-2xl leading-tight">{i.title}</h3></div>
-              <button className="btn-ghost w-fit" onClick={() => router.push(i.format === "Short" ? "/short-videos" : "/videos")}>Start in Studio</button>
+              <button className="btn-ghost w-fit" onClick={() => router.push(i.format === "Short" ? "/short-videos" : "/video-studio")}>Start in Studio</button>
             </Reveal>
           ))}
         </ul>
@@ -156,7 +156,7 @@ export function Library() {
         ))}
         {items.length === 0 && <li className="col-span-full text-sm text-muted">No assets match.</li>}
       </ul>
-      <div className="card mt-8 p-5"><h3 className="t-label text-muted">Reuse suggestions</h3><ul className="mt-3 grid gap-2 text-sm"><li>• <b>ep12_final.mp4</b> has never been clipped — try the <Link href="/videos?type=Podcast" className="text-brand underline">podcast set</Link>.</li><li className="text-warn">• Repeat risk: you posted a “pitch tips” Reel 5 days ago — space similar topics ≥ 10 days apart.</li></ul></div>
+      <div className="card mt-8 p-5"><h3 className="t-label text-muted">Reuse suggestions</h3><ul className="mt-3 grid gap-2 text-sm"><li>• <b>ep12_final.mp4</b> has never been clipped — try the <Link href="/video-studio?type=Podcast" className="text-brand underline">podcast set</Link>.</li><li className="text-warn">• Repeat risk: you posted a “pitch tips” Reel 5 days ago — space similar topics ≥ 10 days apart.</li></ul></div>
     </div>
   );
 }

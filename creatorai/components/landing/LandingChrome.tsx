@@ -50,7 +50,7 @@ export function SiteHeader({ onEnter, onReach }: { onEnter: () => void; onReach:
       <motion.header animate={{ y: hidden ? "-100%" : 0 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         className="sticky top-0 z-40 border-b border-line bg-bg/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-5 md:px-10">
-          <Link href="/welcome" className="font-display text-2xl tracking-tight" aria-label="CreatorAi home">
+          <Link href="/" className="font-display text-2xl tracking-tight" aria-label="CreatorAi home">
             Creator<span className="text-brand">Ai</span>
           </Link>
           <nav aria-label="Primary" className="hidden items-center gap-8 md:flex">
@@ -244,7 +244,7 @@ export function SiteFooter() {
             </div>
             <div>
               <p className="t-label mb-3 opacity-60">Read this site</p>
-              <ul className="grid gap-2"><li><Link href="/welcome" className="hover:underline">For humans</Link></li><li><a href="/llms.txt" className="hover:underline">For robots</a></li></ul>
+              <ul className="grid gap-2"><li><Link href="/" className="hover:underline">For humans</Link></li><li><a href="/llms.txt" className="hover:underline">For robots</a></li></ul>
             </div>
           </div>
         </div>

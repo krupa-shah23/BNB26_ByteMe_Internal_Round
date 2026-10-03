@@ -17,7 +17,7 @@ export function CreateModal({ open, onClose }: { open: boolean; onClose: () => v
           <button data-autofocus onClick={() => go("/short-videos")} className="card group p-6 text-left transition-colors hover:border-brand">
             <Smartphone className="mb-8 text-brand" /><div className="font-display text-3xl">Short</div><p className="mt-1 text-sm text-muted">Reels, Shorts, Stories, Ads · 9:16</p>
           </button>
-          <button onClick={() => go("/videos")} className="card group p-6 text-left transition-colors hover:border-brand">
+          <button onClick={() => go("/video-studio")} className="card group p-6 text-left transition-colors hover:border-brand">
             <Film className="mb-8 text-accent" /><div className="font-display text-3xl">Video</div><p className="mt-1 text-sm text-muted">Podcasts, lectures, vlogs · 16:9</p>
           </button>
         </div>
@@ -38,14 +38,14 @@ export function CommandPalette({ open, onClose, onDemo }: { open: boolean; onClo
   const cmds = useMemo<Cmd[]>(() => {
     const go = (h: string) => () => router.push(h);
     return [
-      { id: "home", label: "Home", hint: "Page", run: go("/") },
-      { id: "trends", label: "Trends", hint: "Home section", run: go("/?section=trends") },
-      { id: "library", label: "Library", hint: "Home section", run: go("/?section=library") },
-      { id: "collabs", label: "Collabs", hint: "Home section", run: go("/?section=collabs") },
-      { id: "calendar", label: "Calendar", hint: "Home section", run: go("/?section=calendar") },
+      { id: "home", label: "Home", hint: "Page", run: go("/home") },
+      { id: "trends", label: "Trends", hint: "Home section", run: go("/home#trends") },
+      { id: "library", label: "Library", hint: "Home section", run: go("/home#library") },
+      { id: "collabs", label: "Collabs", hint: "Home section", run: go("/home#collabs") },
+      { id: "calendar", label: "Calendar", hint: "Page", run: go("/calendar") },
       { id: "short", label: "Short Videos", hint: "Page", run: go("/short-videos") },
-      { id: "videos", label: "Videos", hint: "Page", run: go("/videos") },
-      { id: "studio", label: "Studio", hint: "Page", run: go("/studio") },
+      { id: "videos", label: "Video Studio", hint: "Page", run: go("/video-studio") },
+      { id: "studio", label: "Studio history", hint: "Page", run: go("/studio") },
       { id: "dash", label: "Dashboard", hint: "Page", run: go("/dashboard") },
       { id: "earn", label: "Earnings", hint: "Dashboard section", run: go("/dashboard?section=earnings") },
       { id: "aud", label: "Audience", hint: "Dashboard section", run: go("/dashboard?section=audience") },
