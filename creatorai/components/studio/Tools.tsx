@@ -1,5 +1,7 @@
 "use client";
 import { AnimatePresence, motion } from "framer-motion";
+import { useStore } from "@/lib/store";
+import { personaliseCaptions, preferredTone, styleBrief } from "@/lib/creatorDna";
 import { Check, Copy, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import clsx from "clsx";
@@ -152,7 +154,8 @@ export function ThumbnailModal({ open, onClose, project, onUse }: { open: boolea
 
 /* ───────────── Captions drawer ───────────── */
 export function CaptionsDrawer({ open, onClose, project, onUse }: { open: boolean; onClose: () => void; project: Project; onUse: (c: NonNullable<Project["caption"]>) => void }) {
-  const [tone, setTone] = useState("witty");
+  const dna = useStore((s) => s.creatorDNA);
+  const [tone, setTone] = useState<string>(() => preferredTone(useStore.getState().creatorDNA));
   const [platform, setPlatform] = useState("ig_reel");
   const [opts, setOpts] = useState<CaptionOption[] | null>(null);
   const [source, setSource] = useState<"live" | "demo">("demo");
@@ -163,9 +166,9 @@ export function CaptionsDrawer({ open, onClose, project, onUse }: { open: boolea
     if (!open) return;
     let alive = true;
     setOpts(null);
-    captionService.suggest({ tone, platform, topic: project.title }).then((r) => { if (alive) { setOpts(r.options); setSource(r.source); } });
+    captionService.suggest({ tone, platform, topic: project.title, style: styleBrief(dna) }).then((r) => { if (alive) { setOpts(personaliseCaptions(r.options, dna)); setSource(r.source); } });
     return () => { alive = false; };
-  }, [open, tone, platform, project.title]);
+  }, [open, tone, platform, project.title, dna]);
 
   const limit = platform === "x" ? 280 : platform === "linkedin" ? 3000 : 2200;
   const copy = (id: string, text: string) => { navigator.clipboard?.writeText(text).catch(() => undefined); setCopied(id); setTimeout(() => setCopied(null), 1400); };
@@ -174,7 +177,7 @@ export function CaptionsDrawer({ open, onClose, project, onUse }: { open: boolea
     <Overlay open={open} onClose={onClose} labelledBy="cap-h" width="max-w-lg">
       <div className="p-6 pt-20 md:p-8 md:pt-20">
         <h2 id="cap-h" className="t-h2">Captions</h2>
-        <p className="mt-1 text-sm text-muted">Choose a style, then pick the one you like.</p>
+        <p className="mt-1 text-sm text-muted">Choose a style, then pick the one you like. Matched to your Creator DNA.</p>
         <div className="mt-5 flex flex-wrap gap-2" role="radiogroup" aria-label="Tone">
           {captionsFx.tones.map((t) => <button key={t} role="radio" aria-checked={tone === t} onClick={() => setTone(t)} className={clsx("chip px-4 py-1.5 text-sm capitalize", tone === t && "border-brand bg-brand text-brand-ink")}>{t === "pro" ? "professional" : t}</button>)}
         </div>

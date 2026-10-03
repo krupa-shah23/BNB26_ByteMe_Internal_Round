@@ -1,7 +1,7 @@
 "use client";
 import type { PlayerRef } from "@remotion/player";
 import { motion } from "framer-motion";
-import { Check, Pause, Play, Plus, Redo2, RotateCcw, Save, Sparkles, Subtitles, Undo2, Image as ImageIcon } from "lucide-react";
+import { Check, Dna, Pause, Play, Plus, Redo2, RotateCcw, Save, Sparkles, Subtitles, Undo2, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,6 +14,7 @@ import { CaptionsDrawer, ThumbnailModal, ThumbCard } from "./Tools";
 import { PROFILES, aspectDims, fmtTime, friendlyTitle, normalize, relTime, segmentName, totalDur, uid } from "@/lib/projects";
 import { groupById } from "@/lib/match";
 import { tracks, trackById } from "@/lib/precheck";
+import { dnaTraits, sortHooksByDNA } from "@/lib/creatorDna";
 import { useStore } from "@/lib/store";
 import type { Aspect, PlatformId, Segment } from "@/lib/types";
 
@@ -29,6 +30,10 @@ export function Editor({ projectId }: { projectId: string }) {
   const patch = useStore((s) => s.patchProject);
   const setDirty = useStore((s) => s.setDirty);
   const toast = useStore((s) => s.toast);
+  const dna = useStore((s) => s.creatorDNA);
+  const addFeedback = useStore((s) => s.addFeedback);
+  const [dnaOpen, setDnaOpen] = useState(false);
+  const capFocus = useRef("");
 
   const [tl, setTl] = useState<Segment[]>(project?.timeline ?? []);
   const [past, setPast] = useState<Segment[][]>([]);
@@ -116,12 +121,14 @@ export function Editor({ projectId }: { projectId: string }) {
     const el = tlRef.current; if (!el) return;
     const pxPerSec = el.clientWidth / Math.max(total, 1);
     const x0 = e.clientX, d0 = seg.dur;
+    let lastD = d0;
     const move = (ev: PointerEvent) => {
       const d = Math.max(0.5, Math.min(60, +(d0 + (ev.clientX - x0) / pxPerSec).toFixed(1)));
+      lastD = d;
       setTl((cur) => normalize(cur.map((s) => (s.id === seg.id ? { ...s, dur: d, out: s.src ? +((s.in ?? 0) + d).toFixed(1) : s.out, touched: true } : s))));
       dirtyRef.current = true; setSaved(false); setDirty(true);
     };
-    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); setPast((p) => [...p.slice(-40), tl]); setFuture([]); };
+    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); addFeedback({ type: "pacing", originalValue: String(d0), newValue: String(lastD), context: "editing.pacing" }); setPast((p) => [...p.slice(-40), tl]); setFuture([]); };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
   };
 
@@ -160,7 +167,19 @@ export function Editor({ projectId }: { projectId: string }) {
           <Link href="/studio" className="text-sm text-muted hover:text-text">← Back to Studio</Link>
           <input aria-label="Project name" defaultValue={title} key={project.id + title} onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== title) patch(project.id, { title: v }); }} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
             className="mt-1 block w-full max-w-xl truncate rounded-lg bg-transparent font-display text-3xl tracking-tight outline-none hover:bg-sunken focus:bg-sunken md:text-4xl" />
-          <p className="text-sm text-muted" aria-live="polite">{saved ? `Edited ${relTime(project.updatedAt)}` : "Saving…"}</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-sm text-muted" aria-live="polite">{saved ? `Edited ${relTime(project.updatedAt)}` : "Saving…"}</p>
+            <div className="relative">
+              <button onClick={() => setDnaOpen((o) => !o)} aria-expanded={dnaOpen} className="chip gap-1.5 bg-accent/60 py-1 text-black hover:bg-accent"><Dna size={13} />Using your Creator DNA<Check size={13} /></button>
+              {dnaOpen && (
+                <div role="dialog" aria-label="Your Creator DNA" className="absolute left-0 top-9 z-30 w-72 rounded-2xl border border-line bg-surface p-4 shadow-soft">
+                  <p className="font-display text-lg tracking-tight">Your Creator DNA</p>
+                  <ul className="mt-2 grid gap-1 text-sm">{dnaTraits(dna, 6).map((t) => <li key={t} className="flex items-center gap-2"><Check size={12} className="text-ok" />{t}</li>)}</ul>
+                  <Link href="/profile-studio" className="btn-primary mt-4 w-full py-2 text-sm" onClick={() => setDnaOpen(false)}>View / Edit DNA</Link>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button className="btn-ghost h-10 w-10 p-0" onClick={undo} disabled={!past.length} aria-label="Undo"><Undo2 size={16} /></button>
@@ -203,10 +222,11 @@ export function Editor({ projectId }: { projectId: string }) {
                 </div>
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted">Opening ideas</p>
-                  <ul className="grid gap-2">{hooksFx.hooks.map((h) => (
+                  <ul className="grid gap-2">{sortHooksByDNA(hooksFx.hooks, dna).map((h) => (
                     <li key={h.text} className="rounded-xl border border-line p-3">
                       <p>{h.text}</p>
-                      <button className="mt-2 text-xs font-medium text-brand underline-offset-4 hover:underline" onClick={() => { const first = tl[0]; if (first?.id) { edit(first.id, { caption: h.text }); toast("Opening updated", h.text); } }}>Use this opening</button>
+                      {dna.hooks.includes(h.style) && <span className="mt-1 inline-block text-[11px] text-brand">Matches your style</span>}
+                      <button className="mt-2 block text-xs font-medium text-brand underline-offset-4 hover:underline" onClick={() => { const first = tl[0]; if (first?.id) { addFeedback({ type: "hook", originalValue: first.caption ?? "", newValue: h.text, context: `hook:${h.style}` }); edit(first.id, { caption: h.text }); toast("Opening updated", h.text); } }}>Use this opening</button>
                     </li>))}</ul>
                 </div>
               </div>
@@ -290,7 +310,7 @@ export function Editor({ projectId }: { projectId: string }) {
                 <p className="font-display text-2xl tracking-tight">{nameOf(selected)}</p>
                 <div className="mt-1">{selected.touched ? <Badge tone="ok">Edited by you</Badge> : <Badge tone="brand"><Sparkles size={12} />Suggested by CreatorAI</Badge>}</div>
               </div>
-              <div><label className="mb-1 block font-medium" htmlFor="cap">Caption</label><textarea id="cap" className="input min-h-20" value={selected.caption ?? ""} onChange={(e) => edit(selected.id!, { caption: e.target.value })} /></div>
+              <div><label className="mb-1 block font-medium" htmlFor="cap">Caption</label><textarea id="cap" className="input min-h-20" value={selected.caption ?? ""} onFocus={() => { capFocus.current = selected.caption ?? ""; }} onBlur={() => addFeedback({ type: "caption", originalValue: capFocus.current, newValue: selected.caption ?? "", context: "inspector.caption" })} onChange={(e) => edit(selected.id!, { caption: e.target.value })} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="mb-1 block font-medium" htmlFor="dur">How long? (sec)</label><input id="dur" type="number" step="0.1" min="0.5" className="input" value={selected.dur} onChange={(e) => { const d = Math.max(0.5, +e.target.value || 0.5); edit(selected.id!, { dur: d, out: selected.src ? +((selected.in ?? 0) + d).toFixed(1) : selected.out }); }} /></div>
                 {selected.src && <div><label className="mb-1 block font-medium" htmlFor="in">Starts at (sec)</label><input id="in" type="number" step="0.5" min="0" className="input" value={selected.in ?? 0} onChange={(e) => { const i = Math.max(0, +e.target.value || 0); edit(selected.id!, { in: i, out: +(i + selected.dur).toFixed(1) }); }} /></div>}
@@ -350,7 +370,7 @@ export function Editor({ projectId }: { projectId: string }) {
         </div>
       </section>
 
-      <CaptionsDrawer open={caps} onClose={() => setCaps(false)} project={project} onUse={(c) => { patch(project.id, { caption: c }); toast("Caption added", "You can see it on the preview card"); }} />
+      <CaptionsDrawer open={caps} onClose={() => setCaps(false)} project={project} onUse={(c) => { addFeedback({ type: "caption", originalValue: project.caption?.caption ?? "", newValue: c.caption, context: `drawer:${c.tone}` }); patch(project.id, { caption: c }); toast("Caption added", "You can see it on the preview card"); }} />
       <ThumbnailModal open={thumb} onClose={() => setThumb(false)} project={project} onUse={(t) => { patch(project.id, { thumb: t }); toast("Thumbnail chosen"); }} />
     </div>
   );

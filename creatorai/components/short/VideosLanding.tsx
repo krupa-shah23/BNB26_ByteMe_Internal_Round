@@ -18,7 +18,7 @@ const ORBIT: { g: GlyphName; x: string; y: string; r: string; d: string }[] = [
 
 export function VideosLanding() {
   return (
-    <div className="mx-auto max-w-[1100px] pb-10">
+    <div className="mx-auto max-w-[1200px] pb-10">
       <section className="relative px-2 pb-14 pt-8 text-center md:pt-14">
         <div className="pointer-events-none absolute inset-0 hidden md:block" aria-hidden="true">
           <svg className="absolute inset-0 h-full w-full" viewBox="0 0 1000 300" preserveAspectRatio="none"><ellipse cx="500" cy="150" rx="470" ry="135" fill="none" stroke="rgb(var(--text))" strokeOpacity="0.35" strokeWidth="1.2" strokeDasharray="1.5 7" strokeLinecap="round" /></svg>
@@ -32,12 +32,10 @@ export function VideosLanding() {
         <p className="relative mt-4 text-lg text-muted">What are you creating today?</p>
       </section>
 
-      <section aria-label="Choose a video type" className="grid gap-5 sm:grid-cols-3">
+      <section aria-label="Choose a video type" className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
         {TYPES.map((t) => <FormatCard key={t.href} {...t} />)}
+        <FormatCard href="/videos/other" title="Other" platform="Anything else" glyph="other" tone="bg-brand text-brand-ink" />
       </section>
-      <div className="mt-5 flex justify-center">
-        <FormatCard href="/videos/other" title="Other" platform="Anything else" glyph="other" tone="bg-brand text-brand-ink" wide />
-      </div>
 
       <section aria-label="Upload video" className="mx-auto mt-14 max-w-3xl">
         <UploadWorkspace kind="video" embedded forcedTab="All" dropTitle="+ Upload video" dropHint="Drop your footage here — we’ll recognise it and start a cut." />

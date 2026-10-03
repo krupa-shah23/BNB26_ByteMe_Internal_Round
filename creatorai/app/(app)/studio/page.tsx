@@ -52,11 +52,8 @@ export default function StudioList() {
   const rows = useMemo(() => sorted.filter((p) => (status === "All" || p.status === status) && (type === "All" || p.type === type) && p.title.toLowerCase().includes(q.toLowerCase())), [sorted, q, status, type]);
 
   return (
-    <div className="mx-auto max-w-[1100px] pb-10">
-      <section className="px-2 pb-12 pt-8 text-center md:pt-14">
-        <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="font-display text-[clamp(2.6rem,7vw,5.6rem)] font-medium leading-[0.98] tracking-[-0.045em]">Studio</motion.h1>
-        <p className="mt-4 text-lg text-muted">Everything you’ve created, in one place.</p>
-      </section>
+    <div className="mx-auto max-w-[1100px] pb-10 pt-2">
+      <h1 className="sr-only">Studio</h1>
 
       {/* New project */}
       <section aria-label="New project">

@@ -7,12 +7,12 @@ type Opt = { id: string; caption: string; cta: string };
 const fixture = (tone: string): Opt[] => (captions.options as Record<string, Opt[]>)[tone] ?? captions.options.witty;
 
 export async function POST(req: Request) {
-  const { tone = "witty", platform = "ig_reel", topic = "creator", text = "" } = await req.json().catch(() => ({}));
+  const { tone = "witty", platform = "ig_reel", topic = "creator", text = "", style = "" } = await req.json().catch(() => ({}));
   const key = process.env.GEMINI_API_KEY;
   if (!key) return NextResponse.json({ options: fixture(tone), source: "demo" });
 
   const model = process.env.GEMINI_MODEL || "gemini-2.0-flash"; // pick the current flash-tier model at build time
-  const prompt = `Write 3 social captions for ${platform}. Topic: ${topic}. ${text ? `Context: ${text}.` : ""} Tone: ${tone}. Return JSON: {"options":[{"id":"1","caption":"...","cta":"..."}]}. Keep each caption under 220 characters.`;
+  const prompt = `Write 3 social captions for ${platform}. Topic: ${topic}. ${text ? `Context: ${text}.` : ""} Tone: ${tone}. ${style ? `Match this creator's style: ${style}.` : ""} Return JSON: {"options":[{"id":"1","caption":"...","cta":"..."}]}. Keep each caption under 220 characters.`;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 3800);
   try {

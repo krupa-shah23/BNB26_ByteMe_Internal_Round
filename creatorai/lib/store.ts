@@ -2,12 +2,13 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { useEffect, useState } from "react";
-import type { CalendarItem, Lead, Notice, Project } from "./types";
+import type { CalendarItem, CreatorDNA, CreatorFeedback, Lead, Notice, Project } from "./types";
+import { applyFeedback, defaultDNA } from "./creatorDna";
 import { groupById } from "./match";
 import { makeProject, uid } from "./projects";
 
 export interface Permissions { earnings: boolean; reach: boolean; audience: boolean; comments: boolean; decided: boolean }
-export interface Toast { id: string; title: string; body?: string }
+export interface Toast { id: string; title: string; body?: string; ms: number }
 
 const day = 86_400_000;
 function seedProjects(): Project[] {
@@ -46,6 +47,9 @@ interface State {
   permissions: Permissions;
   pref: number[];            // collab preference vector
   swiped: Record<string, "right" | "left" | "up">;
+  creatorDNA: CreatorDNA;     // current distilled style profile
+  creatorFeedback: CreatorFeedback[]; // persistent history of corrections
+  requested: string[];       // creators we sent a collaboration message to (Tracker)
   leads: (Lead & { at: string })[];
   newsletter: string[];
   timeOffsetMs: number;      // Demo Panel "fast-forward time"
@@ -61,7 +65,8 @@ interface State {
   setPermissions(p: Partial<Permissions>): void;
   swipe(id: string, dir: "right" | "left" | "up", vec: number[]): void;
   addLead(l: Lead): void; addNewsletter(e: string): void;
-  setDirty(v: boolean): void; toast(title: string, body?: string): void; dismissToast(id: string): void;
+  setDirty(v: boolean): void; toast(title: string, body?: string, ms?: number): void; request(id: string): void; dismissToast(id: string): void;
+  setDNA(d: CreatorDNA): void; addFeedback(f: Pick<CreatorFeedback, "type" | "originalValue" | "newValue" | "context">): void;
   set(p: Partial<State>): void;
   reset(): void;
 }
@@ -73,6 +78,9 @@ const initial = () => ({
   notices: [{ id: "n0", title: "Welcome to CreatorAi", body: "Drop a group of clips in Short Videos to see the magic.", at: new Date().toISOString(), read: false }] as Notice[],
   permissions: { earnings: false, reach: false, audience: false, comments: false, decided: false },
   pref: [0, 0, 0, 0, 0, 0, 0, 0],
+  requested: [] as string[],
+  creatorDNA: defaultDNA,
+  creatorFeedback: [] as CreatorFeedback[],
   swiped: {} as Record<string, "right" | "left" | "up">,
   leads: [] as (Lead & { at: string })[],
   newsletter: [] as string[],
@@ -107,12 +115,19 @@ export const useStore = create<State>()(
       addLead: (l) => set((s) => ({ leads: [...s.leads, { ...l, at: new Date().toISOString() }] })),
       addNewsletter: (e) => set((s) => ({ newsletter: [...s.newsletter, e] })),
       setDirty: (v) => set({ dirty: v }),
-      toast: (title, body) => {
+      request: (id) => set((s) => ({ requested: s.requested.includes(id) ? s.requested : [id, ...s.requested] })),
+      toast: (title, body, ms) => {
         const id = uid("t");
-        set((s) => ({ toasts: [...s.toasts, { id, title, body }] }));
-        setTimeout(() => get().dismissToast(id), 5200);
+        set((s) => ({ toasts: [...s.toasts, { id, title, body, ms: ms ?? 5200 }] }));
+        setTimeout(() => get().dismissToast(id), ms ?? 5200);
       },
       dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
+      setDNA: (d) => set({ creatorDNA: { ...d, version: d.version + 1, updatedAt: new Date().toISOString() } }),
+      addFeedback: (f) => set((s) => {
+        if (f.originalValue === f.newValue) return s;
+        const rec: CreatorFeedback = { ...f, id: uid("fb"), creatorId: s.creatorDNA.creatorId, createdAt: new Date().toISOString() };
+        return { creatorFeedback: [rec, ...s.creatorFeedback].slice(0, 200), creatorDNA: applyFeedback(s.creatorDNA, rec) };
+      }),
       set: (p) => set(p),
       reset: () => set({ ...initial(), loggedIn: true }),
     }),

@@ -127,6 +127,18 @@ body {
   --brand: 217 229 107; --brand-ink: 11 40 34; --brand-2: 90 160 150; --accent: 217 229 107; --tan: 168 155 107;
   --shadow: 0 10px 40px rgb(0 0 0 / 0.5);
 }
+@property --ang { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@keyframes spin-ang { to { --ang: 360deg; } }
+/* subtle animated border for the search pill */
+.glow-border {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(rgb(var(--bg)), rgb(var(--bg))) padding-box,
+    conic-gradient(from var(--ang), rgb(var(--line)) 0 62%, rgb(var(--brand) / 0.7) 80%, rgb(var(--accent)) 92%, rgb(var(--line)) 100%) border-box;
+  animation: spin-ang 7s linear infinite;
+  box-shadow: 0 0 14px -4px rgb(var(--accent) / 0.35);
+}
+@media (prefers-reduced-motion: reduce) { .glow-border { animation: none; } }
 @keyframes orbit-bob { 0%,100% { transform: translateY(0) rotate(var(--r,0deg)); } 50% { transform: translateY(-10px) rotate(calc(var(--r,0deg) + 4deg)); } }
 .orbit-bob { animation: orbit-bob var(--d,6s) ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .orbit-bob { animation: none; } }

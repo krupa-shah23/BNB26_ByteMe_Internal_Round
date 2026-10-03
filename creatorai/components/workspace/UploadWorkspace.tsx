@@ -96,6 +96,7 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
       title: match?.isDefault ? friendlyTitle(files[0]?.name ?? "upload") : group.title,
     });
     if (!p.files.length) p.files = group.inputs.map((i) => i.filenames[0]);
+    if (useStore.getState().creatorDNA.editing.zooms === "punchy") p.timeline = p.timeline.map((s, i) => (i === 0 ? { ...s, zoom: 12 } : s));
     upsertProject(p);
     useStore.getState().notify("Video generated", `${p.title} is ready in Studio.`);
     setResult(p); setBusy(null);

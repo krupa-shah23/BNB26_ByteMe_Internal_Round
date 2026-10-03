@@ -4,7 +4,7 @@ export interface JobStep { label: string; ms: number }
 export interface JobProgress { stepIndex: number; progress: number; steps: JobStep[]; done: boolean }
 export type JobListener = (p: JobProgress) => void;
 
-export interface CaptionInput { tone: string; platform: string; topic: string; text?: string }
+export interface CaptionInput { tone: string; platform: string; topic: string; text?: string; style?: string }
 export interface CaptionOption { id: string; caption: string; cta: string }
 
 export interface ClipService {

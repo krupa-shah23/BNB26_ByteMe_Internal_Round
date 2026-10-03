@@ -15,7 +15,7 @@ const FORMATS: { href: string; title: string; platform: string; glyph: GlyphName
 export function FormatCard({ href, title, platform, glyph, tone, wide }: (typeof FORMATS)[number] & { wide?: boolean }) {
   return (
     <motion.div whileHover={{ y: -6 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className={wide ? "w-full max-w-md" : "w-full"}>
-      <Link href={href} className={clsx("group relative flex h-full min-h-[220px] flex-col justify-between overflow-hidden rounded-[28px] border border-text/10 p-6 transition-shadow hover:shadow-soft", tone)}>
+      <Link href={href} className={clsx("group relative flex h-full min-h-[200px] flex-col justify-between overflow-hidden rounded-[28px] border border-text/10 p-6 transition-shadow hover:shadow-soft", tone)}>
         <div className="flex items-start justify-between">
           <div>
             <div className="font-display text-3xl tracking-tight">{title}</div>
@@ -37,7 +37,7 @@ export const ORBIT: { g: GlyphName; x: string; y: string; r: string; d: string }
 
 export function ShortsLanding() {
   return (
-    <div className="mx-auto max-w-[1100px] pb-10">
+    <div className="mx-auto max-w-[1200px] pb-10">
       <section className="relative px-2 pb-14 pt-8 text-center md:pt-14">
         {/* dotted orbit with floating tiles (decorative) */}
         <div className="pointer-events-none absolute inset-0 hidden md:block" aria-hidden="true">
@@ -52,12 +52,10 @@ export function ShortsLanding() {
         <p className="relative mt-4 text-lg text-muted">Choose a format and let’s get started.</p>
       </section>
 
-      <section aria-label="Choose a format" className="grid gap-5 sm:grid-cols-3">
+      <section aria-label="Choose a format" className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
         {FORMATS.map((f) => <FormatCard key={f.href} {...f} />)}
+        <FormatCard href="/short-videos/ads" title="Ads" platform="Create an ad" glyph="ads" tone="bg-brand text-brand-ink" />
       </section>
-      <div className="mt-5 flex justify-center">
-        <FormatCard href="/short-videos/ads" title="Ads" platform="Create an ad" glyph="ads" tone="bg-brand text-brand-ink" wide />
-      </div>
 
       <section aria-label="Upload clips" className="mx-auto mt-14 max-w-3xl">
         <UploadWorkspace kind="short" embedded forcedTab="Reels" dropTitle="+ Upload clips" dropHint="Drop your videos here — we’ll recognise the set and start a cut." />
