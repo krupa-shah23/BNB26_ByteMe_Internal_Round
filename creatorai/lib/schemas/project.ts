@@ -11,6 +11,7 @@ export const segment = z.strictObject({
   photo: z.string().optional(), anim: z.string().optional(),
   kind: z.string(), caption: z.string().optional(), zoom: z.number().optional(), url: z.string().optional(),
   touched: z.boolean().optional(),
+  speed: z.number().optional(), vol: z.number().optional(), label: z.string().optional(),
   ai: z.strictObject({ dur: z.number(), caption: z.string().optional(), in: z.number().optional(), out: z.number().optional() }).optional(),
 });
 

@@ -32,7 +32,6 @@ function baseSteps(g: Group, photoCount?: number): JobStepDef[] {
       { key: "speech", label: "Transcribing speech", ms: 1500 },
       { key: "slides", label: "Detecting slides, tables and equations", ms: 1500 },
       { key: "moments", label: "Finding moments", ms: 1300 },
-      { key: "dna", label: "Applying your Creator DNA", ms: 1200 },
       { key: "render", label: "Rendering full video", ms: 1400 },
     ];
   }

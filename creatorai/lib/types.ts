@@ -25,6 +25,10 @@ export interface Segment {
   url?: string;
   /** set when the creator changes it, so the UI can tint AI vs user edits */
   touched?: boolean;
+  /** playback speed (1 = normal) and original-audio volume (0-100) */
+  speed?: number; vol?: number;
+  /** creator-facing name for suggested sections ("Best moment", "Reaction"…) */
+  label?: string;
   /** original AI values, for "Reset AI suggestion" */
   ai?: { dur: number; caption?: string; in?: number; out?: number };
 }
@@ -98,16 +102,3 @@ export type Lead = z.infer<typeof leadSchema>;
 export const captionOptionSchema = z.object({ id: z.string(), caption: z.string(), cta: z.string(), hashtags: z.array(z.string()).optional() });
 export const captionResponseSchema = z.object({ options: z.array(captionOptionSchema).min(1) });
 
-/** The creator's current distilled style profile. Feedback below is the persistent history it was learned from. */
-export interface CreatorDNA {
-  creatorId: string; version: number; updatedAt: string;
-  tone: { energy: number; humour: number; formality: number; seriousness: number };            // 0-100
-  writing: { sentenceLength: "short" | "medium" | "long"; vocabulary: "simple" | "balanced" | "rich"; directness: number; humour: "none" | "dry" | "playful" | "sarcastic" };
-  hooks: string[];                                                                                // preferred opening types
-  storytelling: { structure: string };
-  editing: { pacing: number; cuts: "tight" | "natural" | "relaxed"; zooms: "none" | "subtle" | "punchy"; broll: "rare" | "balanced" | "frequent"; silence: "trim" | "keep" };
-  captions: { style: "clean" | "bold" | "minimal"; emphasis: "none" | "keywords" | "emoji"; position: "top" | "centre" | "bottom" };
-  cta: { style: "soft" | "direct" | "question"; frequency: "rare" | "sometimes" | "often" | "always" };
-}
-export type FeedbackType = "caption" | "hook" | "pacing" | "style" | "cta" | "edit";
-export interface CreatorFeedback { id: string; creatorId: string; type: FeedbackType; originalValue: string; newValue: string; context: string; createdAt: string }

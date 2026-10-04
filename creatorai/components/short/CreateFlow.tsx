@@ -67,11 +67,11 @@ function Choice({ opt, selected, onPick, multi }: { opt: Opt; selected: boolean;
   const peak = opt.ratio ? Math.max(...opt.ratio) : 1;
   return (
     <motion.button type="button" role={multi ? "checkbox" : "radio"} aria-checked={selected} onClick={onPick} whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }}
-      className={clsx("relative flex min-h-[104px] flex-col items-center justify-center gap-1.5 rounded-3xl border p-4 text-center transition-colors", selected ? "border-brand bg-brand text-brand-ink" : "border-line bg-surface hover:border-text/40")}>
+      className={clsx("relative flex min-h-[104px] lg:min-h-[clamp(84px,14vh,168px)] flex-col items-center justify-center gap-1.5 rounded-3xl border p-4 text-center transition-colors", selected ? "border-brand bg-brand text-brand-ink" : "border-line bg-surface hover:border-text/40")}>
       {opt.ratio && (
         <span className={clsx("mb-1 block rounded-md border-2", selected ? "border-accent bg-accent/25" : "border-text/50")} style={{ width: 30 * (opt.ratio[0] / peak) + 6, height: 30 * (opt.ratio[1] / peak) + 6 }} />
       )}
-      <span className="font-display text-xl tracking-tight">{opt.title}</span>
+      <span className="font-display text-2xl tracking-tight">{opt.title}</span>
       {opt.sub && <span className={clsx("text-sm", selected ? "opacity-80" : "text-muted")}>{opt.sub}</span>}
       {selected && <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute right-3 top-3 grid h-6 w-6 place-items-center rounded-full bg-accent text-black"><Check size={14} /></motion.span>}
     </motion.button>
@@ -101,23 +101,24 @@ export function CreateFlow({ format }: { format: FormatKey }) {
     ...steps.filter((s) => !s.finish).map((s) => [s.label, ans[s.id]?.join(" · ") ?? "—"] as [string, string]),
   ];
 
-  const center = m.kind === "video"; // Videos flows (Podcast, Lecture, Vlog, Other) are centred on the page
+  const center = true; // every flow is centred on the page
   return (
-    <div className={clsx("flex max-w-5xl flex-col gap-4 pb-4 lg:h-full", center && "mx-auto w-full")}>
-      <Link href={m.kind === "video" ? "/videos" : "/short-videos"} className="inline-flex w-fit items-center gap-2 text-sm hover:opacity-60"><ArrowLeft size={16} />Back</Link>
+    <div className="flex flex-col pb-4 lg:h-full">
+      <Link href={m.kind === "video" ? "/videos" : "/short-videos"} className="inline-flex w-fit items-center gap-2 self-start text-sm hover:opacity-60"><ArrowLeft size={16} />Back</Link>
 
+      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center gap-6 py-2 lg:gap-5">
       <header className={clsx("flex items-center gap-4", center && "flex-col gap-3 text-center")}>
-        <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="shrink-0"><Glyph name={m.glyph} size={48} /></motion.div>
+        <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="shrink-0"><Glyph name={m.glyph} size={52} /></motion.div>
         <div>
-          <h1 className="font-display text-[clamp(1.8rem,3.4vw,2.8rem)] font-medium leading-none tracking-[-0.04em]">Create {m.article} {m.noun}</h1>
-          <p className="mt-1.5 text-sm text-muted">{phase === "steps" ? "Let’s shape your video before we make it." : "Now add your clips and we’ll take it from here."}</p>
+          <h1 className="font-display text-[clamp(2rem,min(4.4vw,6.5vh),3.6rem)] font-medium leading-none tracking-[-0.04em]">Create {m.article} {m.noun}</h1>
+          <p className="mt-2 text-base text-muted">{phase === "steps" ? "Let’s shape your video before we make it." : "Now add your clips and we’ll take it from here."}</p>
         </div>
       </header>
 
       {phase === "steps" ? (
         <>
-          <div className="pb-7 pt-1"><StepIndicator steps={steps} current={i} onJump={go} left={!center} /></div>
-          <div className="min-h-0 flex-1">
+          <div className="mx-auto w-full max-w-3xl pb-6"><StepIndicator steps={steps} current={i} onJump={go} left={!center} /></div>
+          <div>
             <StepPanel index={i} direction={dir}>
               {cur.finish ? (
                 <div className={clsx("max-w-md", center && "mx-auto text-center")}>
@@ -128,9 +129,9 @@ export function CreateFlow({ format }: { format: FormatKey }) {
                 </div>
               ) : (
                 <>
-                  <h2 className={clsx("mb-1 font-display text-2xl tracking-tight", center && "text-center")}>{cur.heading}</h2>
-                  <p className={clsx("mb-4 text-sm text-muted", center && "text-center")}>{cur.multi ? "Pick as many as you like." : "Pick one to continue."}</p>
-                  <div role={cur.multi ? "group" : "radiogroup"} aria-label={cur.heading} className={clsx("grid gap-3", center && "mx-auto", cur.options!.length === 2 ? "max-w-2xl grid-cols-2" : cur.options!.length === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3")}>
+                  <h2 className={clsx("mb-1 font-display text-3xl tracking-tight", center && "text-center")}>{cur.heading}</h2>
+                  <p className={clsx("mb-4 text-base text-muted", center && "text-center")}>{cur.multi ? "Pick as many as you like." : "Pick one to continue."}</p>
+                  <div role={cur.multi ? "group" : "radiogroup"} aria-label={cur.heading} className={clsx("grid gap-3 lg:gap-4", center && "mx-auto", cur.options!.length === 2 ? "max-w-2xl grid-cols-2" : cur.options!.length === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3")}>
                     {cur.options!.map((o) => <Choice key={o.id} opt={o} selected={!!ans[cur.id]?.includes(o.id)} multi={cur.multi} onPick={() => pick(cur, o.id)} />)}
                   </div>
                 </>
@@ -150,11 +151,12 @@ export function CreateFlow({ format }: { format: FormatKey }) {
             {summary.map(([k, v]) => <span key={k} className="chip bg-surface py-1.5"><span className="text-muted">{k}</span> {v}</span>)}
             <button className="text-sm underline underline-offset-4 hover:opacity-60" onClick={() => { setPhase("steps"); go(0); }}>Edit</button>
           </div>
-          <div className={clsx("max-w-3xl", center && "mx-auto w-full")}>
-            <UploadWorkspace kind={m.kind} embedded forcedTab={m.tab} dropTitle={m.kind === "video" ? "+ Upload videos and photos" : "+ Upload videos and photos"} dropHint={`Drop the clips and photos for your ${m.noun.toLowerCase()}, in any order. Audio is welcome too.`} />
+          <div className="mx-auto w-full max-w-3xl">
+            <UploadWorkspace kind={m.kind} embedded forcedTab={m.tab} dropTitle="Upload videos and photos" dropHint={`Drop the clips and photos for your ${m.noun.toLowerCase()}, in any order. Audio is welcome too.`} />
           </div>
         </motion.div>
       )}
+      </div>
     </div>
   );
 }

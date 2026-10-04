@@ -288,7 +288,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>}
 
         {homeRail}
-        <main id="app-main" className={clsx("px-4 pb-28 pt-4 md:px-10 lg:pb-12 lg:transition-[padding] lg:duration-300", railOpen ? "lg:pl-[17rem]" : "lg:pl-[7rem]", home && "pt-2 lg:h-[calc(100dvh-5rem)] lg:overflow-hidden lg:pb-5", fit && "no-scrollbar lg:h-[calc(100dvh-5rem)] lg:overflow-y-auto lg:pb-5 lg:pt-2")}>{children}</main>
+        <main id="app-main" className={clsx("px-4 pb-28 pt-4 md:px-10 lg:pb-12 lg:transition-[padding] lg:duration-300", railOpen ? "lg:pl-[17rem]" : "lg:pl-[7rem]", home && "pt-2 lg:h-[calc(100dvh-5rem)] lg:overflow-hidden lg:pb-5", fit && "no-scrollbar lg:h-[calc(100dvh-5rem)] lg:pb-5 lg:pt-2", fit && "lg:overflow-hidden")}>{children}</main>
       </div>
 
       {/* mobile bottom tab bar */}

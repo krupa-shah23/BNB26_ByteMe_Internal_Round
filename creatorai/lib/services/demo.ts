@@ -22,7 +22,7 @@ export async function runJob(steps: JobStep[], onProgress: JobListener) {
 }
 
 export const demoClipService: ClipService = {
-  generate: (g, onProgress) => runJob(generationSteps(g), onProgress),
+  generate: (g, onProgress) => runJob(generationSteps(g).map((s) => ({ ...s, ms: 2000 + Math.round(Math.random() * 2000) })), onProgress), // 2-4 s per check, randomised
 };
 
 export const demoCaptionService: CaptionService = {

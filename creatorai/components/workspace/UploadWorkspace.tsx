@@ -9,7 +9,8 @@ import { Poster, Reveal, SlidingNav } from "@/components/ui/bits";
 import { AiClipLab } from "@/components/workspace/AiClipLab";
 import { fingerprint } from "@/lib/fingerprint";
 import { defaultGroup, groupById, groups, sampleFingerprints } from "@/lib/match";
-import { GENERATE_MIN, PHOTO_COUNT, isPhotoReel, recognisedLabel } from "@/lib/photoReel";
+import { GENERATE_MIN, PHOTO_COUNT, isPhotoReel, normaliseName, recognisedLabel } from "@/lib/photoReel";
+import { makeStoryProject } from "@/lib/storyImage";
 import { CoverFit, ReelPreview } from "@/components/ui/ReelMedia";
 import { LectureReport } from "@/components/studio/LectureReport";
 import { SongPick } from "@/components/audio/SongSearch";
@@ -104,6 +105,16 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
     if (!arr.length) return;
     setBusy("reading");
     const fps = await Promise.all(arr.map(fingerprint));
+    // Stories: a single photo is analysed (profanity + institution name) and opens straight in Studio, already cleaned
+    if (kind === "short" && tab === "Stories" && fps.length === 1 && fps[0].kind === "image" && !normaliseName(fps[0].name)) {
+      setFiles(fps);
+      await sleep(2000 + Math.random() * 1500);
+      const p = makeStoryProject(fps[0].name);
+      upsertProject(p);
+      toast("Story analysed", "2 issues found and cleaned");
+      router.push(`/studio/${p.id}`);
+      return;
+    }
     await ingest(fps);
   };
   const useSample = (id: string) => { reset(); void ingest(sampleFingerprints(groupById(id)), []); };
@@ -125,7 +136,6 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
     // live: keep the server's id/version/timeline but apply what this screen knows (upload tab targets, file names)
     const p: Project = server ? { ...server, files: fresh.files, photos: fresh.photos, platforms: fresh.platforms, title: fresh.title } : fresh;
     if (!p.files.length) p.files = group.inputs.map((i) => i.filenames[0]);
-    if (!isPhotoReel(group) && useStore.getState().creatorDNA.editing.zooms === "punchy") p.timeline = p.timeline.map((s, i) => (i === 0 ? { ...s, zoom: 12 } : s));
     const song = useStore.getState().pickedTrack;
     if (song) { p.audioId = song.id; if (p.noAudio) p.noAudio = false; }
     upsertProject(p);
@@ -152,7 +162,7 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
   const tie = (match?.candidates.length ?? 0) > 1 && !pick;
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div className={clsx("mx-auto max-w-[1400px]", embedded && "flex w-full flex-1 flex-col")}>
       {!embedded && <Reveal className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="t-label text-muted">{kind === "short" ? "9:16 · Reels, Shorts, Stories, Ads" : "16:9 · Podcasts, lectures, vlogs"}</p>
@@ -165,13 +175,13 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
 
       {/* upload zone */}
       {showDrop && kind === "short" && <div className="mb-3"><SongPick /></div>}
-      {showDrop && <section aria-label="Upload" className={embedded ? "grid gap-3" : "grid gap-6 lg:grid-cols-5"}>
-        <div className={embedded ? "" : "lg:col-span-3"}>
+      {showDrop && <section aria-label="Upload" className={embedded ? "grid flex-1 grid-rows-[1fr_auto] gap-3" : "grid gap-6 lg:grid-cols-5"}>
+        <div className={embedded ? "min-h-0" : "lg:col-span-3"}>
           <motion.div
             onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
             onDrop={(e) => { e.preventDefault(); setDrag(false); onFiles(e.dataTransfer.files); }}
             animate={{ scale: drag ? 1.02 : 1 }} transition={{ type: "spring", stiffness: 400, damping: 14 }}
-            className={clsx("grain relative grid place-items-center rounded-3xl border-2 border-dashed text-center transition-colors", embedded ? "min-h-[190px] p-5" : "min-h-[300px] p-8", drag ? "border-brand bg-brand/10" : "border-line bg-surface")}>
+            className={clsx("grain relative grid place-items-center rounded-3xl border-2 border-dashed text-center transition-colors", embedded ? "h-full min-h-[190px] p-5" : "min-h-[300px] p-8", drag ? "border-brand bg-brand/10" : "border-line bg-surface")}>
             <div className={clsx("relative z-10 grid justify-items-center", embedded ? "gap-2.5" : "gap-4")}>
               <motion.div animate={{ y: drag ? -10 : [0, -6, 0] }} transition={drag ? undefined : { repeat: Infinity, duration: 2.6 }} className={clsx("grid place-items-center rounded-2xl bg-brand text-brand-ink", embedded ? "h-12 w-12" : "h-16 w-16")}><UploadCloud /></motion.div>
               <h2 className={embedded ? "font-display text-2xl tracking-tight" : "t-h2"}>{dropTitle ?? "Drop your videos and photos here"}</h2>
@@ -302,10 +312,12 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
             <div className={clsx("relative w-full overflow-hidden rounded-2xl border border-line", result.groupId === "lecture-merge" ? "aspect-video max-w-[360px]" : embedded ? "aspect-[9/16] max-w-[120px]" : "aspect-[9/16] max-w-[220px]")}>
               <ReelPreview src={result.reel.video} poster={result.reel.poster} label={result.title} className="h-full w-full" muted={result.groupId === "photo-reel"} />
               <span className="pointer-events-none absolute bottom-3 right-3 rounded-md bg-text/80 px-2 py-0.5 text-xs text-bg">{fmtTime(totalDur(result.timeline))}</span>
+              <Link href={`/studio/${result.id}`} aria-label={`Open ${result.title} in Studio`} className="absolute inset-0 z-10 cursor-pointer" />
             </div>
           ) : (
             <Poster seed={result.hue} label={result.title} className={clsx("w-full rounded-2xl border border-line", result.aspect === "9:16" ? (embedded ? "aspect-[9/16] max-w-[120px]" : "aspect-[9/16] max-w-[220px]") : (embedded ? "aspect-video md:w-[120px]" : "aspect-video md:w-[220px]"))}>
               <span className="absolute bottom-3 right-3 rounded-md bg-text/80 px-2 py-0.5 text-xs text-bg">{fmtTime(totalDur(result.timeline))}</span>
+              <Link href={`/studio/${result.id}`} aria-label={`Open ${result.title} in Studio`} className="absolute inset-0 z-10 cursor-pointer" />
               <motion.span className="absolute right-3 top-3 text-brand-ink" animate={{ rotate: [0, 20, 0], scale: [1, 1.3, 1] }} transition={{ repeat: 3, duration: 0.8 }}><Sparkles size={18} /></motion.span>
             </Poster>
           )}

@@ -6,10 +6,9 @@ Goal: make `creatorai/` use the UI from `frontend/` while keeping every backend 
 ## What the comparison found
 
 - `frontend/` has screens `creatorai/` lacks: `short-videos/[format]`, `videos/[format]`,
-  `components/short/*`, `components/profile/CreatorDNA.tsx`, `components/home/Discovery.tsx`,
+  `components/short/*`, `components/home/Discovery.tsx`,
   `components/home/FeatureCards.tsx`, `components/shell/CalendarOverlay.tsx`,
-  `components/ui/RubberSegment.tsx`, `components/ui/Stepper.tsx`, `lib/creatorDna.ts`,
-  `fixtures/creator-dna.json`.
+  `components/ui/RubberSegment.tsx`, `components/ui/Stepper.tsx`.
 - `creatorai/` has the whole backend plus a few UI files only it uses:
   `ProjectSync`, `SettingsSync`, `AiClipLab`, `lib/api/*`, `lib/clips.ts`, `lib/jobSteps.ts`.
 - Files that exist in both but differ (the risky part):
@@ -33,8 +32,7 @@ gain only the new types/fields the frontend needs (`style`, `CreatorFeedback`, `
 
 ## Phase 1 — Add frontend-only files (no conflicts)
 Copy files that exist only in `frontend/`: new pages, `components/short`, `profile`,
-`Discovery`, `FeatureCards`, `CalendarOverlay`, `RubberSegment`, `Stepper`, `creatorDna.ts`,
-`creator-dna.json`.
+`Discovery`, `FeatureCards`, `CalendarOverlay`, `RubberSegment`, `Stepper`.
 
 ## Phase 2 — Overwrite pure-UI files
 Copy the frontend version of: `globals.css`, `tailwind.config.ts`, `app/layout.tsx`, the
@@ -54,7 +52,6 @@ For each: start from the creatorai version, add what the frontend needs.
 ## Phase 4 — Connect new screens to the backend
 - Short/video create flow → `POST /api/upload`, `/api/v1/projects`, `/clips/generate`, job stream.
 - Captions → `/api/v1/captions/generate` (now accepts `style`; extend `captionsBody` schema).
-- Creator DNA → fixtures first; wire to profile/analytics routes if they exist.
 - Calendar overlay → `/api/v1/calendar/*`.
 - Every service keeps the "live, else demo fallback" behaviour so the UI never errors.
 

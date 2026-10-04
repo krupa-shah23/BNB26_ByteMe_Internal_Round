@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import { allCreators, recommend, type Creator } from "@/lib/recommend";
-import { tickOf, type Tick } from "@/lib/messaging";
+import { optionsFor, previewOf, tickOf, topicOf, type Tick } from "@/lib/messaging";
 import { useStore } from "@/lib/store";
 import type { Msg } from "@/lib/types";
 
@@ -60,6 +60,7 @@ export function Messages() {
   useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [cur.length, sel]);
 
   const c = sel ? byId(sel) : null;
+  const opts = sel ? optionsFor(sel, cur) : [];
   const send = (e: React.FormEvent) => { e.preventDefault(); if (!sel || !draft.trim()) return; sendMessage(sel, draft); setDraft(""); };
   const startThread = (id: string) => { request(id); setSel(id); setTab("inbox"); };
 
@@ -85,7 +86,7 @@ export function Messages() {
                         <span className="flex items-baseline justify-between gap-2"><span className="truncate text-sm font-semibold">{t.c.handle}</span><span className="shrink-0 text-[11px] text-muted">{short(t.last.at, now)}</span></span>
                         <span className="flex min-w-0 items-center gap-1 text-xs text-muted">
                           {t.last.from === "me" && <Ticks tick={tickOf(t.last, now)} />}
-                          <span className={clsx("truncate", t.unread > 0 && "font-medium text-text")}>{t.last.text}</span>
+                          <span className={clsx("truncate", t.unread > 0 && "font-medium text-text")}>{t.last.from === "them" ? previewOf(t.id, t.last) : t.last.text}</span>
                         </span>
                       </span>
                       {t.unread > 0 && <span className="grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[11px] font-bold text-brand-ink">{t.unread}</span>}
@@ -123,6 +124,7 @@ export function Messages() {
               <button className="grid h-9 w-9 place-items-center rounded-full hover:bg-sunken lg:hidden" aria-label="Back to inbox" onClick={() => setSel(null)}><ArrowLeft size={18} /></button>
               <Avatar c={c} size={38} />
               <div className="min-w-0"><p className="truncate font-semibold">{c.name}</p><p className="truncate text-xs text-muted">{c.handle} · {c.niche} · {(c.followers / 1000).toFixed(0)}K followers</p></div>
+              <span className="chip ml-auto hidden shrink-0 bg-sunken py-1 text-[11px] sm:inline-flex">{topicOf(c.id)}</span>
             </header>
             <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-4" aria-live="polite">
               <ul className="grid gap-2">
@@ -141,7 +143,15 @@ export function Messages() {
               </ul>
               <div ref={end} />
             </div>
-            <form onSubmit={send} className="flex items-center gap-2 border-t border-line p-3">
+            {opts.length > 0 && (
+              <div className="border-t border-line px-3 pt-3" aria-label="Quick replies">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">Reply with</p>
+                <div className="no-scrollbar flex max-h-40 flex-wrap gap-1.5 overflow-y-auto pb-1">
+                  {opts.map((o) => <button key={o.text} type="button" className="rounded-2xl border border-line bg-bg px-3 py-1.5 text-left text-sm transition-colors hover:border-brand hover:bg-brand/10" onClick={() => sendMessage(c.id, o.text)}>{o.text}</button>)}
+                </div>
+              </div>
+            )}
+            <form onSubmit={send} className={clsx("flex items-center gap-2 p-3", opts.length === 0 && "border-t border-line")}>
               <input className="input" placeholder="Write a message" aria-label="Message" value={draft} onChange={(e) => setDraft(e.target.value)} />
               <button className="btn-brand h-11 w-11 shrink-0 p-0" aria-label="Send" disabled={!draft.trim()}><Send size={16} /></button>
             </form>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import clsx from "clsx";
 import { UploadWorkspace } from "@/components/workspace/UploadWorkspace";
 import { Glyph, type GlyphName } from "./Glyphs";
+import { FlowCard } from "./FlowCard";
 
 const FORMATS: { href: string; title: string; platform: string; glyph: GlyphName; tone: string }[] = [
   { href: "/short-videos/reels", title: "Reels", platform: "Instagram", glyph: "reels", tone: "bg-accent text-black" },
@@ -37,28 +38,26 @@ export const ORBIT: { g: GlyphName; x: string; y: string; r: string; d: string }
 
 export function ShortsLanding() {
   return (
-    <div className="mx-auto max-w-[1200px] pb-4">
-      <section className="relative px-2 pb-6 pt-2 text-center md:pt-4">
-        {/* dotted orbit with floating tiles (decorative) */}
-        <div className="pointer-events-none absolute inset-0 hidden md:block" aria-hidden="true">
-          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 1000 300" preserveAspectRatio="none"><ellipse cx="500" cy="150" rx="470" ry="135" fill="none" stroke="rgb(var(--text))" strokeOpacity="0.35" strokeWidth="1.2" strokeDasharray="1.5 7" strokeLinecap="round" /></svg>
-          {ORBIT.map((o) => (
-            <div key={o.g} className="orbit-bob absolute -translate-x-1/2 -translate-y-1/2" style={{ left: o.x, top: o.y, ["--r" as string]: o.r, ["--d" as string]: o.d }}><Glyph name={o.g} size={52} /></div>
-          ))}
-        </div>
-        <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="relative font-display text-[clamp(2.2rem,5vw,3.8rem)] font-medium leading-[0.98] tracking-[-0.045em]">
-          Create your next short
-        </motion.h1>
-        <p className="relative mt-2 text-base text-muted">Choose a format and let’s get started.</p>
-      </section>
-
+    <div className="mx-auto flex max-w-[1200px] flex-col pb-4 lg:h-full lg:pb-0">
       <section aria-label="Choose a format" className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
         {FORMATS.map((f) => <FormatCard key={f.href} {...f} />)}
         <FormatCard href="/short-videos/ads" title="Ads" platform="Create an ad" glyph="ads" tone="bg-brand text-brand-ink" />
       </section>
 
-      <section aria-label="Upload clips" className="mx-auto mt-6 max-w-3xl">
-        <UploadWorkspace kind="short" embedded forcedTab="Reels" dropTitle="+ Upload videos and photos" dropHint="Drop your videos and photos here and we’ll recognise the set and start a cut." />
+      <section aria-label="Upload clips" className="mt-6 grid items-stretch gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+        <div className="rounded-[28px] flex flex-col border border-text/10 p-5 lg:min-h-0">
+          <UploadWorkspace kind="short" embedded forcedTab="Reels" dropTitle="Upload videos and photos" dropHint="Drop your videos and photos here and we’ll recognise the set and start a cut." />
+        </div>
+        <FlowCard
+          eyebrow="From footage to short"
+          steps={[
+            { title: "Find the moment", sub: "Best beats picked from your footage" },
+            { title: "Build the clip", sub: "Trimmed, paced and ready to cut" },
+            { title: "Add captions", sub: "Styled and synced automatically" },
+            { title: "Adapt the format", sub: "Sized for Reels, Shorts or Stories" },
+          ]}
+          footer="Your edits always stay editable."
+        />
       </section>
     </div>
   );

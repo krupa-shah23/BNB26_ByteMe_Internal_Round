@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { AbsoluteFill, Img, Sequence, Video, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { Bookmark, Heart, MessageCircle, Music2, MoreHorizontal, Repeat2, Send, Share2, ThumbsDown, ThumbsUp } from "lucide-react";
 import type { Aspect, Segment, TextOverlay } from "@/lib/types";
 import { gradientFor } from "@/components/ui/bits";
 import { PROFILES } from "@/lib/projects";
@@ -13,7 +14,103 @@ export interface EdlProps {
   overlays?: TextOverlay[];
   /** shown instead of the video if the file can't be loaded */
   poster?: string;
+  capStyle?: "clean" | "bold" | "minimal";
   [key: string]: unknown;
+}
+
+/** Long-video previews: the player / post furniture that sits on or around the video. */
+function LongChrome({ platform, unit }: { platform: PlatformId; unit: number }) {
+  const txt = unit * 0.034;
+  const ic = unit * 0.05;
+  const shadow = "0 1px 6px rgba(0,0,0,0.6)";
+  const icon = { size: ic, strokeWidth: 2, style: { filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.6))" } };
+  const Item = ({ i, label }: { i: React.ReactNode; label: string }) => <div style={{ display: "flex", alignItems: "center", gap: unit * 0.012, fontSize: txt, fontWeight: 600 }}>{i}<span>{label}</span></div>;
+  const bar = { position: "absolute" as const, left: unit * 0.04, right: unit * 0.04, bottom: unit * 0.035, display: "flex", alignItems: "center", justifyContent: "space-between", gap: unit * 0.03 };
+  return (
+    <AbsoluteFill style={{ pointerEvents: "none", color: "#fff", fontFamily: "var(--font-text)", textShadow: shadow }}>
+      {platform === "yt_video" && (<>
+        <div style={{ position: "absolute", left: unit * 0.04, bottom: unit * 0.09, fontSize: txt * 1.1, fontWeight: 700 }}>Your video title goes here</div>
+        <div style={{ ...bar, bottom: unit * 0.03 }}>
+          <div style={{ flex: 1, height: unit * 0.008, background: "rgba(255,255,255,0.35)", borderRadius: 99 }}><div style={{ width: "32%", height: "100%", background: "#f00", borderRadius: 99 }} /></div>
+          <span style={{ fontSize: txt }}>0:00 / 10:23</span>
+        </div>
+        <div style={{ position: "absolute", right: unit * 0.04, top: unit * 0.04, display: "flex", gap: unit * 0.02, fontSize: txt, fontWeight: 600 }}>
+          <span style={{ background: "rgba(0,0,0,0.55)", borderRadius: 99, padding: `${unit * 0.008}px ${unit * 0.02}px`, textShadow: "none" }}>Subscribe</span>
+          <span style={{ background: "rgba(0,0,0,0.55)", borderRadius: 99, padding: `${unit * 0.008}px ${unit * 0.02}px`, textShadow: "none" }}>Like 24K</span>
+        </div>
+      </>)}
+      {platform === "linkedin" && (<>
+        <div style={{ position: "absolute", left: unit * 0.04, top: unit * 0.04, display: "flex", alignItems: "center", gap: unit * 0.015, fontSize: txt, fontWeight: 700 }}>
+          <span style={{ width: unit * 0.06, height: unit * 0.06, borderRadius: "50%", background: "rgba(255,255,255,0.85)", display: "inline-block" }} />Your Name · Creator
+        </div>
+        <div style={bar}>
+          <Item i={<ThumbsUp {...icon} />} label="Like" />
+          <Item i={<MessageCircle {...icon} />} label="Comment" />
+          <Item i={<Repeat2 {...icon} />} label="Repost" />
+          <Item i={<Send {...icon} />} label="Send" />
+        </div>
+      </>)}
+      {platform === "x" && (<>
+        <div style={{ position: "absolute", left: unit * 0.04, top: unit * 0.04, display: "flex", alignItems: "center", gap: unit * 0.015, fontSize: txt, fontWeight: 700 }}>
+          <span style={{ width: unit * 0.06, height: unit * 0.06, borderRadius: "50%", background: "rgba(255,255,255,0.85)", display: "inline-block" }} />@yourhandle
+        </div>
+        <div style={bar}>
+          <Item i={<MessageCircle {...icon} />} label="Reply" />
+          <Item i={<Repeat2 {...icon} />} label="Repost" />
+          <Item i={<Heart {...icon} />} label="Like" />
+          <Item i={<Share2 {...icon} />} label="Share" />
+        </div>
+      </>)}
+    </AbsoluteFill>
+  );
+}
+
+/** "View as" mock of the app's own buttons and text, so you can see what would sit on top of the video. */
+function PlatformChrome({ platform, unit }: { platform: PlatformId; unit: number }) {
+  const ig = platform === "ig_reel";
+  const fb = platform === "facebook";
+  if (platform === "yt_video" || platform === "linkedin" || platform === "x") return <LongChrome platform={platform} unit={unit} />;
+  if (!ig && !fb && platform !== "yt_short") return null;
+  const ic = unit * 0.07;
+  const txt = unit * 0.028;
+  const shadow = "0 1px 6px rgba(0,0,0,0.6)";
+  const Btn = ({ icon, label }: { icon: React.ReactNode; label?: string }) => (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: unit * 0.006, fontSize: txt, fontWeight: 600 }}>{icon}{label && <span>{label}</span>}</div>
+  );
+  const props = { size: ic, strokeWidth: 2, style: { filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.6))" } };
+  return (
+    <AbsoluteFill style={{ pointerEvents: "none", color: "#fff", fontFamily: "var(--font-text)", textShadow: shadow }}>
+      <div style={{ position: "absolute", right: unit * 0.03, bottom: unit * 0.1, display: "flex", flexDirection: "column", alignItems: "center", gap: unit * 0.035 }}>
+        {fb ? (<>
+          <Btn icon={<ThumbsUp {...props} />} label="Like" />
+          <Btn icon={<MessageCircle {...props} />} label="Reply" />
+          <Btn icon={<Share2 {...props} />} label="Share" />
+          <Btn icon={<MoreHorizontal {...props} />} />
+        </>) : ig ? (<>
+          <Btn icon={<Heart {...props} />} label="24.1K" />
+          <Btn icon={<MessageCircle {...props} />} label="312" />
+          <Btn icon={<Send {...props} />} label="1.2K" />
+          <Btn icon={<Bookmark {...props} />} />
+          <Btn icon={<MoreHorizontal {...props} />} />
+        </>) : (<>
+          <Btn icon={<ThumbsUp {...props} />} label="24K" />
+          <Btn icon={<ThumbsDown {...props} />} label="Dislike" />
+          <Btn icon={<MessageCircle {...props} />} label="312" />
+          <Btn icon={<Share2 {...props} />} label="Share" />
+          <Btn icon={<Repeat2 {...props} />} label="Remix" />
+        </>)}
+      </div>
+      <div style={{ position: "absolute", left: unit * 0.04, right: unit * 0.2, bottom: unit * 0.04, display: "flex", flexDirection: "column", gap: unit * 0.014, fontSize: txt * 1.1 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: unit * 0.02, fontWeight: 700 }}>
+          <span style={{ width: unit * 0.06, height: unit * 0.06, borderRadius: "50%", background: "rgba(255,255,255,0.85)", display: "inline-block" }} />
+          <span>{ig ? "yourname" : fb ? "Your Page" : "@yourchannel"}</span>
+          <span style={{ border: "1px solid #fff", borderRadius: 999, padding: `${unit * 0.004}px ${unit * 0.018}px`, fontSize: txt, background: ig || fb ? "transparent" : "#fff", color: ig || fb ? "#fff" : "#000", textShadow: "none" }}>{ig ? "Follow" : fb ? "Follow" : "Subscribe"}</span>
+        </div>
+        <div style={{ opacity: 0.9 }}>Your caption goes here #reel</div>
+        {ig && <div style={{ display: "flex", alignItems: "center", gap: unit * 0.01, fontSize: txt }}><Music2 size={txt} />Original audio</div>}
+      </div>
+    </AbsoluteFill>
+  );
 }
 
 const label: Record<string, string> = { hook: "HOOK", demo: "DEMO", cta: "CTA", photo: "PHOTO", explain: "EXPLAIN", story: "STORY", quote: "QUOTE", punch: "PUNCHLINE" };
@@ -34,10 +131,10 @@ function Slate({ seg, idx, p }: { seg: Segment; idx: number; p: EdlProps }) {
   const [attempt, setAttempt] = useState(0);
   const start = Math.round((seg.in ?? 0) * fps);
   return (
-    <AbsoluteFill style={{ background: gradientFor(p.hue + idx), overflow: "hidden" }}>
+    <AbsoluteFill style={{ background: fixed && url && !failed ? "#000" : gradientFor(p.hue + idx), overflow: "hidden" }}>
       {url && !failed && (
         <AbsoluteFill style={{ transform: `scale(${kb})` }}>
-                    <Video key={`fg${attempt}`} src={url} startFrom={start} muted onError={() => setFailed(true)} style={{ width: "100%", height: "100%", objectFit: fixed ? "contain" : "cover" }} />
+                    <Video key={`fg${attempt}`} src={url} startFrom={start} playbackRate={seg.speed ?? 1} volume={(seg.vol ?? 80) / 100} muted={(seg.vol ?? 80) === 0} onError={() => setFailed(true)} style={{ width: "100%", height: "100%", objectFit: fixed ? "contain" : "cover" }} />
         </AbsoluteFill>
       )}
       {url && failed && (
@@ -64,14 +161,12 @@ function Slate({ seg, idx, p }: { seg: Segment; idx: number; p: EdlProps }) {
       </div>}
       {seg.caption && (
         <div style={{ position: "absolute", left: `${prof.safe.side}%`, right: `${prof.safe.side}%`, bottom: `${portrait ? prof.safe.bottom + 4 : prof.safe.bottom + 3}%`, opacity: fade, transform: `translateY(${rise}px)`, textAlign: "center" }}>
-          <span style={{ display: "inline-block", background: "rgb(var(--text) / 0.78)", color: "rgb(var(--bg))", padding: `${unit * 0.014}px ${unit * 0.028}px`, borderRadius: unit * 0.02, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: unit * (portrait ? 0.056 : 0.05), lineHeight: 1.15, letterSpacing: "-0.02em" }}>{seg.caption}</span>
+          <span style={{ display: "inline-block", ...(p.capStyle === "minimal" ? { background: "transparent", color: "#fff", textShadow: "0 2px 8px rgba(0,0,0,0.8)" } : p.capStyle === "bold" ? { background: "#facc15", color: "#000", textTransform: "uppercase" as const } : { background: "rgb(var(--text) / 0.78)", color: "rgb(var(--bg))" }), padding: `${unit * 0.014}px ${unit * 0.028}px`, borderRadius: unit * 0.02, fontFamily: "var(--font-display)", fontWeight: p.capStyle === "bold" ? 800 : 600, fontSize: unit * (portrait ? 0.056 : 0.05), lineHeight: 1.15, letterSpacing: "-0.02em" }}>{seg.caption}</span>
         </div>
       )}
       {p.selectedId === seg.id && <AbsoluteFill style={{ boxShadow: `inset 0 0 0 ${unit * 0.008}px rgb(var(--accent))`, pointerEvents: "none" }} />}
       {p.showSafe && (
-        <AbsoluteFill style={{ pointerEvents: "none" }}>
-          <div style={{ position: "absolute", inset: 0, top: `${prof.safe.top}%`, bottom: `${prof.safe.bottom}%`, left: `${prof.safe.side}%`, right: `${prof.safe.side}%`, border: `${unit * 0.004}px dashed rgb(var(--accent))` }} />
-        </AbsoluteFill>
+        <PlatformChrome platform={p.platform} unit={unit} />
       )}
     </AbsoluteFill>
   );

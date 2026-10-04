@@ -19,17 +19,14 @@ const MOMENTS: { n: string; t: string; title: string; text: string; why: string;
   { n: "06", t: "~07:30 – 09:05", title: "Mutation", text: "Shows chromosome mutation and the resulting fitness values.", why: "Strong standalone concept with a visible before/after transformation.", s: [8.1, 8.9, 9.0, 7.8, 8.5] },
 ];
 const SCORE_LABELS = ["Hook potential", "Educational value", "Visual clarity", "Standalone context", "Short-form potential"];
-const DNA: [string, string][] = [["Content style", "Educational / explanatory"], ["Pacing", "Moderate"], ["Presentation", "Step-by-step"], ["Language", "Technical / instructional"], ["Visual style", "Slide-led"], ["Information density", "High"], ["Hook style", "Problem → explanation"], ["CTA style", "Minimal"]];
 const STRUCTURE = ["HOOK · “How does a genetic algorithm actually find the best solution?”", "PROBLEM · f(x) = x²", "STEP 1 · Initial population", "STEP 2 · Calculate fitness", "STEP 3 · Select the mating pool", "STEP 4 · Crossover", "STEP 5 · Mutation", "PAYOFF · Best-performing solution"];
 const DECISIONS: [string, string][] = [["Cuts", "Remove pauses and unnecessary repetition"], ["Pacing", "Medium-fast, cut every 2–5 sec where possible"], ["Zoom", "Into important table values"], ["Transitions", "Minimal, this is educational content"], ["Captions", "Large technical keywords; highlight equations and key numbers"], ["B-roll", "Not needed"], ["Music", "None / very low-volume optional track"], ["CTA", "Minimal"]];
 const OUTPUTS: [string, string, string][] = [["Short 1", "How Genetic Algorithms Choose the Best Solution", "45–60 sec"], ["Short 2", "Fitness Functions Explained Using f(x) = x²", "40–50 sec"], ["Short 3", "Crossover and Mutation in Genetic Algorithms", "45–60 sec"], ["Main video", "Genetic Algorithm Solved Example", "~10–12 min after removing dead time"]];
 const HOOKS: [string, string, string][] = [["Educational", "How does a genetic algorithm actually find the best solution?", "9.1"], ["Curiosity", "What happens when you make an algorithm evolve?", "8.7"], ["Problem-based", "Can we use evolution to solve an optimisation problem?", "8.5"], ["Direct", "Here’s a complete Genetic Algorithm example in under a minute.", "8.2"]];
 const PLATFORMS: [string, string, string][] = [["YouTube", "16:9 · 10–12 min · full explanation", "Genetic Algorithm Solved Example | Selection, Crossover & Mutation"], ["YouTube Shorts", "9:16 · 45–60 sec", "Crops the slide, zooms into table regions, larger captions, restructures the explanation"], ["Instagram Reel", "9:16 · 30–60 sec", "Strongest hook, fastest explanation, visual changes, concise payoff"], ["LinkedIn", "Video + post", "Genetic algorithms borrow an idea from evolution: solutions improve through selection, crossover and mutation."]];
 const SUGGESTIONS: [string, string][] = [["Remove 4.2 sec pause", "Long silence"], ["Zoom into fitness table", "Important visual"], ["Shorten intro", "Low retention potential"], ["Highlight f(x) = x²", "Key concept"], ["Remove repeated explanation", "Duplicate content"]];
-const LEARNING: [string, string][] = [["Rejects background music", "Prefers educational videos without background music"], ["Deletes a long intro", "Prefers shorter introductions"], ["Increases caption size", "Prefers large captions for technical content"], ["Repeatedly picks curiosity hooks", "Prefers curiosity-driven openings"]];
-const FINAL_DNA: [string, string][] = [["Content", "Educational / Technical"], ["Pacing", "Medium → Fast"], ["Hooks", "Curiosity + Problem"], ["Captions", "Large, keyword-focused"], ["Visuals", "Zoom important content, highlight equations"], ["B-roll", "Low"], ["Music", "Minimal / None"], ["CTA", "Minimal"], ["Structure", "Hook → Explanation → Example → Result"]];
 
-const TABS = ["Understand", "Moments", "Creator DNA", "AI edit", "Hooks & captions", "Platforms", "Content pack", "Review", "Learning"] as const;
+const TABS = ["Understand", "Moments", "AI edit", "Hooks & captions", "Platforms", "Content pack", "Review"] as const;
 type Tab = (typeof TABS)[number];
 
 function Rows({ rows }: { rows: [string, string][] }) {
@@ -72,16 +69,10 @@ export function LectureReport({ open, onClose }: { open: boolean; onClose: () =>
               <dl className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">{m.s.map((v, i) => <div key={i} className="rounded-lg bg-sunken px-2 py-1.5"><dt className="text-muted">{SCORE_LABELS[i]}</dt><dd className="font-semibold">{v.toFixed(1)}/10</dd></div>)}</dl>
               <button className="btn-ghost mt-3 py-1.5" aria-pressed={added.includes(m.n)} onClick={() => { setAdded((a) => (a.includes(m.n) ? a.filter((x) => x !== m.n) : [...a, m.n])); toast(added.includes(m.n) ? "Removed from video" : "Added to video", m.title); }}>{added.includes(m.n) ? "✓ Added" : "+ Add to video"}</button>
             </li>))}</ul>)}
-          {tab === "Creator DNA" && (<>
-            <H>Creator DNA detected</H><Rows rows={DNA} />
-            <p className="mt-4 text-sm">Creator DNA confidence: <b>62%</b></p>
-            <div className="mt-2 h-2 max-w-sm overflow-hidden rounded-full bg-sunken"><div className="h-full w-[62%] rounded-full bg-brand" /></div>
-            <p className="mt-3 text-sm text-muted">CreatorAI is still learning your style. Upload more videos to improve personalisation.</p>
-          </>)}
           {tab === "AI edit" && (<>
             <H>Recommended Short · Genetic Algorithm Explained in 60 Seconds</H>
             <ol className="grid gap-2">{STRUCTURE.map((s, i) => <li key={s} className="flex gap-3 rounded-xl border border-line px-4 py-3 text-sm"><span className="font-mono text-muted">{i + 1}</span>{s}</li>)}</ol>
-            <H>AI editing decisions (based on your Creator DNA)</H><Rows rows={DECISIONS} />
+            <H>AI editing decisions</H><Rows rows={DECISIONS} />
             <p className="mt-3 text-sm text-muted">Technical screen recording: no face tracking, no aggressive jump cuts, no random B-roll.</p>
             <H>Before → AI recommendation</H>
             <p className="mb-3 text-sm">12:38 full tutorial → <b>3 Shorts + 1 main video</b></p>
@@ -109,11 +100,6 @@ export function LectureReport({ open, onClose }: { open: boolean; onClose: () =>
             <button className="btn-ghost mt-3 py-1.5" onClick={() => toast("More ideas generated")}>Generate more</button>
           </>)}
           {tab === "Review" && (<ul className="grid gap-2">{SUGGESTIONS.map(([s, r]) => <li key={s} className="card flex flex-wrap items-center justify-between gap-2 p-4 text-sm"><span><b>{s}</b><br /><span className="text-muted">{r}</span></span><button className="btn-ghost py-1.5" aria-pressed={done.includes(s)} onClick={() => setDone((d) => (d.includes(s) ? d : [...d, s]))}>{done.includes(s) ? "✓ Accepted" : "Accept"}</button></li>)}</ul>)}
-          {tab === "Learning" && (<>
-            <H>What CreatorAI learns from your choices</H>
-            <ul className="grid gap-2">{LEARNING.map(([a, b]) => <li key={a} className="card p-4 text-sm"><span className="text-muted">{a}</span><br />→ <b>{b}</b></li>)}</ul>
-            <H>Creator DNA after this video</H><Rows rows={FINAL_DNA} />
-          </>)}
         </div>
       </div>
     </Overlay>

@@ -2,7 +2,7 @@ import creatorsFx from "@/fixtures/creators.json";
 
 export interface Creator { id: string; name: string; handle: string; niche: string; followers: number; topics: string[]; vec: number[] }
 export const allCreators = creatorsFx.creators as Creator[];
-/** The signed-in creator's profile. BACKEND-SLOT(recommendations): from Creator DNA + analytics. */
+/** The signed-in creator's profile. BACKEND-SLOT(recommendations): from analytics. */
 export const ME = { vec: [0.8, 0.3, 0.2, 0.8, 0.4, 0.7, 0.3, 0.4], topics: ["startup-india", "education", "comedy", "career"], followers: 48200 };
 
 export interface Rec {

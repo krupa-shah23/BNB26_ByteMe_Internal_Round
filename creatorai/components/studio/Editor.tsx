@@ -1,7 +1,7 @@
 "use client";
 import type { PlayerRef } from "@remotion/player";
 import { motion } from "framer-motion";
-import { ShieldCheck, Check, Dna, Download, Pause, Play, Plus, Redo2, RotateCcw, Save, Sparkles, Subtitles, Trash2, Undo2, Image as ImageIcon } from "lucide-react";
+import { ShieldCheck, Scissors, Check, Download, Pause, Play, Plus, Redo2, RotateCcw, Save, Sparkles, Subtitles, Trash2, Undo2, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -26,8 +26,13 @@ import { renderFiltered } from "@/lib/banuba";
 const FilterPanel = dynamic(() => import("./FilterPanel").then((m) => m.FilterPanel), { ssr: false, loading: () => <div className="skeleton mt-4 h-64 w-full rounded-2xl" /> });
 import { groupById } from "@/lib/match";
 import { tracks, trackById } from "@/lib/precheck";
+import { ClipsTab, PostTab, StoryEditor } from "./ContentTabs";
+import { CuratedClips, CuratedPost, CuratedStory } from "./ContentTabsCurated";
+import { LongContentPanel } from "./ContentTabsLong";
+import { longContentFor, studioContentFor } from "@/lib/studioContent";
+import { StoryImageStudio } from "./StoryImageStudio";
+import { STORY_GROUP } from "@/lib/storyImage";
 import { MusicSearch } from "@/components/audio/SongSearch";
-import { dnaTraits, sortHooksByDNA } from "@/lib/creatorDna";
 import { useStore } from "@/lib/store";
 import type { Aspect, PlatformId, Segment, TextOverlay } from "@/lib/types";
 
@@ -37,16 +42,18 @@ type Tab = "story" | "moments" | "clips" | "post";
 const TABS: { id: Tab; label: string }[] = [{ id: "story", label: "Story" }, { id: "moments", label: "Find moments" }, { id: "clips", label: "Clips" }, { id: "post", label: "Where to post" }];
 /** One undo step covers both the cut and the text layer. */
 type Snap = { tl: Segment[]; ov: TextOverlay[] };
-type ViewAs = "clean" | "ig_reel" | "yt_short";
-const VIEW_AS: { id: ViewAs; label: string }[] = [{ id: "clean", label: "Clean" }, { id: "ig_reel", label: "IG Reels" }, { id: "yt_short", label: "YT Shorts" }];
+type ViewAs = "clean" | PlatformId;
+const VIEW_LABEL: Partial<Record<PlatformId, string>> = { ig_reel: "IG Reels", yt_short: "YT Shorts", facebook: "FB Stories", yt_video: "YouTube", linkedin: "LinkedIn", x: "X" };
+/** Short videos preview as Reels / Shorts / Stories; long videos as YouTube / LinkedIn / X. */
+const viewOptions = (isShort: boolean): { id: ViewAs; label: string }[] => [{ id: "clean", label: "Clean" }, ...((isShort ? ["ig_reel", "yt_short", "facebook"] : ["yt_video", "linkedin", "x"]) as PlatformId[]).map((id) => ({ id, label: VIEW_LABEL[id] ?? id }))];
 const clampN = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 /** "View as platform": draws that app's safe zone (where buttons and captions cover the video). Clean = off. */
-function ViewAsControl({ value, onChange }: { value: ViewAs; onChange: (v: ViewAs) => void }) {
+function ViewAsControl({ value, onChange, options }: { value: ViewAs; onChange: (v: ViewAs) => void; options: { id: ViewAs; label: string }[] }) {
   return (
     <div role="radiogroup" aria-label="View as platform" className="flex flex-wrap items-center justify-center gap-1 rounded-2xl border border-line bg-surface p-1 text-xs font-medium">
       <span className="whitespace-nowrap px-2 text-muted">View as</span>
-      {VIEW_AS.map((v) => (
+      {options.map((v) => (
         <button key={v.id} type="button" role="radio" aria-checked={value === v.id} onClick={() => onChange(v.id)}
           className={clsx("whitespace-nowrap rounded-pill px-3 py-1.5 transition-colors", value === v.id ? "bg-text text-white dark:text-bg" : "text-muted hover:text-text")}>{v.label}</button>
       ))}
@@ -94,10 +101,6 @@ export function Editor({ projectId }: { projectId: string }) {
   const patch = useStore((s) => s.patchProject);
   const setDirty = useStore((s) => s.setDirty);
   const toast = useStore((s) => s.toast);
-  const dna = useStore((s) => s.creatorDNA);
-  const addFeedback = useStore((s) => s.addFeedback);
-  const [dnaOpen, setDnaOpen] = useState(false);
-  const capFocus = useRef("");
 
   const [tl, setTl] = useState<Segment[]>(project?.timeline ?? []);
   const [past, setPast] = useState<Snap[]>([]);
@@ -105,6 +108,9 @@ export function Editor({ projectId }: { projectId: string }) {
   const [sel, setSel] = useState<string | undefined>(project?.timeline[0]?.id);
   const [hoverSeg, setHoverSeg] = useState<string | undefined>();
   const [tab, setTab] = useState<Tab>("story");
+  type ClipDraft = { id: string | undefined; start: string; end: string; speed: number; aspect: Aspect; vol: number; text: string; pos: TextOverlay["pos"]; textOn: boolean };
+  const [clipEdit, setClipEdit] = useState<ClipDraft | null>(null);
+  const [musicVol, setMusicVol] = useState(35);
   const [caps, setCaps] = useState(false);
   const [thumb, setThumb] = useState(false);
   const [viewAs, setViewAs] = useState<ViewAs>("clean");
@@ -122,16 +128,32 @@ export function Editor({ projectId }: { projectId: string }) {
   const [selOv, setSelOv] = useState<string | undefined>();
   const dirtyRef = useRef(false);
   const [script, setScript] = useState("");
+  const longContent = longContentFor(project?.groupId);
+  const content = studioContentFor(project?.groupId); // hand-written copy for specific demo uploads
   const [hooks, setHooks] = useState<{ text: string; style: string; score?: number }[]>(hooksFx.hooks);
   useEffect(() => {
     if (!project) return;
     let alive = true;
     // an audience-question project starts from its drafted script instead of the sample one
     if (project.prefill) setScript(project.prefill.script.join("\n"));
+    else if (content) setScript(content.story.default.join("\n"));
     else scriptService.write({ topic: project.title, groupId: project.groupId }).then((r) => { if (alive) setScript(r.lines.join("\n")); });
     if (mode("hooks") === "live") hookService.suggest({ topic: project.title }).then((r) => { if (alive) setHooks(r.hooks.map((text) => ({ text, style: r.source === "live" ? "AI" : "sample" }))); });
     return () => { alive = false; };
   }, [project?.id, project?.groupId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Curated upload sets: split the single AI clip into the hand-written moments, once (labelled clips are never re-split)
+  useEffect(() => {
+    const first = latest.current[0];
+    if (!project || !content || !project.reel || latest.current.length !== 1 || !first || first.label || !first.url) return;
+    const L = project.reel.durationSec;
+    const seeds = content.clips.initial;
+    const next = normalize(seeds.map((c, i) => {
+      const from = Math.min(c.from, L - 0.5), to = i === seeds.length - 1 ? L : Math.min(c.to, L);
+      return { ...first, id: uid("seg"), in: from, out: +to.toFixed(2), dur: +(to - from).toFixed(2), label: c.label, caption: c.text, touched: false, ai: { dur: +(to - from).toFixed(2), caption: c.text, in: from, out: +to.toFixed(2) } };
+    }));
+    setTl(next); touch();
+  }, [project?.id, content]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Audience → "Create response": drop the drafted hook into the opening once, keep everything editable
   useEffect(() => {
@@ -147,7 +169,7 @@ export function Editor({ projectId }: { projectId: string }) {
 
   const save = useCallback(() => {
     if (!project || !dirtyRef.current) return;
-    patch(project.id, { timeline: latest.current, ...(project.reel ? { overlays: latestOv.current } : {}), version: project.version + 1, status: project.status === "Generated" ? "Editing" : project.status });
+    patch(project.id, { timeline: latest.current, ...{ overlays: latestOv.current }, version: project.version + 1, status: project.status === "Generated" ? "Editing" : project.status });
     dirtyRef.current = false; setSaved(true); setDirty(false);
   }, [patch, project, setDirty]);
 
@@ -176,6 +198,13 @@ export function Editor({ projectId }: { projectId: string }) {
     const a = new Audio(songUrl); a.loop = true; songRef.current = a;
     return () => { a.pause(); songRef.current = null; };
   }, [songUrl]);
+  useEffect(() => {
+    try { const v = localStorage.getItem(`creatorai-mvol-${project?.id}`); if (v !== null && !Number.isNaN(+v)) setMusicVol(+v); } catch { /* storage unavailable */ }
+  }, [project?.id]);
+  useEffect(() => {
+    if (songRef.current) songRef.current.volume = clampN(musicVol, 0, 100) / 100;
+    try { localStorage.setItem(`creatorai-mvol-${project?.id}`, String(musicVol)); } catch { /* storage unavailable */ }
+  }, [musicVol, songUrl, project?.id]);
   useEffect(() => {
     const a = songRef.current; if (!a) return;
     if (playing) { const f = playerRef.current?.getCurrentFrame() ?? 0; if (Math.abs(a.currentTime - f / FPS) > 0.4) { try { a.currentTime = f / FPS; } catch { /* not seekable yet */ } } a.play().catch(() => {}); } else a.pause();
@@ -206,14 +235,15 @@ export function Editor({ projectId }: { projectId: string }) {
     if (s.id !== id) return s;
     const m = { ...s, ...p, touched: true };
     const len = project?.reel?.durationSec;
-    if (len && m.url) { // trim stays inside the real video
-      const i = clampN(m.in ?? 0, 0, len - 0.5), d = clampN(m.dur, 0.5, len - i);
-      return { ...m, in: +i.toFixed(2), dur: +d.toFixed(2), out: +(i + d).toFixed(2) };
+    if (len && m.url) { // trim stays inside the real video (dur is on-screen time, so source length = dur x speed)
+      const sp = m.speed ?? 1;
+      const i = clampN(m.in ?? 0, 0, len - 0.5), d = clampN(m.dur, 0.5, (len - i) / sp);
+      return { ...m, in: +i.toFixed(2), dur: +d.toFixed(2), out: +(i + d * sp).toFixed(2) };
     }
     return m;
   }));
   const selected = tl.find((s) => s.id === sel);
-  const nameOf = (s: Segment) => segmentName(s.kind, tl.indexOf(s), tl.length);
+  const nameOf = (s: Segment) => s.label ?? segmentName(s.kind, tl.indexOf(s), tl.length);
 
   // review lanes: ad-safety, PII, claims, consent
   const [compRaw, applyComp] = useCompliance(project);
@@ -245,6 +275,8 @@ export function Editor({ projectId }: { projectId: string }) {
     return <div className="grid place-items-center gap-4 py-24 text-center"><h1 className="t-h2">We couldn’t find that project</h1><Link className="btn-primary" href="/studio">Back to Studio</Link></div>;
   }
 
+  if (project.groupId === STORY_GROUP) return <StoryImageStudio project={project} />;
+
   const platform = project.platforms[0] ?? "ig_reel";
   const ratio = aspectDims[project.aspect].ratio;
   const setAspect = (a: Aspect) => patch(project.id, { aspect: a });
@@ -267,7 +299,7 @@ export function Editor({ projectId }: { projectId: string }) {
       setTl((cur) => normalize(cur.map((s) => (s.id === seg.id ? { ...s, dur: d, out: s.src ? +((s.in ?? 0) + d).toFixed(1) : s.out, touched: true } : s))));
       dirtyRef.current = true; setSaved(false); setDirty(true);
     };
-    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); addFeedback({ type: "pacing", originalValue: String(d0), newValue: String(lastD), context: "editing.pacing" }); setPast((p) => [...p.slice(-40), { tl, ov: latestOv.current }]); setFuture([]); };
+    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); setPast((p) => [...p.slice(-40), { tl, ov: latestOv.current }]); setFuture([]); };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
   };
   /** left edge of the fixed video: moves where it starts, keeps where it ends */
@@ -338,7 +370,7 @@ export function Editor({ projectId }: { projectId: string }) {
   const togglePlay = () => playerRef.current?.toggle();
 
   const title = friendlyTitle(project.title);
-  const edlProps = { timeline: tl, aspect: project.aspect, hue: project.hue, groupId: project.groupId, media: project.media, showSafe: safe, platform: safe ? (viewAs as PlatformId) : platform, selectedId: hoverSeg ?? sel, title, overlays: project.reel ? ov : undefined, poster: project.cover };
+  const edlProps = { timeline: tl, aspect: project.aspect, hue: project.hue, groupId: project.groupId, media: project.media, showSafe: safe, platform: safe ? (viewAs as PlatformId) : platform, selectedId: hoverSeg ?? sel, title, overlays: ov, poster: project.cover };
   const playheadPct = total ? Math.min(100, (frame / FPS / total) * 100) : 0;
   const nowSec = frame / FPS;
   const REASONS: Record<string, string> = { hook: "A strong way to start", demo: "Shows the payoff", cta: "A clear ask to finish on", explain: "Makes sense on its own", story: "A moment people will feel", quote: "A line worth quoting", punch: "Setup and punchline" };
@@ -360,7 +392,6 @@ export function Editor({ projectId }: { projectId: string }) {
         </div>
         <p className="mt-2 text-xs text-muted">{seg0.dur.toFixed(1)} sec of {project.reel.durationSec.toFixed(1)}</p>
       </div>
-      <OverlayEditor items={ov} selId={selOv} total={total} onSelect={(id) => { setSelOv(id); const o = ov.find((x) => x.id === id); if (o) jump(o.at); }} onAdd={addOv} onBegin={beginOv} onChange={changeOv} onRemove={removeOv} />
     </div>
   ) : null;
 
@@ -374,16 +405,6 @@ export function Editor({ projectId }: { projectId: string }) {
             className="mt-1 block w-full max-w-xl truncate rounded-lg bg-transparent font-display text-3xl tracking-tight outline-none hover:bg-sunken focus:bg-sunken md:text-4xl" />
           <div className="flex flex-wrap items-center gap-3">
             <p className="text-sm text-muted" aria-live="polite">{saved ? `Edited ${relTime(project.updatedAt)}` : "Saving…"}</p>
-            <div className="relative">
-              <button onClick={() => setDnaOpen((o) => !o)} aria-expanded={dnaOpen} className="chip gap-1.5 bg-accent/60 py-1 text-black hover:bg-accent"><Dna size={13} />Using your Creator DNA<Check size={13} /></button>
-              {dnaOpen && (
-                <div role="dialog" aria-label="Your Creator DNA" className="absolute left-0 top-9 z-30 w-72 rounded-2xl border border-line bg-surface p-4 shadow-soft">
-                  <p className="font-display text-lg tracking-tight">Your Creator DNA</p>
-                  <ul className="mt-2 grid gap-1 text-sm">{dnaTraits(dna, 6).map((t) => <li key={t} className="flex items-center gap-2"><Check size={12} className="text-ok" />{t}</li>)}</ul>
-                  <Link href="/profile-studio" className="btn-primary mt-4 w-full py-2 text-sm" onClick={() => setDnaOpen(false)}>View / Edit DNA</Link>
-                </div>
-              )}
-            </div>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -414,6 +435,7 @@ export function Editor({ projectId }: { projectId: string }) {
         {/* YOUR CONTENT */}
         <section className="order-2 overflow-hidden rounded-[24px] border border-text/10 bg-surface xl:order-1" aria-label="Your content">
           <h2 className="px-4 pt-4 text-xs font-semibold uppercase tracking-[0.14em] text-muted">Your content</h2>
+          {longContent && project.type !== "Short" ? <LongContentPanel c={longContent} platforms={project.platforms} setPlatforms={(p) => patch(project.id, { platforms: p.length ? p : project.platforms })} toast={toast} /> : (<>
           <div role="tablist" className="grid gap-1 p-2 text-xs font-medium" style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))` }}>
             {visibleTabs.map((t) => (
               <button key={t.id} role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)} className={clsx("rounded-xl px-1 py-2.5 leading-tight transition-colors", tab === t.id ? "bg-brand text-brand-ink" : "text-muted hover:bg-sunken")}>{t.label}</button>
@@ -422,24 +444,15 @@ export function Editor({ projectId }: { projectId: string }) {
           <div className="max-h-[560px] overflow-y-auto p-4 pt-2 text-sm">
             {tab === "story" && (
               <div className="grid gap-5">
-                <div>
-                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-muted" htmlFor="story">Your story</label>
-                  <textarea id="story" className="input min-h-36 leading-relaxed" value={script} onChange={(e) => setScript(e.target.value)} />
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <button className="btn-ghost py-2" onClick={() => { scriptService.write({ topic: project.title, groupId: project.groupId }).then((r) => setScript(r.lines.join("\n"))); toast("New version created"); }}><Sparkles size={14} />Generate new version</button>
-                    <select aria-label="Adapt your story for a platform" className="input w-auto py-2 text-xs" onChange={(e) => {
-                      const v = e.target.value; if (!v) return;
-                      setScript((s) => s.split("\n").map((l) => v === "x" ? l.slice(0, 140) : v === "linkedin" ? l.replace(/\.$/, "") + ", here’s what I learned." : "🔥 " + l).join("\n")); e.target.value = "";
-                    }}><option value="">Adapt for…</option><option value="ig_reel">Instagram Reel (punchy)</option><option value="linkedin">LinkedIn (professional)</option><option value="x">X (short)</option></select>
-                  </div>
-                </div>
+                {content ? <CuratedStory c={content.story} script={script} setScript={setScript} toast={toast} /> : (
+                  <StoryEditor script={script} setScript={setScript} toast={toast} onGenerate={() => { scriptService.write({ topic: project.title, groupId: project.groupId }).then((r) => setScript(r.lines.join("\n"))); toast("New version created"); }} />
+                )}
                 {!project.reel && <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted">Opening ideas</p>
-                  <ul className="grid gap-2">{sortHooksByDNA(hooks, dna).map((h) => (
+                  <ul className="grid gap-2">{hooks.map((h) => (
                     <li key={h.text} className="rounded-xl border border-line p-3">
                       <p>{h.text}</p>
-                      {dna.hooks.includes(h.style) && <span className="mt-1 inline-block text-[11px] text-brand">Matches your style</span>}
-                      <button className="mt-2 block text-xs font-medium text-brand underline-offset-4 hover:underline" onClick={() => { const first = tl[0]; if (first?.id) { addFeedback({ type: "hook", originalValue: first.caption ?? "", newValue: h.text, context: `hook:${h.style}` }); edit(first.id, { caption: h.text }); toast("Opening updated", h.text); } }}>Use this opening</button>
+                      <button className="mt-2 block text-xs font-medium text-brand underline-offset-4 hover:underline" onClick={() => { const first = tl[0]; if (first?.id) { edit(first.id, { caption: h.text }); toast("Opening updated", h.text); } }}>Use this opening</button>
                     </li>))}</ul>
                 </div>}
               </div>
@@ -457,41 +470,17 @@ export function Editor({ projectId }: { projectId: string }) {
               </div>
             )}
             {tab === "clips" && (
-              <ul className="grid gap-3">
-                {tl.map((s) => (
-                  <li key={s.id} className={clsx("rounded-xl border p-3", sel === s.id ? "border-brand" : "border-line")} onMouseEnter={() => setHoverSeg(s.id)} onMouseLeave={() => setHoverSeg(undefined)}>
-                    <div className="flex items-center justify-between"><b>{nameOf(s)}</b><span className="font-mono text-xs text-muted">{s.src ? `${fmtTime(s.in ?? 0)} – ${fmtTime(s.out ?? 0)}` : "Photo"}</span></div>
-                    {s.caption && <p className="mt-1 text-muted">“{s.caption}”</p>}
-                    <div className="mt-2 flex gap-2">
-                      <button className="btn-ghost flex-1 py-1.5" onClick={() => { setSel(s.id); playerRef.current?.seekTo(Math.round(s.at * FPS)); }}>Edit</button>
-                      <button className="btn-ghost py-1.5 text-bad" disabled={tl.length < 2} onClick={() => remove(s.id)}>Remove</button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              content ? <CuratedClips c={content.clips} t={{ tl, nameOf, edit, commit, sel, setSel, seekTo: (sec) => playerRef.current?.seekTo(Math.round(sec * FPS)), preview: () => playerRef.current?.play(), toast, sourceLen: project.reel?.durationSec ?? total, regenerate: () => { if (group) { commit(normalize(seedTimeline(group))); toast("New version created", "Back to the AI suggestion"); } }, hoverSeg: setHoverSeg }}  /> : (
+                <ClipsTab t={{ tl, nameOf, edit, commit, sel, setSel, seekTo: (sec) => playerRef.current?.seekTo(Math.round(sec * FPS)), preview: () => playerRef.current?.play(), toast, sourceLen: project.reel?.durationSec ?? total, regenerate: () => { if (group) { commit(normalize(seedTimeline(group))); toast("New version created", "Back to the AI suggestion"); } }, hoverSeg: setHoverSeg }} />
+              )
             )}
             {tab === "post" && (
-              <div className="grid gap-3">
-                <p className="text-muted">Where do you want to share this? Your video is adjusted automatically for each one.</p>
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted">Shape</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {(["9:16", "1:1", "4:5", "16:9"] as Aspect[]).map((a) => <button key={a} aria-pressed={project.aspect === a} onClick={() => setAspect(a)} className={clsx("chip px-3 py-1", project.aspect === a && "border-brand bg-brand text-brand-ink")}>{a}</button>)}
-                  </div>
-                </div>
-                <div><p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted">Preview as</p><ViewAsControl value={viewAs} onChange={setViewAs} /><p className="mt-1.5 text-xs text-muted">Shows where buttons and text can cover the video.</p></div>
-                {(Object.keys(PROFILES) as PlatformId[]).map((p) => {
-                  const pr = PROFILES[p]; const on = project.platforms.includes(p);
-                  return (
-                    <label key={p} className={clsx("flex cursor-pointer items-start gap-3 rounded-xl border p-3", on ? "border-brand bg-brand/5" : "border-line")}>
-                      <input type="checkbox" checked={on} onChange={() => togglePlatform(p)} className="mt-1 accent-[rgb(var(--brand))]" />
-                      <span><span className="block font-medium">{pr.label}</span>{on && <span className="text-xs text-muted">{pr.aspect}{pr.maxSec < 3600 ? ` · up to ${pr.maxSec >= 120 ? `${Math.round(pr.maxSec / 60)} min` : `${pr.maxSec} sec`}` : ""}</span>}</span>
-                    </label>
-                  );
-                })}
-              </div>
+              content && project.type === "Short" ? <CuratedPost c={content.post} t={{ kind: project.type === "Short" ? "short" : "long", platforms: project.platforms, setPlatforms: (p) => patch(project.id, { platforms: p.length ? p : project.platforms, aspect: "9:16" }), total, tl, edit, script, setScript, toast, addOverlay: (text, pos, at, dur) => { beginOv(); setOv((cur) => [...cur, { id: uid("ov"), text, at: +at.toFixed(2), dur: +dur.toFixed(2), pos, size: "m" }]); touch(); } }}  /> : (
+                <PostTab t={{ kind: project.type === "Short" ? "short" : "long", platforms: project.platforms, setPlatforms: (p) => patch(project.id, { platforms: p.length ? p : project.platforms, ...(project.type === "Short" ? { aspect: "9:16" as Aspect } : {}) }), total, tl, edit, script, setScript, toast, addOverlay: (text, pos, at, dur) => { beginOv(); setOv((cur) => [...cur, { id: uid("ov"), text, at: +at.toFixed(2), dur: +dur.toFixed(2), pos, size: "m" }]); touch(); } }} />
+              )
             )}
           </div>
+          </>)}
         </section>
 
         {/* VIDEO PREVIEW */}
@@ -505,7 +494,7 @@ export function Editor({ projectId }: { projectId: string }) {
               <button className="grid h-10 w-10 place-items-center rounded-full bg-text text-bg" onClick={togglePlay} aria-label={playing ? "Pause" : "Play"}>{playing ? <Pause size={16} /> : <Play size={16} />}</button>
               <span className="font-mono text-sm tabular-nums">{fmtTime(nowSec)} / {fmtTime(total)}</span>
             </div>
-            <div className="mt-3"><ViewAsControl value={viewAs} onChange={setViewAs} /></div>
+            <div className="mt-3"><ViewAsControl value={viewAs} onChange={setViewAs} options={viewOptions(project.type === "Short")} /></div>
           </div>
           {(project.caption || project.thumb) && (
             <div className="mt-4 grid gap-4 rounded-[24px] border border-text/10 bg-surface p-4 sm:grid-cols-[160px_1fr]">
@@ -538,7 +527,7 @@ export function Editor({ projectId }: { projectId: string }) {
                 <p className="font-display text-2xl tracking-tight">{nameOf(selected)}</p>
                 <div className="mt-1">{selected.touched ? <Badge tone="ok">Edited by you</Badge> : <Badge tone="brand"><Sparkles size={12} />Suggested by CreatorAI</Badge>}</div>
               </div>
-              <div><label className="mb-1 block font-medium" htmlFor="cap">Caption</label><textarea id="cap" className="input min-h-20" value={selected.caption ?? ""} onFocus={() => { capFocus.current = selected.caption ?? ""; }} onBlur={() => addFeedback({ type: "caption", originalValue: capFocus.current, newValue: selected.caption ?? "", context: "inspector.caption" })} onChange={(e) => edit(selected.id!, { caption: e.target.value })} /></div>
+              <div><label className="mb-1 block font-medium" htmlFor="cap">Caption</label><textarea id="cap" className="input min-h-20" value={selected.caption ?? ""} onChange={(e) => edit(selected.id!, { caption: e.target.value })} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="mb-1 block font-medium" htmlFor="dur">How long? (sec)</label><input id="dur" type="number" step="0.1" min="0.5" className="input" value={selected.dur} onChange={(e) => { const d = Math.max(0.5, +e.target.value || 0.5); edit(selected.id!, { dur: d, out: selected.src ? +((selected.in ?? 0) + d).toFixed(1) : selected.out }); }} /></div>
                 {selected.src && <div><label className="mb-1 block font-medium" htmlFor="in">Starts at (sec)</label><input id="in" type="number" step="0.5" min="0" className="input" value={selected.in ?? 0} onChange={(e) => { const i = Math.max(0, +e.target.value || 0); edit(selected.id!, { in: i, out: +(i + selected.dur).toFixed(1) }); }} /></div>}
@@ -562,17 +551,19 @@ export function Editor({ projectId }: { projectId: string }) {
       </div>
 
       {/* TIMELINE */}
+      {comp ? (
       <section className="mt-5 rounded-[24px] border border-text/10 bg-surface p-4" aria-label="Timeline">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm">
           <span><b className="font-display text-lg tracking-tight">Timeline</b> <span className="text-muted">· {Math.round(total)} seconds</span></span>
-          <span className="text-xs text-muted">Drag the edges to shorten or extend a section · <span className="text-brand">■</span> Suggested by CreatorAI <span className="ml-1 text-accent">■</span> Edited by you</span>
+          <span className="text-xs text-muted">Drag the edges to shorten or extend a section · <span className="text-brand">■</span> Suggested by CreatorAi <span className="ml-1 text-accent">▣</span> Edited by you</span>
         </div>
         <div className="relative">
-          <div className="mb-1 h-4 cursor-pointer touch-none select-none text-[10px] text-muted" onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); scrubTo(e); }} onPointerMove={(e) => { if (e.buttons === 1) scrubTo(e); }} aria-hidden="true">
+          <div className="mb-1 ml-[5.5rem] h-4 cursor-pointer touch-none select-none text-[10px] text-muted" onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); scrubTo(e); }} onPointerMove={(e) => { if (e.buttons === 1) scrubTo(e); }} aria-hidden="true">
             <div className="flex justify-between">{Array.from({ length: Math.min(8, Math.ceil(total / 5) + 1) }, (_, i) => <span key={i}>{fmtTime((total / Math.max(1, Math.min(7, Math.ceil(total / 5)))) * i)}</span>)}</div>
           </div>
-          {comp && <><StrictBracket total={total} /><MonStrip issues={computeAdSafe(project, comp).issues} total={total} focus={focus} onPick={pick} /></>}
-          <div ref={tlRef} className="relative flex h-20 gap-0.5 overflow-hidden rounded-xl bg-sunken">
+          {comp && <div className="pl-[5.5rem]"><StrictBracket total={total} /><MonStrip issues={computeAdSafe(project, comp).issues} total={total} focus={focus} onPick={pick} /></div>}
+          <div className="flex items-center gap-2"><span className="w-20 shrink-0 text-[11px] font-medium uppercase tracking-wider text-muted">Video</span>
+          <div ref={tlRef} className="relative flex h-20 min-w-0 flex-1 gap-0.5 overflow-hidden rounded-xl bg-sunken">
             {tl.map((s) => (
               <motion.div key={s.id} layout="position" style={{ flexGrow: s.dur, flexBasis: 0 }} onClick={() => { setSel(s.id); playerRef.current?.seekTo(Math.round(s.at * FPS)); }}
                 onMouseEnter={() => setHoverSeg(s.id)} onMouseLeave={() => setHoverSeg(undefined)}
@@ -580,25 +571,25 @@ export function Editor({ projectId }: { projectId: string }) {
                 className={clsx("relative min-w-[28px] cursor-pointer overflow-hidden rounded-lg border-2 p-2 text-left text-xs", s.touched ? "border-accent bg-accent/25" : "border-brand/60 bg-brand/25", sel === s.id && "ring-2 ring-text")}
                 role="button" tabIndex={0} aria-label={`${nameOf(s)}, ${s.dur.toFixed(1)} seconds`} onKeyDown={(e) => { if (e.key === "Enter") setSel(s.id); if (e.key === "ArrowRight") edit(s.id!, { dur: +(s.dur + 0.1).toFixed(1) }); if (e.key === "ArrowLeft") edit(s.id!, { dur: Math.max(0.5, +(s.dur - 0.1).toFixed(1)) }); }}>
                 {!s.touched && <motion.span className="absolute inset-0 bg-gradient-to-r from-transparent via-brand-ink/40 to-transparent" initial={{ x: "-100%" }} animate={{ x: "100%" }} transition={{ duration: 1.1, delay: 0.3 }} />}
-                <div className="relative truncate font-semibold">{!s.touched && <Sparkles size={10} className="mr-1 inline" />}{nameOf(s)}</div>
+                <div className="relative truncate font-semibold"><Scissors size={11} className="mr-1 inline" />{nameOf(s)}</div>
                 <div className="relative truncate text-muted">{s.dur.toFixed(1)} sec</div>
                 <div role="separator" aria-label="Drag to change length" onPointerDown={(e) => trim(s, e)} onClick={(e) => e.stopPropagation()} className="absolute inset-y-0 right-0 w-2 cursor-ew-resize bg-text/40 hover:bg-text" />
                 {s.url && <div role="separator" aria-label="Drag to change where it starts" onPointerDown={(e) => trimStart(s, e)} onClick={(e) => e.stopPropagation()} className="absolute inset-y-0 left-0 w-2 cursor-ew-resize bg-text/40 hover:bg-text" />}
               </motion.div>
             ))}
             <div className="pointer-events-none absolute inset-y-0 w-0.5 bg-text" style={{ left: `${playheadPct}%` }} aria-hidden="true"><span className="absolute -left-1 -top-0.5 h-2 w-2.5 rounded-sm bg-text" /></div>
-          </div>
-          <div className="mt-2 grid grid-cols-[minmax(0,1fr)] gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted">
-            <div className="flex items-center gap-2"><span className="w-16 shrink-0">Captions</span>
+          </div></div>
+          <div className="mt-3 grid grid-cols-[minmax(0,1fr)] gap-2 text-[11px] font-medium uppercase tracking-wider text-muted">
+            <div className="flex items-center gap-2"><span className="w-20 shrink-0">Captions</span>
               <div className="flex h-6 min-w-0 flex-1 gap-0.5 overflow-hidden rounded-lg bg-sunken">
-                {tl.map((s) => <div key={s.id} style={{ flexGrow: s.dur, flexBasis: 0, minWidth: 0 }} className={clsx("overflow-hidden whitespace-nowrap px-1.5 text-[10px] normal-case leading-6", s.caption ? (s.touched ? "bg-accent/40 text-text" : "bg-brand-2/50 text-text") : "")}>{s.caption}</div>)}
+                
               </div>
             </div>
-            {project.reel && <div className="flex items-center gap-2"><span className="w-16 shrink-0">Text</span>
+            <div className="flex items-center gap-2"><span className="w-20 shrink-0">Text</span>
               <div className="relative h-6 min-w-0 flex-1 rounded-lg bg-sunken">{ov.map((o) => <button key={o.id} type="button" onClick={() => { setSelOv(o.id); jump(o.at); }} style={{ left: `${(o.at / Math.max(total, 0.1)) * 100}%`, width: `${Math.max(3, (o.dur / Math.max(total, 0.1)) * 100)}%` }} className={clsx("absolute inset-y-0 overflow-hidden whitespace-nowrap rounded-lg px-1.5 text-left text-[10px] normal-case leading-6", o.id === selOv ? "bg-brand text-white dark:text-brand-ink" : "bg-accent/40 text-text")}>{o.text}</button>)}</div>
-            </div>}
+            </div>
             {!project.noAudio && (
-              <div className="flex items-center gap-2"><span className="w-16 shrink-0">Music</span>
+              <div className="flex items-center gap-2"><span className="w-20 shrink-0">Music</span>
               <div className="relative h-6 min-w-0 flex-1 rounded-lg bg-sunken"><div className="h-full w-full overflow-hidden rounded-lg bg-tan/40 px-2 text-[10px] normal-case leading-6 text-text">{music?.title}</div>{comp && <BleepMarks c={comp} total={total} />}</div>
             </div>
             )}
@@ -607,7 +598,125 @@ export function Editor({ projectId }: { projectId: string }) {
         </div>
       </section>
 
-      <CaptionsDrawer open={caps} onClose={() => setCaps(false)} project={project} onUse={(c) => { addFeedback({ type: "caption", originalValue: project.caption?.caption ?? "", newValue: c.caption, context: `drawer:${c.tone}` }); patch(project.id, { caption: c }); toast("Caption added", "You can see it on the preview card"); }} />
+      ) : (
+      <>
+      <section className="mt-5 rounded-[24px] border border-text/10 bg-surface p-5 md:p-6" aria-label="Timeline">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <span><b className="font-display text-xl tracking-tight">Timeline</b> <span className="text-muted">· {Math.round(total)} seconds</span></span>
+          <span className="chip bg-sunken py-1 text-[11px] font-semibold uppercase tracking-wider"><Sparkles size={12} />AI edit</span>
+        </div>
+        <p className="mt-3 text-sm"><b className="font-medium">CreatorAi selected {tl.length > 1 ? "these sections" : "this section"} for you.</b> <span className="text-muted">Click “Edit clip” to change {tl.length > 1 ? "one" : "it"}.</span></p>
+
+        <div className="mt-5 grid gap-5">
+          <div>
+            <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-muted">Video</p>
+            <ul className="grid gap-3">
+              {tl.map((s) => {
+                const d = clipEdit?.id === s.id ? clipEdit : null;
+                const start = s.in ?? 0;
+                const speed = s.speed ?? 1;
+                const hasMedia = !!(s.src || s.url);
+                const maxEnd = project.reel ? project.reel.durationSec : undefined;
+                const dStart = d ? +d.start : start;
+                const dEnd = d ? +d.end : start + s.dur * speed;
+                const outDur = (dEnd - dStart) / (d && hasMedia ? d.speed : 1);
+                const valid = !!d && Number.isFinite(dStart) && Number.isFinite(dEnd) && dStart >= 0 && dEnd - dStart >= 0.5 && (maxEnd === undefined || dEnd <= maxEnd + 0.001) && (!d.textOn || d.text.trim().length > 0);
+                const set = (p: Partial<ClipDraft>) => setClipEdit((c) => (c ? { ...c, ...p } : c));
+                const existingOv = ov[0];
+                const openEdit = () => {
+                  setSel(s.id); playerRef.current?.seekTo(Math.round(s.at * FPS));
+                  setClipEdit(d ? null : { id: s.id, start: String(+start.toFixed(2)), end: String(+(start + s.dur * speed).toFixed(2)), speed, aspect: project.aspect, vol: s.vol ?? 80, text: existingOv?.text ?? "", pos: existingOv?.pos ?? "bottom", textOn: !!existingOv });
+                };
+                const apply = () => {
+                  if (!d) return;
+                  edit(s.id!, { dur: +outDur.toFixed(2), vol: d.vol, ...(hasMedia ? { speed: d.speed } : {}), ...(s.src ? { in: dStart, out: +dEnd.toFixed(2) } : {}), ...(s.url ? { in: dStart } : {}) });
+                  if (d.aspect !== project.aspect) setAspect(d.aspect);
+                  if (d.textOn && d.text.trim()) {
+                    beginOv();
+                    if (existingOv) setOv((cur) => cur.map((o, k) => (k === 0 ? { ...o, text: d.text.trim(), pos: d.pos } : o)));
+                    else { const o: TextOverlay = { id: uid("ov"), text: d.text.trim(), at: s.at, dur: +Math.max(0.5, Math.min(4, outDur)).toFixed(1), pos: d.pos, size: "m" }; setOv((cur) => [...cur, o]); setSelOv(o.id); }
+                    touch();
+                  } else if (!d.textOn && existingOv) { removeOv(existingOv.id); }
+                  setClipEdit(null); toast("Clip updated");
+                };
+                const chip = (on: boolean) => clsx("chip px-3 py-1.5 text-sm", on && "border-brand bg-brand text-brand-ink");
+                const box = "rounded-xl border border-line bg-bg/40 p-4";
+                const lbl = "mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted";
+                return (
+                  <li key={s.id} className={clsx("rounded-2xl border p-4", s.touched ? "border-accent bg-accent/15" : "border-brand/40 bg-brand/10", (sel === s.id || d) && "ring-2 ring-text/60")} onMouseEnter={() => setHoverSeg(s.id)} onMouseLeave={() => setHoverSeg(undefined)}>
+                    <span className={clsx("chip py-1 text-[11px] font-semibold uppercase tracking-wider", s.touched ? "border-ok/40 bg-ok/10 text-ok" : "bg-surface")}>{s.touched ? <><Check size={12} />Edited by you</> : <><Sparkles size={12} />AI suggested</>}</span>
+                    <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+                      <div>
+                        <p className="font-display text-2xl tracking-tight">{nameOf(s)}</p>
+                        <p className="mt-0.5 text-sm text-muted">{s.dur.toFixed(1)} sec{speed !== 1 ? ` · ${speed}×` : ""}</p>
+                      </div>
+                      <button type="button" className="btn-primary px-5 py-2.5 text-sm" aria-expanded={!!d} onClick={openEdit}>{d ? "Close" : "Edit clip"}</button>
+                    </div>
+                    {d && (
+                      <div className="mt-4 rounded-2xl border border-line bg-surface p-4 md:p-5">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Edit clip</p>
+                        <p className="mt-1 font-display text-xl tracking-tight">{nameOf(s)}</p>
+                        <div className="mt-4 grid gap-4 md:grid-cols-2">
+                          <div className={box}>
+                            <p className={lbl}>Trim</p>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div><label className="mb-1 block text-sm font-medium" htmlFor={`cs-${s.id}`}>Start (sec)</label><input id={`cs-${s.id}`} type="number" step="0.1" min="0" className="input" value={d.start} onChange={(e) => set({ start: e.target.value })} /></div>
+                              <div><label className="mb-1 block text-sm font-medium" htmlFor={`ce-${s.id}`}>End (sec)</label><input id={`ce-${s.id}`} type="number" step="0.1" min="0" max={maxEnd} className="input" value={d.end} onChange={(e) => set({ end: e.target.value })} /></div>
+                            </div>
+                            <p className="mt-3 text-sm text-muted">Duration <b className="font-medium text-text">{Number.isFinite(outDur) && outDur >= 0.5 ? outDur.toFixed(1) : "—"} sec</b></p>
+                            {!valid && <p className="mt-1 text-xs text-bad">{d.textOn && !d.text.trim() ? "Add some text, or remove the text overlay." : `Needs at least 0.5 sec${maxEnd !== undefined ? ` and no more than ${maxEnd.toFixed(1)}` : ""}.`}</p>}
+                          </div>
+                          <div className={box}>
+                            <p className={lbl}>Format</p>
+                            <div role="radiogroup" aria-label="Format" className="flex flex-wrap gap-2">{(["9:16", "1:1", "16:9"] as Aspect[]).map((a) => <button key={a} type="button" role="radio" aria-checked={d.aspect === a} className={chip(d.aspect === a)} onClick={() => set({ aspect: a })}>{a}</button>)}</div>
+                            <p className={clsx(lbl, "mt-5")}>Speed</p>
+                            <div role="radiogroup" aria-label="Speed" className="flex flex-wrap gap-2">{[0.5, 1, 1.25, 1.5, 2].map((v) => <button key={v} type="button" role="radio" aria-checked={d.speed === v} disabled={!hasMedia} className={clsx(chip(d.speed === v), "disabled:opacity-40")} onClick={() => set({ speed: v })}>{v}×</button>)}</div>
+                          </div>
+                          <div className={box}>
+                            <p className={lbl}>Text overlay</p>
+                            {!d.textOn ? (
+                              <button type="button" className="btn-ghost px-4 py-2 text-sm" onClick={() => set({ textOn: true, text: d.text || "3 things nobody tells you about AI" })}><Plus size={14} />Add text</button>
+                            ) : (
+                              <div className="grid gap-3">
+                                <div><label className="mb-1 block text-sm font-medium" htmlFor={`ct-${s.id}`}>Text</label><input id={`ct-${s.id}`} className="input" value={d.text} maxLength={80} onChange={(e) => set({ text: e.target.value })} /></div>
+                                <div className="flex flex-wrap gap-1.5">{["3 things nobody tells you about AI", "Wait for it…", "Follow for more"].map((t) => <button key={t} type="button" className="chip px-2.5 py-1 text-xs hover:bg-sunken" onClick={() => set({ text: t })}>{t}</button>)}</div>
+                                <div role="radiogroup" aria-label="Position" className="flex gap-2">{(["top", "middle", "bottom"] as const).map((p) => <button key={p} type="button" role="radio" aria-checked={d.pos === p} className={clsx(chip(d.pos === p), "capitalize")} onClick={() => set({ pos: p })}>{p === "middle" ? "Centre" : p}</button>)}</div>
+                                <button type="button" className="w-fit text-xs underline underline-offset-4 hover:opacity-60" onClick={() => set({ textOn: false })}>Remove text</button>
+                              </div>
+                            )}
+                          </div>
+                          <div className={box}>
+                            <p className={lbl}>Audio</p>
+                            <div className="grid gap-4">
+                              <div><label className="mb-1 flex justify-between text-sm font-medium" htmlFor={`cv-${s.id}`}><span>Original audio</span><span className="tabular-nums text-muted">{d.vol}%</span></label><input id={`cv-${s.id}`} type="range" min="0" max="100" value={d.vol} onChange={(e) => set({ vol: +e.target.value })} className="w-full accent-[rgb(var(--brand))]" /></div>
+                              <div><label className="mb-1 flex justify-between text-sm font-medium" htmlFor={`cm-${s.id}`}><span>Music</span><span className="tabular-nums text-muted">{musicVol}%</span></label><input id={`cm-${s.id}`} type="range" min="0" max="100" value={musicVol} disabled={!!project.noAudio} onChange={(e) => setMusicVol(+e.target.value)} className="w-full accent-[rgb(var(--brand))] disabled:opacity-40" /></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-5 flex justify-end gap-2">
+                          <button type="button" className="btn-ghost px-4 py-2 text-sm" onClick={() => setClipEdit(null)}>Cancel</button>
+                          <button type="button" className="btn-primary px-5 py-2 text-sm" disabled={!valid} onClick={apply}>Apply changes</button>
+                        </div>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+          {!project.noAudio && (
+            <div>
+              <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-muted">Music</p>
+              <div className="truncate rounded-xl bg-tan/40 px-4 py-3 text-sm">{music?.title}</div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      </>
+      )}
+
+      <CaptionsDrawer open={caps} onClose={() => setCaps(false)} project={project} onUse={(c) => { patch(project.id, { caption: c }); toast("Caption added", "You can see it on the preview card"); }} />
       <ThumbnailModal open={thumb} onClose={() => setThumb(false)} project={project} onUse={(t) => { patch(project.id, { thumb: t }); toast("Thumbnail chosen"); }} />
     </div>
   );

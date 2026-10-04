@@ -4,10 +4,9 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { useEffect, useState } from "react";
 import analyticsFx from "@/fixtures/analytics.json";
 import type { Track } from "./precheck";
-import type { Asset, CalendarItem, CreatorDNA, CreatorFeedback, Lead, Msg, Notice, Project } from "./types";
+import type { Asset, CalendarItem, Lead, Msg, Notice, Project } from "./types";
 import creatorsFx from "@/fixtures/creators.json";
-import { OPENER, replyFor, seedMessages } from "./messaging";
-import { applyFeedback, defaultDNA } from "./creatorDna";
+import { OPENER, SCRIPTS, replyTo, seedMessages } from "./messaging";
 import { seedProjects } from "./seed";
 import { uid } from "./projects";
 
@@ -34,8 +33,6 @@ interface State {
   calendar: CalendarItem[];
   notices: Notice[];
   permissions: Permissions;
-  creatorDNA: CreatorDNA;     // current distilled style profile
-  creatorFeedback: CreatorFeedback[]; // persistent history of corrections
   requested: string[];       // creators we sent a collaboration message to
   messages: Record<string, Msg[]>; // DM threads keyed by creator id
   pref: number[];            // collab preference vector
@@ -60,7 +57,6 @@ interface State {
   swipe(id: string, dir: "right" | "left" | "up", vec: number[]): void;
   addLead(l: Lead): void; addNewsletter(e: string): void;
   setDirty(v: boolean): void; toast(title: string, body?: string, ms?: number): void; request(id: string): void; dismissToast(id: string): void;
-  setDNA(d: CreatorDNA): void; addFeedback(f: Pick<CreatorFeedback, "type" | "originalValue" | "newValue" | "context">): void;
   set(p: Partial<State>): void;
   reset(): void;
 }
@@ -69,8 +65,8 @@ const handleOf = (id: string) => creatorsFx.creators.find((c) => c.id === id)?.h
 function seedNotices(): Notice[] {
   const ago = (m: number) => new Date(Date.now() - m * 60_000).toISOString();
   return [
-    { id: "n_dm1", kind: "collab", href: "/messages?c=c3", title: `New collab message from ${handleOf("c3")}`, body: "Hey Aarav! Loved your pitch reel. Want to do a joint video?", at: ago(22), read: false },
-    { id: "n_dm2", kind: "collab", href: "/messages?c=c7", title: `${handleOf("c7")} replied`, body: "Yes! Are you free for a collab shoot next week?", at: ago(180), read: false },
+    { id: "n_dm1", kind: "collab", href: "/messages?c=c25", title: `New collab message from ${handleOf("c25")}`, body: SCRIPTS.c25.preview, at: ago(14), read: false },
+    { id: "n_dm2", kind: "collab", href: "/messages?c=c27", title: `New message from ${handleOf("c27")}`, body: SCRIPTS.c27.preview, at: ago(38), read: false },
     { id: "n_cal1", kind: "calendar", title: "Reminder: Reply to brand email", body: "Due today at 11:00 PM", at: ago(45), read: false },
     { id: "n_cal2", kind: "calendar", title: "Deadline: Ep. 13 script locked", body: "In 3 days", at: ago(600), read: true },
     { id: "n0", kind: "system", title: "Welcome to CreatorAi", body: "Drop a group of clips in Short Videos to see the magic.", at: ago(1440), read: true },
@@ -89,8 +85,6 @@ const initial = () => ({
   messages: seedMessages(),
   permissions: { earnings: false, reach: false, audience: false, comments: false, decided: false },
   requested: [] as string[],
-  creatorDNA: defaultDNA,
-  creatorFeedback: [] as CreatorFeedback[],
   pref: [0, 0, 0, 0, 0, 0, 0, 0],
   swiped: {} as Record<string, "right" | "left" | "up">,
   leads: [] as (Lead & { at: string })[],
@@ -124,15 +118,15 @@ export const useStore = create<State>()(
         if (!t) return;
         const mk = (from: Msg["from"], body: string): Msg => ({ id: uid("m"), from, text: body, at: new Date().toISOString(), read: from === "me" });
         set((s) => ({ messages: { ...s.messages, [cid]: [...(s.messages[cid] ?? []), mk("me", t)] } }));
-        // simulated creator: replies a few seconds later (BACKEND-SLOT(messages))
+        // simulated creator: answers *that* reply a few seconds later (BACKEND-SLOT(messages))
+        const before = get().messages[cid] ?? [];
+        const reply = replyTo(cid, before.slice(0, -1), t);
+        if (reply === null) return;
         setTimeout(() => {
-          const replies = (get().messages[cid] ?? []).filter((m) => m.from === "them").length;
-          if (replies >= 4) return;
-          const reply = replyFor(Math.max(0, replies - (cid in seedMessages() ? 1 : 0)));
           set((s) => ({ messages: { ...s.messages, [cid]: [...(s.messages[cid] ?? []), mk("them", reply)] } }));
           get().notify(`${handleOf(cid)} replied`, reply, { kind: "collab", href: `/messages?c=${cid}` });
           get().toast(`${handleOf(cid)} replied`, reply);
-        }, 7000);
+        }, 2500 + Math.random() * 2000);
       },
       markThreadRead: (cid) => set((s) => (s.messages[cid]?.some((m) => m.from === "them" && !m.read) ? { messages: { ...s.messages, [cid]: s.messages[cid].map((m) => ({ ...m, read: true })) } } : s)),
       markNoticesRead: () => set((s) => ({ notices: s.notices.map((n) => ({ ...n, read: true })) })),
@@ -155,12 +149,6 @@ export const useStore = create<State>()(
         set((s) => ({ toasts: [...s.toasts, { id, title, body, ms: ms ?? 12_000 }] }));
         setTimeout(() => get().dismissToast(id), ms ?? 12_000);
       },
-      setDNA: (d) => set({ creatorDNA: { ...d, version: d.version + 1, updatedAt: new Date().toISOString() } }),
-      addFeedback: (f) => set((s) => {
-        if (f.originalValue === f.newValue) return s;
-        const rec: CreatorFeedback = { ...f, id: uid("fb"), creatorId: s.creatorDNA.creatorId, createdAt: new Date().toISOString() };
-        return { creatorFeedback: [rec, ...s.creatorFeedback].slice(0, 200), creatorDNA: applyFeedback(s.creatorDNA, rec) };
-      }),
       dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
       set: (p) => set(p),
       reset: () => set({ ...initial(), loggedIn: true }),
@@ -181,6 +169,11 @@ export const useStore = create<State>()(
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<State>;
         const merged = { ...current, ...p } as State;
+        // older sessions have the previous demo threads: switch to the per-person conversations once
+        if (!p.messages?.c25?.some((m) => m.id === "m_c25_1")) {
+          merged.messages = seedMessages();
+          merged.notices = [...seedNotices().filter((n) => n.id === "n_dm1" || n.id === "n_dm2"), ...(p.notices ?? []).filter((n) => n.id !== "n_dm1" && n.id !== "n_dm2")];
+        }
         if (!p.notices?.some((n) => n.kind)) merged.notices = [...seedNotices().filter((n) => n.id !== "n0"), ...(p.notices ?? seedNotices())];
         return merged;
       },
