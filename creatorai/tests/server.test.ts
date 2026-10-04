@@ -72,7 +72,7 @@ describe("generate + jobs", () => {
     expect(j.status).toBe("queued");
     expect(projects.get(projectId)).toBeUndefined(); // not in Studio until the job is done
 
-    vi.advanceTimersByTime(2500);
+    vi.advanceTimersByTime(12000);
     j = await get(jobId);
     expect(j.status).toBe("running");
     expect(j.steps.filter((s: { status: string }) => s.status === "done").length).toBeGreaterThan(0);

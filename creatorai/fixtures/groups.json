@@ -1,116 +1,1005 @@
 {
   "groups": [
     {
-      "id": "g1", "title": "Startup pitch, behind the scenes", "topic": "startup-india", "format": "short", "type": "Reel", "preset": "Business/finance",
-      "media": false, "hue": 1,
+      "id": "g1",
+      "title": "Startup pitch, behind the scenes",
+      "topic": "startup-india",
+      "format": "short",
+      "type": "Reel",
+      "preset": "Business/finance",
+      "media": false,
+      "hue": 1,
       "inputs": [
-        { "role": "A", "filenames": ["pitch_intro.mp4"], "sha256_first_1mb": "", "durationSec": 41.2 },
-        { "role": "B", "filenames": ["pitch_demo.mp4"], "sha256_first_1mb": "", "durationSec": 96.0 },
-        { "role": "C", "filenames": ["pitch_outro.mp4"], "sha256_first_1mb": "", "durationSec": 33.5 }
+        {
+          "role": "A",
+          "filenames": [
+            "pitch_intro.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 41.2
+        },
+        {
+          "role": "B",
+          "filenames": [
+            "pitch_demo.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 96
+        },
+        {
+          "role": "C",
+          "filenames": [
+            "pitch_outro.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 33.5
+        }
       ],
-      "photos": [{ "id": "p1", "filenames": ["team.jpg"], "sha256": "" }],
-      "audio": { "id": "bgm3", "src": "/demo/g1/bgm.mp3", "risk": "high" },
+      "photos": [
+        {
+          "id": "p1",
+          "filenames": [
+            "team.jpg"
+          ],
+          "sha256": ""
+        }
+      ],
+      "audio": {
+        "id": "bgm3",
+        "src": "/demo/g1/bgm.mp3",
+        "risk": "high"
+      },
       "timeline": [
-        { "at": 0, "dur": 4.2, "src": "A", "in": 12, "out": 16.2, "kind": "hook", "caption": "We pitched to 40 investors in 3 days…" },
-        { "at": 4.2, "dur": 8, "src": "B", "in": 30, "out": 38, "kind": "demo", "caption": "This is the demo that got us the term sheet" },
-        { "at": 12.2, "dur": 2, "photo": "p1", "anim": "kenburns", "kind": "photo", "caption": "The team behind it" },
-        { "at": 14.2, "dur": 6, "src": "C", "in": 5, "out": 11, "kind": "cta", "caption": "Follow for Part 2, the pricing slide" }
+        {
+          "at": 0,
+          "dur": 4.2,
+          "src": "A",
+          "in": 12,
+          "out": 16.2,
+          "kind": "hook",
+          "caption": "We pitched to 40 investors in 3 days…"
+        },
+        {
+          "at": 4.2,
+          "dur": 8,
+          "src": "B",
+          "in": 30,
+          "out": 38,
+          "kind": "demo",
+          "caption": "This is the demo that got us the term sheet"
+        },
+        {
+          "at": 12.2,
+          "dur": 2,
+          "photo": "p1",
+          "anim": "kenburns",
+          "kind": "photo",
+          "caption": "The team behind it"
+        },
+        {
+          "at": 14.2,
+          "dur": 6,
+          "src": "C",
+          "in": 5,
+          "out": 11,
+          "kind": "cta",
+          "caption": "Follow for Part 2, the pricing slide"
+        }
       ],
-      "hashtags": ["#startupindia", "#pitchdeck", "#founderlife"],
+      "hashtags": [
+        "#startupindia",
+        "#pitchdeck",
+        "#founderlife"
+      ],
       "chapters": []
     },
     {
-      "id": "g2", "title": "DSA lecture 3, Binary search, finally clear", "topic": "education", "format": "video", "type": "Lecture", "preset": "Lecture/education",
-      "media": false, "hue": 2,
+      "id": "g2",
+      "title": "DSA lecture 3, Binary search, finally clear",
+      "topic": "education",
+      "format": "video",
+      "type": "Lecture",
+      "preset": "Lecture/education",
+      "media": false,
+      "hue": 2,
       "inputs": [
-        { "role": "A", "filenames": ["dsa_lecture_3.mp4"], "sha256_first_1mb": "", "durationSec": 1812 },
-        { "role": "B", "filenames": ["dsa_whiteboard.mp4"], "sha256_first_1mb": "", "durationSec": 420 },
-        { "role": "C", "filenames": ["dsa_recap.mp4"], "sha256_first_1mb": "", "durationSec": 95 }
+        {
+          "role": "A",
+          "filenames": [
+            "dsa_lecture_3.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 1812
+        },
+        {
+          "role": "B",
+          "filenames": [
+            "dsa_whiteboard.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 420
+        },
+        {
+          "role": "C",
+          "filenames": [
+            "dsa_recap.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 95
+        }
       ],
-      "photos": [{ "id": "p1", "filenames": ["dsa_slide.png"], "sha256": "" }],
-      "audio": { "id": "bgm2", "src": "/demo/g2/bgm.mp3", "risk": "low" },
+      "photos": [
+        {
+          "id": "p1",
+          "filenames": [
+            "dsa_slide.png"
+          ],
+          "sha256": ""
+        }
+      ],
+      "audio": {
+        "id": "bgm2",
+        "src": "/demo/g2/bgm.mp3",
+        "risk": "low"
+      },
       "timeline": [
-        { "at": 0, "dur": 6, "src": "A", "in": 140, "out": 146, "kind": "hook", "caption": "Why does binary search need a sorted array?" },
-        { "at": 6, "dur": 14, "src": "B", "in": 20, "out": 34, "kind": "explain", "caption": "Halve the search space every step" },
-        { "at": 20, "dur": 3, "photo": "p1", "anim": "kenburns", "kind": "photo", "caption": "O(log n), the formula" },
-        { "at": 23, "dur": 10, "src": "A", "in": 900, "out": 910, "kind": "explain", "caption": "Edge case: mid overflow" },
-        { "at": 33, "dur": 7, "src": "C", "in": 10, "out": 17, "kind": "cta", "caption": "Next: two-pointer tricks" }
+        {
+          "at": 0,
+          "dur": 6,
+          "src": "A",
+          "in": 140,
+          "out": 146,
+          "kind": "hook",
+          "caption": "Why does binary search need a sorted array?"
+        },
+        {
+          "at": 6,
+          "dur": 14,
+          "src": "B",
+          "in": 20,
+          "out": 34,
+          "kind": "explain",
+          "caption": "Halve the search space every step"
+        },
+        {
+          "at": 20,
+          "dur": 3,
+          "photo": "p1",
+          "anim": "kenburns",
+          "kind": "photo",
+          "caption": "O(log n), the formula"
+        },
+        {
+          "at": 23,
+          "dur": 10,
+          "src": "A",
+          "in": 900,
+          "out": 910,
+          "kind": "explain",
+          "caption": "Edge case: mid overflow"
+        },
+        {
+          "at": 33,
+          "dur": 7,
+          "src": "C",
+          "in": 10,
+          "out": 17,
+          "kind": "cta",
+          "caption": "Next: two-pointer tricks"
+        }
       ],
-      "hashtags": ["#dsa", "#coding", "#btech"],
-      "chapters": [{ "t": 0, "title": "Why sorted?" }, { "t": 6, "title": "Halving" }, { "t": 23, "title": "Edge cases" }]
+      "hashtags": [
+        "#dsa",
+        "#coding",
+        "#btech"
+      ],
+      "chapters": [
+        {
+          "t": 0,
+          "title": "Why sorted?"
+        },
+        {
+          "t": 6,
+          "title": "Halving"
+        },
+        {
+          "t": 23,
+          "title": "Edge cases"
+        }
+      ]
     },
     {
-      "id": "g3", "title": "Goa in 48 hours, budget vlog", "topic": "travel", "format": "video", "type": "Vlog", "preset": "Vlog/travel",
-      "media": false, "hue": 3,
+      "id": "g3",
+      "title": "Goa in 48 hours, budget vlog",
+      "topic": "travel",
+      "format": "video",
+      "type": "Vlog",
+      "preset": "Vlog/travel",
+      "media": false,
+      "hue": 3,
       "inputs": [
-        { "role": "A", "filenames": ["goa_vlog.mp4"], "sha256_first_1mb": "", "durationSec": 612 },
-        { "role": "B", "filenames": ["goa_beach.mp4"], "sha256_first_1mb": "", "durationSec": 188 },
-        { "role": "C", "filenames": ["goa_food.mp4"], "sha256_first_1mb": "", "durationSec": 140 }
+        {
+          "role": "A",
+          "filenames": [
+            "goa_vlog.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 612
+        },
+        {
+          "role": "B",
+          "filenames": [
+            "goa_beach.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 188
+        },
+        {
+          "role": "C",
+          "filenames": [
+            "goa_food.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 140
+        }
       ],
-      "photos": [{ "id": "p1", "filenames": ["goa_sunset.jpg"], "sha256": "" }],
-      "audio": { "id": "bgm3", "src": "/demo/g3/bgm.mp3", "risk": "high" },
+      "photos": [
+        {
+          "id": "p1",
+          "filenames": [
+            "goa_sunset.jpg"
+          ],
+          "sha256": ""
+        }
+      ],
+      "audio": {
+        "id": "bgm3",
+        "src": "/demo/g3/bgm.mp3",
+        "risk": "high"
+      },
       "timeline": [
-        { "at": 0, "dur": 5, "src": "B", "in": 40, "out": 45, "kind": "hook", "caption": "₹4,800. Two days. All of Goa." },
-        { "at": 5, "dur": 9, "src": "A", "in": 100, "out": 109, "kind": "story", "caption": "Day 1: scooter + sunrise at Chapora" },
-        { "at": 14, "dur": 3, "photo": "p1", "anim": "kenburns", "kind": "photo", "caption": "Golden hour" },
-        { "at": 17, "dur": 8, "src": "C", "in": 22, "out": 30, "kind": "story", "caption": "₹90 fish thali that beat every café" },
-        { "at": 25, "dur": 5, "src": "A", "in": 500, "out": 505, "kind": "cta", "caption": "Full cost breakdown in the comments" }
+        {
+          "at": 0,
+          "dur": 5,
+          "src": "B",
+          "in": 40,
+          "out": 45,
+          "kind": "hook",
+          "caption": "₹4,800. Two days. All of Goa."
+        },
+        {
+          "at": 5,
+          "dur": 9,
+          "src": "A",
+          "in": 100,
+          "out": 109,
+          "kind": "story",
+          "caption": "Day 1: scooter + sunrise at Chapora"
+        },
+        {
+          "at": 14,
+          "dur": 3,
+          "photo": "p1",
+          "anim": "kenburns",
+          "kind": "photo",
+          "caption": "Golden hour"
+        },
+        {
+          "at": 17,
+          "dur": 8,
+          "src": "C",
+          "in": 22,
+          "out": 30,
+          "kind": "story",
+          "caption": "₹90 fish thali that beat every café"
+        },
+        {
+          "at": 25,
+          "dur": 5,
+          "src": "A",
+          "in": 500,
+          "out": 505,
+          "kind": "cta",
+          "caption": "Full cost breakdown in the comments"
+        }
       ],
-      "hashtags": ["#goa", "#budgettravel", "#vlog"],
-      "chapters": [{ "t": 0, "title": "The budget" }, { "t": 5, "title": "Day 1" }, { "t": 17, "title": "Food" }]
+      "hashtags": [
+        "#goa",
+        "#budgettravel",
+        "#vlog"
+      ],
+      "chapters": [
+        {
+          "t": 0,
+          "title": "The budget"
+        },
+        {
+          "t": 5,
+          "title": "Day 1"
+        },
+        {
+          "t": 17,
+          "title": "Food"
+        }
+      ]
     },
     {
-      "id": "g4", "title": "Podcast Ep. 12, Why college projects never ship", "topic": "startup-india", "format": "video", "type": "Podcast", "preset": "Podcast",
-      "media": false, "hue": 4,
+      "id": "g4",
+      "title": "Podcast Ep. 12, Why college projects never ship",
+      "topic": "startup-india",
+      "format": "video",
+      "type": "Podcast",
+      "preset": "Podcast",
+      "media": false,
+      "hue": 4,
       "inputs": [
-        { "role": "A", "filenames": ["podcast_ep12.mp4", "ep12_final.mp4"], "sha256_first_1mb": "", "durationSec": 1812 },
-        { "role": "B", "filenames": ["ep12_guest_cam.mp4"], "sha256_first_1mb": "", "durationSec": 1810 },
-        { "role": "C", "filenames": ["ep12_intro_sting.mp4"], "sha256_first_1mb": "", "durationSec": 12 }
+        {
+          "role": "A",
+          "filenames": [
+            "podcast_ep12.mp4",
+            "ep12_final.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 1812
+        },
+        {
+          "role": "B",
+          "filenames": [
+            "ep12_guest_cam.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 1810
+        },
+        {
+          "role": "C",
+          "filenames": [
+            "ep12_intro_sting.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 12
+        }
       ],
-      "photos": [{ "id": "p1", "filenames": ["ep12_cover.jpg"], "sha256": "" }],
-      "audio": { "id": "bgm4", "src": "/demo/g4/bgm.mp3", "risk": "medium" },
+      "photos": [
+        {
+          "id": "p1",
+          "filenames": [
+            "ep12_cover.jpg"
+          ],
+          "sha256": ""
+        }
+      ],
+      "audio": {
+        "id": "bgm4",
+        "src": "/demo/g4/bgm.mp3",
+        "risk": "medium"
+      },
       "timeline": [
-        { "at": 0, "dur": 5, "src": "A", "in": 730, "out": 735, "kind": "hook", "caption": "\"Nobody ships because nobody owns it.\"" },
-        { "at": 5, "dur": 12, "src": "B", "in": 731, "out": 743, "kind": "quote", "caption": "Guest: the 80% trap" },
-        { "at": 17, "dur": 3, "photo": "p1", "anim": "kenburns", "kind": "photo", "caption": "Ep. 12, out now" },
-        { "at": 20, "dur": 8, "src": "A", "in": 1500, "out": 1508, "kind": "cta", "caption": "Full episode on YouTube" }
+        {
+          "at": 0,
+          "dur": 5,
+          "src": "A",
+          "in": 730,
+          "out": 735,
+          "kind": "hook",
+          "caption": "\"Nobody ships because nobody owns it.\""
+        },
+        {
+          "at": 5,
+          "dur": 12,
+          "src": "B",
+          "in": 731,
+          "out": 743,
+          "kind": "quote",
+          "caption": "Guest: the 80% trap"
+        },
+        {
+          "at": 17,
+          "dur": 3,
+          "photo": "p1",
+          "anim": "kenburns",
+          "kind": "photo",
+          "caption": "Ep. 12, out now"
+        },
+        {
+          "at": 20,
+          "dur": 8,
+          "src": "A",
+          "in": 1500,
+          "out": 1508,
+          "kind": "cta",
+          "caption": "Full episode on YouTube"
+        }
       ],
-      "hashtags": ["#podcast", "#buildinpublic", "#students"],
-      "chapters": [{ "t": 0, "title": "Cold open" }, { "t": 5, "title": "The 80% trap" }, { "t": 20, "title": "Where to listen" }]
+      "hashtags": [
+        "#podcast",
+        "#buildinpublic",
+        "#students"
+      ],
+      "chapters": [
+        {
+          "t": 0,
+          "title": "Cold open"
+        },
+        {
+          "t": 5,
+          "title": "The 80% trap"
+        },
+        {
+          "t": 20,
+          "title": "Where to listen"
+        }
+      ]
     },
     {
-      "id": "g5", "title": "Hostel life memes, exam week edition", "topic": "comedy", "format": "short", "type": "Short", "preset": "Comedy/meme",
-      "media": false, "hue": 5,
+      "id": "g5",
+      "title": "Hostel life memes, exam week edition",
+      "topic": "comedy",
+      "format": "short",
+      "type": "Short",
+      "preset": "Comedy/meme",
+      "media": false,
+      "hue": 5,
       "inputs": [
-        { "role": "A", "filenames": ["meme_setup.mp4"], "sha256_first_1mb": "", "durationSec": 18 },
-        { "role": "B", "filenames": ["meme_punchline.mp4"], "sha256_first_1mb": "", "durationSec": 14 },
-        { "role": "C", "filenames": ["meme_reaction.mp4"], "sha256_first_1mb": "", "durationSec": 9 }
+        {
+          "role": "A",
+          "filenames": [
+            "meme_setup.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 18
+        },
+        {
+          "role": "B",
+          "filenames": [
+            "meme_punchline.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 14
+        },
+        {
+          "role": "C",
+          "filenames": [
+            "meme_reaction.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 9
+        }
       ],
-      "photos": [{ "id": "p1", "filenames": ["meme_template.jpg"], "sha256": "" }],
-      "audio": { "id": "bgm5", "src": "/demo/g5/bgm.mp3", "risk": "medium" },
+      "photos": [
+        {
+          "id": "p1",
+          "filenames": [
+            "meme_template.jpg"
+          ],
+          "sha256": ""
+        }
+      ],
+      "audio": {
+        "id": "bgm5",
+        "src": "/demo/g5/bgm.mp3",
+        "risk": "medium"
+      },
       "timeline": [
-        { "at": 0, "dur": 3, "src": "A", "in": 2, "out": 5, "kind": "hook", "caption": "Me, 11 PM: \"I'll start tomorrow\"" },
-        { "at": 3, "dur": 4, "src": "B", "in": 1, "out": 5, "kind": "punch", "caption": "Exam tomorrow, 9 AM:" },
-        { "at": 7, "dur": 2, "photo": "p1", "anim": "kenburns", "kind": "photo", "caption": "Every. Single. Semester." },
-        { "at": 9, "dur": 3, "src": "C", "in": 0, "out": 3, "kind": "cta", "caption": "Tag your hostel roommate" }
+        {
+          "at": 0,
+          "dur": 3,
+          "src": "A",
+          "in": 2,
+          "out": 5,
+          "kind": "hook",
+          "caption": "Me, 11 PM: \"I'll start tomorrow\""
+        },
+        {
+          "at": 3,
+          "dur": 4,
+          "src": "B",
+          "in": 1,
+          "out": 5,
+          "kind": "punch",
+          "caption": "Exam tomorrow, 9 AM:"
+        },
+        {
+          "at": 7,
+          "dur": 2,
+          "photo": "p1",
+          "anim": "kenburns",
+          "kind": "photo",
+          "caption": "Every. Single. Semester."
+        },
+        {
+          "at": 9,
+          "dur": 3,
+          "src": "C",
+          "in": 0,
+          "out": 3,
+          "kind": "cta",
+          "caption": "Tag your hostel roommate"
+        }
       ],
-      "hashtags": ["#hostellife", "#examseason", "#relatable"],
+      "hashtags": [
+        "#hostellife",
+        "#examseason",
+        "#relatable"
+      ],
       "chapters": []
+    },
+    {
+      "id": "photo-reel",
+      "title": "Photo dump reel",
+      "topic": "lifestyle",
+      "format": "short",
+      "type": "Reel",
+      "preset": "Vlog/travel",
+      "media": true,
+      "hue": 6,
+      "kind": "photo-reel",
+      "inputs": [
+        {
+          "role": "p1",
+          "filenames": [
+            "p1.jpeg"
+          ],
+          "sha256_first_1mb": "e7b3b24949a41bbaf1b03b1f8198789dcdc35bfb0a0fefb462f0bf0a51a3f8e8",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 90910,
+          "height": 853,
+          "width": 1280
+        },
+        {
+          "role": "p2",
+          "filenames": [
+            "p2.jpeg"
+          ],
+          "sha256_first_1mb": "2cee033c1a6aebaa271f8f35f8b4eefac5489261f817f09b22363b01a9f8dd04",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 84835,
+          "height": 853,
+          "width": 1280
+        },
+        {
+          "role": "p3",
+          "filenames": [
+            "p3.jpeg"
+          ],
+          "sha256_first_1mb": "645fdbe3ac66c5a4397a7dcb4317804c1cd4da96384cd49881c0e1bd8344e416",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 81694,
+          "height": 853,
+          "width": 1280
+        },
+        {
+          "role": "p4",
+          "filenames": [
+            "p4.jpeg"
+          ],
+          "sha256_first_1mb": "5bddf5d8144906923220f2e937bf2d8c688207508b9c9a92355520e0cb1ca735",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 66096,
+          "height": 1040,
+          "width": 780
+        },
+        {
+          "role": "p5",
+          "filenames": [
+            "p5.jpeg"
+          ],
+          "sha256_first_1mb": "fbe7c5dfae3bcf51df10a3b9cc3b5df2f8694c8cba4a5daa3803ec059262fcd9",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 76592,
+          "height": 853,
+          "width": 1280
+        },
+        {
+          "role": "p6",
+          "filenames": [
+            "p6.jpeg"
+          ],
+          "sha256_first_1mb": "5afc51891a2cf3a2235f436ac96cc435b3e7ca40256773b4ce698088fc468056",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 80712,
+          "height": 780,
+          "width": 1040
+        },
+        {
+          "role": "p7",
+          "filenames": [
+            "p7.jpeg"
+          ],
+          "sha256_first_1mb": "19c561316008820d347a0d2116680a8ca934cc46da3e3422d46cbdcf75716afb",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 81002,
+          "height": 780,
+          "width": 1040
+        },
+        {
+          "role": "p8",
+          "filenames": [
+            "p8.jpeg"
+          ],
+          "sha256_first_1mb": "3006e7a57c8dd2d30b13ff5c8e4c79b3f5bd1da8345da2318c3480250315209f",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 119370,
+          "height": 715,
+          "width": 1600
+        },
+        {
+          "role": "p9",
+          "filenames": [
+            "p9.jpeg"
+          ],
+          "sha256_first_1mb": "a42df305afcfa1d1a92f48f60d00ef906a82f1e8047efb9de9e0bbc6dd7a2813",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 107674,
+          "height": 1600,
+          "width": 715
+        },
+        {
+          "role": "p10",
+          "filenames": [
+            "p10.jpeg"
+          ],
+          "sha256_first_1mb": "3ad237bc69ac0dadc352601e478ca2584f1a6c1b3fe4a198d8d6b23689752372",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 88607,
+          "height": 853,
+          "width": 1280
+        },
+        {
+          "role": "p11",
+          "filenames": [
+            "p11.jpeg"
+          ],
+          "sha256_first_1mb": "8914ed913d858f7a6ed5dd3c576560bdd84980b495b6bb80a52e5f096791bf7c",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 59585,
+          "height": 1280,
+          "width": 720
+        },
+        {
+          "role": "p12",
+          "filenames": [
+            "p12.jpeg"
+          ],
+          "sha256_first_1mb": "0827be630821b517df79f671a78616b045e6c6934fe2ace5c849cf78f29ec90a",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 102177,
+          "height": 853,
+          "width": 1280
+        },
+        {
+          "role": "p13",
+          "filenames": [
+            "p13.jpeg"
+          ],
+          "sha256_first_1mb": "7ba2348de4da5aa111b0cb49234097fe4c80e765525b5fb53d287876fcd5f2b9",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 258461,
+          "height": 1066,
+          "width": 1600
+        },
+        {
+          "role": "p14",
+          "filenames": [
+            "p14.jpeg"
+          ],
+          "sha256_first_1mb": "1fb7c62ec6f8ba18e87ade6a7c96258f98b3e6ad288e239e4cbee3c5225da9fe",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 103155,
+          "height": 853,
+          "width": 1280
+        },
+        {
+          "role": "p15",
+          "filenames": [
+            "p15.jpeg"
+          ],
+          "sha256_first_1mb": "e412916fb07af9350a8eb258601e227ddf906937ccb578ad73db90690cc8b8a0",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 86961,
+          "height": 853,
+          "width": 1280
+        },
+        {
+          "role": "p16",
+          "filenames": [
+            "p16.jpeg"
+          ],
+          "sha256_first_1mb": "52b354e2ae1d7319644d3d9f25e94686f3efc1ae4784006e8d6298b1305b518e",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 81131,
+          "height": 853,
+          "width": 1280
+        },
+        {
+          "role": "p17",
+          "filenames": [
+            "p17.jpeg"
+          ],
+          "sha256_first_1mb": "c93959a1b17b5d1452a71a201e0c276b6ad73f0efea9f0cbdb1e6477c0284327",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 44448,
+          "height": 1280,
+          "width": 581
+        },
+        {
+          "role": "p18",
+          "filenames": [
+            "p18.jpeg"
+          ],
+          "sha256_first_1mb": "37c0d6017d8af39f06ace3bf03eb96dfa2edf5ff8a34b5a6c2d7fac888901a58",
+          "durationSec": 0,
+          "kind": "image",
+          "size": 42977,
+          "height": 1280,
+          "width": 581
+        }
+      ],
+      "photos": [],
+      "audio": {
+        "id": "none",
+        "src": "",
+        "risk": "low"
+      },
+      "timeline": [
+        {
+          "at": 0,
+          "dur": 16.562,
+          "src": "reel",
+          "in": 0,
+          "out": 16.562,
+          "kind": "reel",
+          "url": "/demo/photo-reel/reel.mp4"
+        }
+      ],
+      "hashtags": [
+        "#photodump",
+        "#reel",
+        "#memories"
+      ],
+      "chapters": [],
+      "output": {
+        "video": "/demo/photo-reel/reel.mp4",
+        "poster": "/demo/photo-reel/poster.jpg",
+        "durationSec": 16.562,
+        "width": 848,
+        "height": 564,
+        "fps": 30,
+        "codec": "avc1",
+        "hasAudio": true
+      }
+    },
+    {
+      "id": "lecture-merge",
+      "kind": "lecture-merge",
+      "title": "Genetic Algorithm Solved Example",
+      "topic": "education",
+      "format": "video",
+      "type": "Lecture",
+      "preset": "Lecture/education",
+      "media": true,
+      "hue": 4,
+      "inputs": [
+        {
+          "role": "part1",
+          "filenames": [
+            "part1.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 0
+        },
+        {
+          "role": "part2",
+          "filenames": [
+            "part2.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 0
+        },
+        {
+          "role": "part3",
+          "filenames": [
+            "part3.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 0
+        }
+      ],
+      "photos": [],
+      "audio": {
+        "id": "none",
+        "src": "",
+        "risk": "low"
+      },
+      "timeline": [
+        {
+          "at": 0,
+          "dur": 758.155,
+          "src": "full",
+          "in": 0,
+          "out": 758.155,
+          "kind": "reel",
+          "url": "/demo/lecture-merge/full_video.mp4"
+        }
+      ],
+      "hashtags": [
+        "#geneticalgorithm",
+        "#optimisation",
+        "#btech"
+      ],
+      "chapters": [
+        {
+          "t": 0,
+          "title": "Problem introduction"
+        },
+        {
+          "t": 80,
+          "title": "Initial population"
+        },
+        {
+          "t": 190,
+          "title": "Fitness calculation"
+        },
+        {
+          "t": 280,
+          "title": "Selection"
+        },
+        {
+          "t": 350,
+          "title": "Crossover"
+        },
+        {
+          "t": 450,
+          "title": "Mutation"
+        }
+      ],
+      "output": {
+        "video": "/demo/lecture-merge/full_video.mp4",
+        "poster": "",
+        "durationSec": 758.155,
+        "width": 848,
+        "height": 384,
+        "fps": 29.99,
+        "codec": "avc1",
+        "hasAudio": true
+      }
+    },
+    {
+      "id": "vlog-merge",
+      "kind": "vlog-merge",
+      "title": "Vlog: the full video",
+      "topic": "lifestyle",
+      "format": "video",
+      "type": "Vlog",
+      "preset": "Vlog/lifestyle",
+      "media": true,
+      "hue": 8,
+      "inputs": [
+        {
+          "role": "video1",
+          "filenames": [
+            "video1.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 0
+        },
+        {
+          "role": "video2",
+          "filenames": [
+            "video2.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 0
+        },
+        {
+          "role": "video3",
+          "filenames": [
+            "video3.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 0
+        }
+      ],
+      "photos": [],
+      "audio": {
+        "id": "none",
+        "src": "",
+        "risk": "low"
+      },
+      "timeline": [
+        {
+          "at": 0,
+          "dur": 623.262,
+          "src": "full",
+          "in": 0,
+          "out": 623.262,
+          "kind": "reel",
+          "url": "/demo/vlog-merge/full.mp4"
+        }
+      ],
+      "hashtags": [
+        "#vlog",
+        "#dayinmylife",
+        "#lifestyle"
+      ],
+      "chapters": [],
+      "output": {
+        "video": "/demo/vlog-merge/full.mp4",
+        "poster": "",
+        "durationSec": 623.262,
+        "width": 386,
+        "height": 848,
+        "fps": 60,
+        "codec": "avc1",
+        "hasAudio": true
+      }
     }
   ],
   "default": {
-    "id": "_default", "title": "Your upload, quick edit", "topic": "general", "format": "short", "type": "Short", "preset": "Vlog/travel",
-    "media": false, "hue": 0,
+    "id": "_default",
+    "title": "Your upload, quick edit",
+    "topic": "general",
+    "format": "short",
+    "type": "Short",
+    "preset": "Vlog/travel",
+    "media": false,
+    "hue": 0,
     "inputs": [],
     "photos": [],
-    "audio": { "id": "bgm1", "src": "", "risk": "low" },
+    "audio": {
+      "id": "bgm1",
+      "src": "",
+      "risk": "low"
+    },
     "timeline": [
-      { "at": 0, "dur": 4, "src": "A", "in": 0, "out": 4, "kind": "hook", "caption": "The one thing nobody tells you…" },
-      { "at": 4, "dur": 8, "src": "A", "in": 20, "out": 28, "kind": "story", "caption": "Here is what actually happened" },
-      { "at": 12, "dur": 4, "src": "A", "in": 60, "out": 64, "kind": "cta", "caption": "Follow for more" }
+      {
+        "at": 0,
+        "dur": 4,
+        "src": "A",
+        "in": 0,
+        "out": 4,
+        "kind": "hook",
+        "caption": "The one thing nobody tells you…"
+      },
+      {
+        "at": 4,
+        "dur": 8,
+        "src": "A",
+        "in": 20,
+        "out": 28,
+        "kind": "story",
+        "caption": "Here is what actually happened"
+      },
+      {
+        "at": 12,
+        "dur": 4,
+        "src": "A",
+        "in": 60,
+        "out": 64,
+        "kind": "cta",
+        "caption": "Follow for more"
+      }
     ],
-    "hashtags": ["#creator", "#india"],
+    "hashtags": [
+      "#creator",
+      "#india"
+    ],
     "chapters": []
   }
 }
-

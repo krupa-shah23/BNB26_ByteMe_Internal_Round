@@ -32,7 +32,7 @@ export function GateRow({ project, g, title }: { project: Project; g: ReturnType
     <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-[24px] border border-text/10 bg-surface px-4 py-3 text-sm" aria-label="Title and thumbnail ad-safety">
       <span className="flex min-w-0 items-center gap-2" title={g.title.note}><span className="text-muted">Title:</span><span className="truncate font-medium">“{title}”</span><Mark ok={g.title.ok} /></span>
       <span className="flex items-center gap-2" title={g.thumb.note}><span className="text-muted">Thumbnail:</span>
-        {project.thumb ? <span className="block w-14 overflow-hidden rounded"><ThumbCard hue={project.hue} frame={project.thumb.frame} text={project.thumb.text} template={project.thumb.template} className="rounded" /></span> : <span className="text-xs text-muted">none yet</span>}
+        {project.thumb ? <span className="block w-14 overflow-hidden rounded"><ThumbCard hue={project.hue} url={project.thumb.url} frame={project.thumb.frame} text={project.thumb.text} template={project.thumb.template} className="rounded" /></span> : <span className="text-xs text-muted">none yet</span>}
         <Mark ok={g.thumb.ok} /></span>
     </div>
   );

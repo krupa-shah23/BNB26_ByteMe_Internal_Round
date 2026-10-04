@@ -1,5 +1,5 @@
 "use client";
-import { SongSearch } from "@/components/audio/SongSearch";
+import { SongSearch, SongPlayButton } from "@/components/audio/SongSearch";
 import { ideaService } from "@/lib/services";
 import { motion } from "framer-motion";
 import { ArrowUpRight, Grid2x2, List, Pause, Play, Sparkles } from "lucide-react";
@@ -18,6 +18,8 @@ const riskLabel = { low: "Low claim risk", medium: "Check license", high: "High 
 export function Overview({ go }: { go: (s: "trends" | "library" | "collabs" | "calendar") => void }) {
   const router = useRouter();
   const toast = useStore((s) => s.toast);
+  const uploads = useStore((s) => s.projects.filter((p) => p.status === "Published").length);
+  const assetCount = useStore((s) => s.assets.length);
   const u = home.user;
   const hour = new Date().getHours();
   const hi = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -35,8 +37,8 @@ export function Overview({ go }: { go: (s: "trends" | "library" | "collabs" | "c
       </section>
 
       <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {[{ l: "Followers", v: u.followers }, { l: "7-day views", v: u.views7d }, { l: "Engagement", v: u.engagement, d: 1, s: "%" }, { l: "Unused clips", v: home.unusedClips.length }].map((k, i) => (
-          <Reveal as="li" key={k.l} delay={i * 0.05} className="card p-5"><div className="t-label text-muted">{k.l}</div><div className="mt-3 font-display text-4xl tracking-tight"><Count to={k.v} decimals={k.d} suffix={k.s} /></div></Reveal>
+        {[{ l: "Followers", v: u.followers }, { l: "7-day views", v: u.views7d }, { l: "Recent uploads", v: uploads }, { l: "Unused clips", v: home.unusedClips.length }].map((k, i) => (
+          <Reveal as="li" key={k.l} delay={i * 0.05} className="card p-5"><div className="t-label text-muted">{k.l}</div><div className="mt-3 font-display text-4xl tracking-tight"><Count to={k.v} /></div></Reveal>
         ))}
       </ul>
 
@@ -65,7 +67,7 @@ export function Overview({ go }: { go: (s: "trends" | "library" | "collabs" | "c
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="card p-6" aria-labelledby="seas-h"><h2 id="seas-h" className="t-label text-muted">Seasonal recommendations</h2>
           <ul className="mt-4 grid gap-3">{home.seasonal.map((s) => <li key={s.id} className="flex items-center justify-between gap-3 border-b border-line pb-3 last:border-0"><span className="font-medium">{s.title}</span><span className="text-xs text-muted">{s.note}</span></li>)}</ul></section>
-        <section className="card p-6" aria-labelledby="lib-h"><div className="flex items-center justify-between"><h2 id="lib-h" className="t-label text-muted">Library · 3 unused clips from your last video</h2><button className="text-xs text-brand underline" onClick={() => go("library")}>Open</button></div>
+        <section className="card p-6" aria-labelledby="lib-h"><div className="flex items-center justify-between"><h2 id="lib-h" className="t-label text-muted">Library · {home.library.length + assetCount} files</h2><button className="text-xs text-brand underline" onClick={() => go("library")}>Open</button></div>
           <ul className="mt-4 grid gap-3">{home.unusedClips.map((c) => <li key={c.id} className="flex items-center justify-between gap-3"><span><span className="block text-sm font-medium">{c.title}</span><span className="text-xs text-muted">{c.range}</span></span><Badge tone="ok">{c.score}</Badge></li>)}</ul></section>
       </div>
 
@@ -95,8 +97,8 @@ export function Trends() {
         <><div className="mb-6 max-w-2xl"><SongSearch /></div>
         <ul className="grid gap-3 md:grid-cols-2">{t.songs.map((s) => (
           <li key={s.id} className="card flex items-center gap-4 p-4">
-            <button onClick={() => setPlaying(playing === s.id ? null : s.id)} aria-label={`${playing === s.id ? "Pause" : "Play"} ${s.title}`} className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand text-brand-ink">{playing === s.id ? <Pause size={18} /> : <Play size={18} />}</button>
-            <div className="min-w-0 flex-1"><p className="truncate font-medium">{s.title}</p><p className="text-xs text-muted">{s.artist} · {s.uses} uses · {s.growth}</p>
+            <SongPlayButton title={s.title} artist={s.artist} className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand text-brand-ink" />
+            <div className="min-w-0 flex-1"><p className="truncate font-medium">{s.title}</p><p className="text-xs text-muted">{s.artist} · {s.uses} uses</p>
               <div className="mt-2 flex h-5 items-end gap-0.5" aria-hidden="true">{Array.from({ length: 28 }, (_, i) => <motion.span key={i} className="w-1 rounded-full bg-accent" animate={{ height: playing === s.id ? [4, 4 + ((i * 7) % 16), 4] : 4 + ((i * 5) % 12) }} transition={{ repeat: playing === s.id ? Infinity : 0, duration: 0.7 + (i % 5) * 0.1 }} />)}</div></div>
             <Badge tone={riskTone[s.risk as keyof typeof riskTone]}>{riskLabel[s.risk as keyof typeof riskLabel]}</Badge>
           </li>))}</ul></>
@@ -128,9 +130,14 @@ export function Library() {
   const [selected, setSelected] = useState<string[]>([]);
   const [topic, setTopic] = useState("all");
   const toast = useStore((s) => s.toast);
-  const items = useMemo(() => home.library.filter((a) => (folder === "All" || a.folder === folder) && (!unused || !a.used) && (topic === "all" || a.topic === topic) && a.name.toLowerCase().includes(q.toLowerCase())), [folder, q, unused, topic]);
+  const assets = useStore((s) => s.assets);
+  const library = useMemo(() => [
+    ...assets.map((a) => ({ id: a.id, name: a.name, kind: a.kind as string, folder: "Photos", platform: "Uploaded", topic: "lifestyle", used: true, thumbUrl: a.thumbUrl as string | undefined })),
+    ...home.library.map((a) => ({ ...a, thumbUrl: undefined as string | undefined })),
+  ], [assets]);
+  const items = useMemo(() => library.filter((a) => (folder === "All" || a.folder === folder) && (!unused || !a.used) && (topic === "all" || a.topic === topic) && a.name.toLowerCase().includes(q.toLowerCase())), [library, folder, q, unused, topic]);
   const toggle = (id: string) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
-  const topics = Array.from(new Set(home.library.map((a) => a.topic)));
+  const topics = Array.from(new Set(library.map((a) => a.topic)));
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -145,7 +152,7 @@ export function Library() {
         {items.map((a, i) => (
           <motion.li layout key={a.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }} className={clsx("card relative", layout === "list" ? "flex items-center gap-4 p-3" : "p-3")}>
             <input type="checkbox" aria-label={`Select ${a.name}`} checked={selected.includes(a.id)} onChange={() => toggle(a.id)} className="absolute left-5 top-5 z-10 h-4 w-4 accent-[rgb(var(--brand))]" />
-            <div className={clsx("grain relative grid place-items-center rounded-xl bg-sunken font-display text-2xl text-muted", layout === "list" ? "h-12 w-16" : "aspect-video")}>{{ video: "▶", image: "▣", audio: "♪", blog: "¶", script: "§", caption: "“”" }[a.kind] ?? "•"}</div>
+            <div className={clsx("grain relative grid place-items-center rounded-xl bg-sunken font-display text-2xl text-muted", layout === "list" ? "h-12 w-16" : "aspect-video", a.thumbUrl && "overflow-hidden")}>{a.thumbUrl ? <img src={a.thumbUrl} alt="" loading="lazy" className="h-full w-full object-cover" /> : ({ video: "▶", image: "▣", audio: "♪", blog: "¶", script: "§", caption: "“”" } as Record<string, string>)[a.kind] ?? "•"}</div>
             <div className={layout === "list" ? "min-w-0 flex-1" : "mt-3"}><p className="truncate text-sm font-medium">{a.name}</p><p className="text-xs text-muted">{a.folder} · {a.platform} · {a.topic}</p></div>
             <div className={clsx("flex gap-1.5", layout === "grid" && "mt-2")}>{a.used ? <Badge tone="muted">Used</Badge> : <Badge tone="warn">Unused · reuse?</Badge>}</div>
           </motion.li>

@@ -82,7 +82,7 @@ function Overview() {
           <tbody>
             {net !== "YouTube" && published.map((p) => (
               <motion.tr key={p.id} initial={{ opacity: 0, backgroundColor: "rgb(var(--brand) / .2)" }} animate={{ opacity: 1, backgroundColor: "rgb(var(--brand) / 0)" }} transition={{ duration: 2 }} className="border-b border-line">
-                <td className="w-32 p-3"><ThumbCard hue={p.hue} frame={p.thumb?.frame ?? 0} text={p.thumb?.text ?? ""} template={p.thumb?.template ?? "brand"} badge={fmtTime(totalDur(p.timeline))} className="rounded-md" /></td>
+                <td className="w-32 p-3"><ThumbCard hue={p.hue} url={p.thumb?.url ?? p.cover} frame={p.thumb?.frame ?? 0} text={p.thumb?.text ?? ""} template={p.thumb?.template ?? "brand"} badge={fmtTime(totalDur(p.timeline))} className="rounded-md" /></td>
                 <td className="px-4 font-medium">{p.title} <Badge tone="brand">New</Badge><span className="mt-0.5 block text-xs font-normal text-muted">{p.platforms.map((x) => (x.startsWith("yt") ? "YouTube" : "Instagram"))[0]} · just now</span></td>
                 <td className="px-4">{NA}</td><td className="px-4">{NA}</td>
               </motion.tr>
@@ -125,7 +125,7 @@ function FragmentRow({ r, open, toggle, permissions, allow }: { r: (typeof analy
 
 /** Hard-coded demo chart driven by analytics.earningsMonthly (token colours only). */
 function EarningsChart() {
-  const data = analytics.earningsMonthly;
+  const data = useStore((s) => s.earnings);
   const W = 640, H = 270, PL = 52, PR = 18, PT = 28, PB = 38;
   const max = Math.ceil(Math.max(...data.map((d) => d.amount)) / 2000) * 2000;
   const x = (i: number) => PL + (i * (W - PL - PR)) / (data.length - 1);
@@ -161,14 +161,56 @@ function EarningsChart() {
   );
 }
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** The creator adds a month's income or corrects any month; the chart updates straight away. */
+function EditIncome() {
+  const earnings = useStore((s) => s.earnings);
+  const set = useStore((s) => s.set);
+  const toast = useStore((s) => s.toast);
+  const [open, setOpen] = useState(false);
+  const [month, setMonth] = useState(MONTHS[new Date().getMonth()]);
+  const [amount, setAmount] = useState("");
+  const save = (rows: { month: string; amount: number }[]) => set({ earnings: [...rows].sort((a, b) => MONTHS.indexOf(a.month) - MONTHS.indexOf(b.month)) });
+  const add = () => {
+    const n = Math.round(Number(amount));
+    if (!Number.isFinite(n) || n < 0 || amount === "") { toast("Enter an amount", "Use a number, for example 9500"); return; }
+    save([...earnings.filter((e) => e.month !== month), { month, amount: n }]);
+    setAmount(""); toast("Income saved", `${month}: ${inr(n)}`);
+  };
+  return (
+    <div className="mt-4">
+      <button type="button" className="btn-ghost py-2" aria-expanded={open} onClick={() => setOpen((o) => !o)}><PenLine size={14} />{open ? "Close" : "Add or correct income"}</button>
+      {open && (
+        <div className="mt-3 rounded-2xl border border-line p-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div><label htmlFor="inc-m" className="mb-1 block text-xs text-muted">Month</label><select id="inc-m" className="input" value={month} onChange={(e) => setMonth(e.target.value)}>{MONTHS.map((m) => <option key={m}>{m}</option>)}</select></div>
+            <div><label htmlFor="inc-a" className="mb-1 block text-xs text-muted">Income (₹)</label><input id="inc-a" type="number" min="0" inputMode="numeric" className="input w-40" value={amount} onChange={(e) => setAmount(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder={earnings.find((e) => e.month === month)?.amount.toString() ?? "0"} /></div>
+            <button type="button" className="btn-primary" onClick={add}>{earnings.some((e) => e.month === month) ? "Update month" : "Add month"}</button>
+          </div>
+          <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+            {earnings.map((e) => (
+              <li key={e.month} className="flex items-center gap-2 rounded-xl border border-line px-3 py-2 text-sm">
+                <span className="w-10 font-medium">{e.month}</span>
+                <input aria-label={`${e.month} income`} type="number" min="0" className="input !py-1.5" value={e.amount} onChange={(ev) => save(earnings.map((x) => (x.month === e.month ? { ...x, amount: Math.max(0, Math.round(Number(ev.target.value) || 0)) } : x)))} />
+                <button type="button" className="text-xs text-bad underline underline-offset-4" onClick={() => { if (earnings.length > 2) save(earnings.filter((x) => x.month !== e.month)); else toast("Keep at least two months", "The chart needs two points"); }}>Remove</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Earnings() {
   const { permissions, setPermissions } = useStore();
-  const max = Math.max(...analytics.earningsMonthly.map((m) => m.amount));
   const body = (
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="card p-6 lg:col-span-2">
         <h2 className="t-h2">Monthly income</h2>
         <EarningsChart />
+        <EditIncome />
       </div>
       <div className="grid gap-6">
         <div className="card p-6"><h3 className="t-label text-muted">Collab income</h3><ul className="mt-3 grid gap-2 text-sm">{analytics.collabIncome.map((c) => <li key={c.with} className="flex justify-between"><span>{c.with}</span><b>{inr(c.amount)}</b></li>)}</ul></div>

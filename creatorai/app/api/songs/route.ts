@@ -33,7 +33,7 @@ export async function GET(req: Request) {
       year: String(s.year ?? ""),
       language: String(s.language ?? ""),
       durationSec: Number(s.duration) || 0,
-      previewUrl: https(s.media_preview_url),
+      previewUrl: https(s.media_url).replace("_320.mp4", "_96.mp4") || https(s.media_preview_url),
       label: decode(s.label),
       copyright: decode(s.copyright_text),
     })).filter((s) => s.id && s.title);

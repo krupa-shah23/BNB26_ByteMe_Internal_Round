@@ -2,7 +2,9 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { useEffect, useState } from "react";
-import type { CalendarItem, CreatorDNA, CreatorFeedback, Lead, Msg, Notice, Project } from "./types";
+import analyticsFx from "@/fixtures/analytics.json";
+import type { Track } from "./precheck";
+import type { Asset, CalendarItem, CreatorDNA, CreatorFeedback, Lead, Msg, Notice, Project } from "./types";
 import creatorsFx from "@/fixtures/creators.json";
 import { OPENER, replyFor, seedMessages } from "./messaging";
 import { applyFeedback, defaultDNA } from "./creatorDna";
@@ -47,6 +49,9 @@ interface State {
   dirty: boolean;            // unsaved studio edits
   toasts: Toast[];
   signIn(a: { name: string; email: string }): void; login(): void; logout(): void;
+  assets: Asset[]; addAssets(rows: Asset[]): void;
+  pickedTrack: Track | null;                     // song chosen before uploading a short
+  earnings: { month: string; amount: number }[]; // monthly income the creator can edit
   upsertProject(p: Project): void; patchProject(id: string, patch: Partial<Project>): void; removeProject(id: string): void;
   addCal(i: Omit<CalendarItem, "id">): void; patchCal(id: string, patch: Partial<CalendarItem>): void; removeCal(id: string): void;
   notify(title: string, body: string, extra?: Pick<Notice, "kind" | "href">): void; markNoticesRead(): void;
@@ -76,6 +81,9 @@ const initial = () => ({
   loggedIn: false,
   account: null as { name: string; email: string } | null,
   projects: seedProjects(),
+  assets: [] as Asset[],
+  pickedTrack: null as Track | null,
+  earnings: analyticsFx.earningsMonthly.map((m) => ({ ...m })),
   calendar: seedCalendar(),
   notices: seedNotices(),
   messages: seedMessages(),
@@ -103,6 +111,7 @@ export const useStore = create<State>()(
       login: () => set({ loggedIn: true }),
       logout: () => set({ loggedIn: false, dirty: false, toasts: [] }),
       // BACKEND-SLOT(project-patch): projects move server-side in B3; this store becomes a cache
+      addAssets: (rows) => set((s) => ({ assets: [...rows, ...s.assets.filter((a) => !rows.some((r) => r.id === a.id))] })),
       upsertProject: (p) => set((s) => ({ projects: [p, ...s.projects.filter((x) => x.id !== p.id)] })),
       patchProject: (id, patch) => set((s) => ({ projects: s.projects.map((p) => (p.id === id ? { ...p, ...patch, updatedAt: new Date().toISOString() } : p)) })),
       removeProject: (id) => set((s) => ({ projects: s.projects.filter((p) => p.id !== id) })),

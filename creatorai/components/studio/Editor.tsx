@@ -1,7 +1,7 @@
 "use client";
 import type { PlayerRef } from "@remotion/player";
 import { motion } from "framer-motion";
-import { Check, Dna, Pause, Play, Plus, Redo2, RotateCcw, Save, Sparkles, Subtitles, Undo2, Image as ImageIcon } from "lucide-react";
+import { Check, Dna, Download, Pause, Play, Plus, Redo2, RotateCcw, Save, Sparkles, Subtitles, Trash2, Undo2, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -18,18 +18,71 @@ import { captionIssues, computeAdSafe, gate, maskProfanity, profanityIn } from "
 import { moveBlur } from "@/lib/compliance/actions";
 import { EdlPlayerLazy } from "./EdlPlayerLazy";
 import { CaptionsDrawer, ThumbnailModal, ThumbCard } from "./Tools";
-import { PROFILES, aspectDims, fmtTime, friendlyTitle, normalize, relTime, segmentName, totalDur, uid } from "@/lib/projects";
+import { PROFILES, aspectDims, fmtTime, friendlyTitle, normalize, relTime, seedTimeline, segmentName, totalDur, uid } from "@/lib/projects";
+import { runJob } from "@/lib/services/demo";
+import { LectureReport } from "./LectureReport";
 import { groupById } from "@/lib/match";
 import { tracks, trackById } from "@/lib/precheck";
 import { MusicSearch } from "@/components/audio/SongSearch";
 import { dnaTraits, sortHooksByDNA } from "@/lib/creatorDna";
 import { useStore } from "@/lib/store";
-import type { Aspect, PlatformId, Segment } from "@/lib/types";
+import type { Aspect, PlatformId, Segment, TextOverlay } from "@/lib/types";
 
 const FPS = 30;
 const ASPECT_W: Record<Aspect, number> = { "9:16": 300, "1:1": 420, "4:5": 380, "16:9": 720 };
 type Tab = "story" | "moments" | "clips" | "post";
 const TABS: { id: Tab; label: string }[] = [{ id: "story", label: "Story" }, { id: "moments", label: "Find moments" }, { id: "clips", label: "Clips" }, { id: "post", label: "Where to post" }];
+/** One undo step covers both the cut and the text layer. */
+type Snap = { tl: Segment[]; ov: TextOverlay[] };
+type ViewAs = "clean" | "ig_reel" | "yt_short";
+const VIEW_AS: { id: ViewAs; label: string }[] = [{ id: "clean", label: "Clean" }, { id: "ig_reel", label: "IG Reels" }, { id: "yt_short", label: "YT Shorts" }];
+const clampN = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+/** "View as platform": draws that app's safe zone (where buttons and captions cover the video). Clean = off. */
+function ViewAsControl({ value, onChange }: { value: ViewAs; onChange: (v: ViewAs) => void }) {
+  return (
+    <div role="radiogroup" aria-label="View as platform" className="flex flex-wrap items-center justify-center gap-1 rounded-2xl border border-line bg-surface p-1 text-xs font-medium">
+      <span className="whitespace-nowrap px-2 text-muted">View as</span>
+      {VIEW_AS.map((v) => (
+        <button key={v.id} type="button" role="radio" aria-checked={value === v.id} onClick={() => onChange(v.id)}
+          className={clsx("whitespace-nowrap rounded-pill px-3 py-1.5 transition-colors", value === v.id ? "bg-text text-white dark:text-bg" : "text-muted hover:text-text")}>{v.label}</button>
+      ))}
+    </div>
+  );
+}
+
+/** The optional text layer on top of a fixed video: add, retime, place and size text. */
+function OverlayEditor({ items, selId, total, onSelect, onAdd, onBegin, onChange, onRemove }: {
+  items: TextOverlay[]; selId?: string; total: number;
+  onSelect: (id: string) => void; onAdd: () => void; onBegin: () => void; onChange: (id: string, p: Partial<TextOverlay>, history?: boolean) => void; onRemove: (id: string) => void;
+}) {
+  const sel = items.find((o) => o.id === selId);
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-2"><p className="font-display text-2xl tracking-tight">Text on video</p><button type="button" className="btn-ghost py-1.5" onClick={onAdd}><Plus size={14} />Add text</button></div>
+      {items.length === 0 ? <p className="mt-2 text-xs text-muted">Nothing added yet. Your video has no text on it.</p> : (
+        <ul className="mt-2 grid gap-1.5">
+          {items.map((o) => (
+            <li key={o.id}><button type="button" onClick={() => onSelect(o.id)} aria-pressed={o.id === selId} className={clsx("flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-xs", o.id === selId ? "border-brand" : "border-line")}><span className="truncate">{o.text || "Empty"}</span><span className="shrink-0 font-mono text-muted">{fmtTime(o.at)}</span></button></li>
+          ))}
+        </ul>
+      )}
+      {sel && (
+        <div className="mt-3 grid gap-3" key={sel.id}>
+          <div><label htmlFor="ov-text" className="mb-1 block font-medium">Text</label><textarea id="ov-text" className="input min-h-16" value={sel.text} onFocus={onBegin} onChange={(e) => onChange(sel.id, { text: e.target.value }, false)} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label htmlFor="ov-at" className="mb-1 block font-medium">Starts at (sec)</label><input id="ov-at" type="number" step="0.5" min="0" max={Math.max(0, +(total - 0.5).toFixed(1))} className="input" value={sel.at} onChange={(e) => onChange(sel.id, { at: +e.target.value || 0 })} /></div>
+            <div><label htmlFor="ov-dur" className="mb-1 block font-medium">How long? (sec)</label><input id="ov-dur" type="number" step="0.5" min="0.5" max={+(total - sel.at).toFixed(1)} className="input" value={sel.dur} onChange={(e) => onChange(sel.id, { dur: +e.target.value || 0.5 })} /></div>
+          </div>
+          <div><p className="mb-1 font-medium">Position</p><div role="radiogroup" aria-label="Position" className="flex gap-1.5">{(["top", "middle", "bottom"] as const).map((p) => <button key={p} type="button" role="radio" aria-checked={sel.pos === p} onClick={() => onChange(sel.id, { pos: p })} className={clsx("chip px-3 py-1 capitalize", sel.pos === p && "border-brand bg-brand text-white dark:text-brand-ink")}>{p}</button>)}</div></div>
+          <div><p className="mb-1 font-medium">Size</p><div role="radiogroup" aria-label="Size" className="flex gap-1.5">{(["s", "m", "l"] as const).map((s) => <button key={s} type="button" role="radio" aria-checked={sel.size === s} onClick={() => onChange(sel.id, { size: s })} className={clsx("chip px-3 py-1 uppercase", sel.size === s && "border-brand bg-brand text-white dark:text-brand-ink")}>{s}</button>)}</div></div>
+          <button type="button" className="btn-ghost py-1.5 text-bad" onClick={() => onRemove(sel.id)}><Trash2 size={14} />Remove text</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const RISK_COPY = { low: "Low chance of a copyright claim", medium: "Some chance of a copyright claim", high: "High chance of a copyright claim" } as const;
 
 export function Editor({ projectId }: { projectId: string }) {
@@ -44,20 +97,26 @@ export function Editor({ projectId }: { projectId: string }) {
   const capFocus = useRef("");
 
   const [tl, setTl] = useState<Segment[]>(project?.timeline ?? []);
-  const [past, setPast] = useState<Segment[][]>([]);
-  const [future, setFuture] = useState<Segment[][]>([]);
+  const [past, setPast] = useState<Snap[]>([]);
+  const [future, setFuture] = useState<Snap[]>([]);
   const [sel, setSel] = useState<string | undefined>(project?.timeline[0]?.id);
   const [hoverSeg, setHoverSeg] = useState<string | undefined>();
   const [tab, setTab] = useState<Tab>("story");
   const [caps, setCaps] = useState(false);
   const [thumb, setThumb] = useState(false);
-  const [safe, setSafe] = useState(false);
+  const [viewAs, setViewAs] = useState<ViewAs>("clean");
+  const safe = viewAs !== "clean";
+  const [exporting, setExporting] = useState<string | null>(null);
+  const [report, setReport] = useState(false);
   const [frame, setFrame] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [saved, setSaved] = useState(true);
   const playerRef = useRef<PlayerRef | null>(null);
   const tlRef = useRef<HTMLDivElement>(null);
   const latest = useRef(tl); latest.current = tl;
+  const [ov, setOv] = useState<TextOverlay[]>(project?.overlays ?? []);
+  const latestOv = useRef(ov); latestOv.current = ov;
+  const [selOv, setSelOv] = useState<string | undefined>();
   const dirtyRef = useRef(false);
   const [script, setScript] = useState("");
   const [hooks, setHooks] = useState<{ text: string; style: string; score?: number }[]>(hooksFx.hooks);
@@ -85,7 +144,7 @@ export function Editor({ projectId }: { projectId: string }) {
 
   const save = useCallback(() => {
     if (!project || !dirtyRef.current) return;
-    patch(project.id, { timeline: latest.current, version: project.version + 1, status: project.status === "Generated" ? "Editing" : project.status });
+    patch(project.id, { timeline: latest.current, ...(project.reel ? { overlays: latestOv.current } : {}), version: project.version + 1, status: project.status === "Generated" ? "Editing" : project.status });
     dirtyRef.current = false; setSaved(true); setDirty(false);
   }, [patch, project, setDirty]);
 
@@ -107,12 +166,26 @@ export function Editor({ projectId }: { projectId: string }) {
     return () => clearInterval(id);
   }, []);
 
+  const songRef = useRef<HTMLAudioElement | null>(null);
+  const songUrl = trackById(project?.audioId ?? "")?.previewUrl;
+  useEffect(() => {
+    if (!songUrl) { songRef.current = null; return; }
+    const a = new Audio(songUrl); a.loop = true; songRef.current = a;
+    return () => { a.pause(); songRef.current = null; };
+  }, [songUrl]);
+  useEffect(() => {
+    const a = songRef.current; if (!a) return;
+    if (playing) { const f = playerRef.current?.getCurrentFrame() ?? 0; if (Math.abs(a.currentTime - f / FPS) > 0.4) { try { a.currentTime = f / FPS; } catch { /* not seekable yet */ } } a.play().catch(() => {}); } else a.pause();
+  }, [playing, songUrl]);
+
+  const snap = (): Snap => ({ tl: latest.current, ov: latestOv.current });
+  const touch = () => { dirtyRef.current = true; setSaved(false); setDirty(true); };
   const commit = useCallback((next: Segment[], keepHistory = true) => {
-    if (keepHistory) { setPast((p) => [...p.slice(-40), latest.current]); setFuture([]); }
+    if (keepHistory) { setPast((p) => [...p.slice(-40), snap()]); setFuture([]); }
     setTl(normalize(next)); dirtyRef.current = true; setSaved(false); setDirty(true);
-  }, [setDirty]);
-  const undo = () => { if (!past.length) return; setFuture((f) => [tl, ...f]); setTl(past[past.length - 1]); setPast((p) => p.slice(0, -1)); dirtyRef.current = true; setSaved(false); setDirty(true); };
-  const redo = () => { if (!future.length) return; setPast((p) => [...p, tl]); setTl(future[0]); setFuture((f) => f.slice(1)); dirtyRef.current = true; setSaved(false); setDirty(true); };
+  }, [setDirty]); // eslint-disable-line react-hooks/exhaustive-deps
+  const undo = () => { if (!past.length) return; const prev = past[past.length - 1]; setFuture((f) => [snap(), ...f]); setTl(prev.tl); setOv(prev.ov); setPast((p) => p.slice(0, -1)); touch(); };
+  const redo = () => { if (!future.length) return; const next = future[0]; setPast((p) => [...p, snap()]); setTl(next.tl); setOv(next.ov); setFuture((f) => f.slice(1)); touch(); };
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -126,12 +199,22 @@ export function Editor({ projectId }: { projectId: string }) {
     return () => window.removeEventListener("keydown", k);
   });
 
-  const edit = (id: string, p: Partial<Segment>) => commit(tl.map((s) => (s.id === id ? { ...s, ...p, touched: true } : s)));
+  const edit = (id: string, p: Partial<Segment>) => commit(tl.map((s) => {
+    if (s.id !== id) return s;
+    const m = { ...s, ...p, touched: true };
+    const len = project?.reel?.durationSec;
+    if (len && m.url) { // trim stays inside the real video
+      const i = clampN(m.in ?? 0, 0, len - 0.5), d = clampN(m.dur, 0.5, len - i);
+      return { ...m, in: +i.toFixed(2), dur: +d.toFixed(2), out: +(i + d).toFixed(2) };
+    }
+    return m;
+  }));
   const selected = tl.find((s) => s.id === sel);
   const nameOf = (s: Segment) => segmentName(s.kind, tl.indexOf(s), tl.length);
 
   // review lanes: ad-safety, PII, claims, consent
-  const [comp, applyComp] = useCompliance(project);
+  const [compRaw, applyComp] = useCompliance(project);
+  const comp = project?.reel ? null : compRaw; // a fixed video file is never inspected, so no compliance layer is shown for it
   const [side, setSide] = useState<"adjust" | "checks">("adjust");
   const [lane, setLane] = useState<Lane>("mon");
   const [focus, setFocus] = useState<Focus>(null);
@@ -139,6 +222,11 @@ export function Editor({ projectId }: { projectId: string }) {
   const checksRef = useRef<HTMLElement>(null);
   const capIss = captionIssues(tl);
   const jump = (t: number) => { const f = Math.round(t * FPS); playerRef.current?.seekTo(f); setFrame(f); };
+  const scrubTo = (e: React.PointerEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const f = Math.round(clampN((e.clientX - r.left) / r.width, 0, 1) * total * FPS);
+    playerRef.current?.seekTo(f); setFrame(f);
+  };
   const pick = (l: Lane, id: string, t: number) => {
     setSide("checks"); setLane(l); setFocus({ lane: l, id }); jump(t);
     if (window.innerWidth < 1280) checksRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -168,15 +256,58 @@ export function Editor({ projectId }: { projectId: string }) {
     const el = tlRef.current; if (!el) return;
     const pxPerSec = el.clientWidth / Math.max(total, 1);
     const x0 = e.clientX, d0 = seg.dur;
+    const cap = project.reel ? Math.max(0.5, project.reel.durationSec - (seg.in ?? 0)) : 60;
     let lastD = d0;
     const move = (ev: PointerEvent) => {
-      const d = Math.max(0.5, Math.min(60, +(d0 + (ev.clientX - x0) / pxPerSec).toFixed(1)));
+      const d = Math.max(0.5, Math.min(cap, +(d0 + (ev.clientX - x0) / pxPerSec).toFixed(1)));
       lastD = d;
       setTl((cur) => normalize(cur.map((s) => (s.id === seg.id ? { ...s, dur: d, out: s.src ? +((s.in ?? 0) + d).toFixed(1) : s.out, touched: true } : s))));
       dirtyRef.current = true; setSaved(false); setDirty(true);
     };
-    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); addFeedback({ type: "pacing", originalValue: String(d0), newValue: String(lastD), context: "editing.pacing" }); setPast((p) => [...p.slice(-40), tl]); setFuture([]); };
+    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); addFeedback({ type: "pacing", originalValue: String(d0), newValue: String(lastD), context: "editing.pacing" }); setPast((p) => [...p.slice(-40), { tl, ov: latestOv.current }]); setFuture([]); };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+  };
+  /** left edge of the fixed video: moves where it starts, keeps where it ends */
+  const trimStart = (seg: Segment, e: React.PointerEvent) => {
+    e.preventDefault();
+    const el = tlRef.current; if (!el) return;
+    const pxPerSec = el.clientWidth / Math.max(total, 1);
+    const x0 = e.clientX, in0 = seg.in ?? 0, out0 = in0 + seg.dur, before: Snap = { tl, ov: latestOv.current };
+    const move = (ev: PointerEvent) => {
+      const i = clampN(+(in0 + (ev.clientX - x0) / pxPerSec).toFixed(2), 0, out0 - 0.5);
+      setTl((cur) => normalize(cur.map((s) => (s.id === seg.id ? { ...s, in: i, dur: +(out0 - i).toFixed(2), out: out0, touched: true } : s))));
+      touch();
+    };
+    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); setPast((p) => [...p.slice(-40), before]); setFuture([]); };
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+  };
+
+  /* text layer (fixed-video projects) */
+  const beginOv = () => { setPast((p) => [...p.slice(-40), snap()]); setFuture([]); };
+  const changeOv = (id: string, p: Partial<TextOverlay>, history = true) => {
+    if (history) beginOv();
+    setOv((cur) => cur.map((o) => {
+      if (o.id !== id) return o;
+      const m = { ...o, ...p };
+      const at = clampN(m.at, 0, Math.max(0, total - 0.5));
+      return { ...m, at: +at.toFixed(2), dur: +clampN(m.dur, 0.5, Math.max(0.5, total - at)).toFixed(2) };
+    }));
+    touch();
+  };
+  const addOv = () => {
+    const at = clampN(+(frame / FPS).toFixed(1), 0, Math.max(0, total - 1));
+    const o: TextOverlay = { id: uid("ov"), text: "Your text", at, dur: +Math.max(0.5, Math.min(3, total - at)).toFixed(1), pos: "bottom", size: "m" };
+    beginOv(); setOv((cur) => [...cur, o]); setSelOv(o.id); touch();
+  };
+  const removeOv = (id: string) => { beginOv(); setOv((cur) => cur.filter((o) => o.id !== id)); setSelOv(undefined); touch(); };
+  const resetReel = () => { beginOv(); setTl(normalize(seedTimeline(group!))); setOv([]); setSelOv(undefined); touch(); toast("Back to the original", "Trim and text were reset"); };
+  const exportReel = async () => {
+    if (!project.reel || exporting) return;
+    save();
+    setExporting("Starting");
+    await runJob([{ label: "Compositing", ms: 900 }, { label: "Encoding 1080p", ms: 1100 }, { label: "Packaging for platforms", ms: 800 }], (p) => setExporting(p.steps[Math.min(p.stepIndex, p.steps.length - 1)].label));
+    const a = document.createElement("a"); a.href = project.reel.video; a.download = "reel.mp4"; document.body.appendChild(a); a.click(); a.remove();
+    setExporting(null); toast("Export ready", "Your video was saved to your device");
   };
 
   const addClip = (c: { src: string; in: number; dur: number; caption: string }) => {
@@ -196,7 +327,7 @@ export function Editor({ projectId }: { projectId: string }) {
   const togglePlay = () => playerRef.current?.toggle();
 
   const title = friendlyTitle(project.title);
-  const edlProps = { timeline: tl, aspect: project.aspect, hue: project.hue, groupId: project.groupId, media: project.media, showSafe: safe, platform, selectedId: hoverSeg ?? sel, title };
+  const edlProps = { timeline: tl, aspect: project.aspect, hue: project.hue, groupId: project.groupId, media: project.media, showSafe: safe, platform: safe ? (viewAs as PlatformId) : platform, selectedId: hoverSeg ?? sel, title, overlays: project.reel ? ov : undefined, poster: project.cover };
   const playheadPct = total ? Math.min(100, (frame / FPS / total) * 100) : 0;
   const nowSec = frame / FPS;
   const REASONS: Record<string, string> = { hook: "A strong way to start", demo: "Shows the payoff", cta: "A clear ask to finish on", explain: "Makes sense on its own", story: "A moment people will feel", quote: "A line worth quoting", punch: "Setup and punchline" };
@@ -205,6 +336,22 @@ export function Editor({ projectId }: { projectId: string }) {
     { id: "cx", src: "A", in: 200, dur: 6, caption: "An audience favourite you haven’t used yet", reason: "People replayed this 3× more than average" },
   ];
   const music = trackById(project.audioId);
+  const visibleTabs = TABS.filter((x) => !(project.reel && x.id === "moments"));
+  const seg0 = tl[0];
+  const reelInspector = project.reel && seg0 ? (
+    <div className="mt-4 grid gap-6">
+      <div>
+        <p className="font-display text-2xl tracking-tight">Trim</p>
+        <p className="mt-1 text-xs text-muted">The video itself is fixed. Shorten it, and add text on top.</p>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <div><label className="mb-1 block font-medium" htmlFor="trim-in">Start (sec)</label><input id="trim-in" type="number" step="0.1" min="0" max={+((seg0.in ?? 0) + seg0.dur - 0.5).toFixed(1)} className="input" value={+(seg0.in ?? 0).toFixed(2)} onChange={(e) => { const end = (seg0.in ?? 0) + seg0.dur; const i = clampN(+e.target.value || 0, 0, end - 0.5); edit(seg0.id!, { in: i, dur: +(end - i).toFixed(2) }); }} /></div>
+          <div><label className="mb-1 block font-medium" htmlFor="trim-out">End (sec)</label><input id="trim-out" type="number" step="0.1" min={+((seg0.in ?? 0) + 0.5).toFixed(1)} max={project.reel.durationSec} className="input" value={+((seg0.in ?? 0) + seg0.dur).toFixed(2)} onChange={(e) => { const i = seg0.in ?? 0; const end = clampN(+e.target.value || 0, i + 0.5, project.reel!.durationSec); edit(seg0.id!, { dur: +(end - i).toFixed(2) }); }} /></div>
+        </div>
+        <p className="mt-2 text-xs text-muted">{seg0.dur.toFixed(1)} sec of {project.reel.durationSec.toFixed(1)}</p>
+      </div>
+      <OverlayEditor items={ov} selId={selOv} total={total} onSelect={(id) => { setSelOv(id); const o = ov.find((x) => x.id === id); if (o) jump(o.at); }} onAdd={addOv} onBegin={beginOv} onChange={changeOv} onRemove={removeOv} />
+    </div>
+  ) : null;
 
   return (
     <div className="mx-auto max-w-[1700px]">
@@ -232,12 +379,15 @@ export function Editor({ projectId }: { projectId: string }) {
           {comp && <ScoreChip score={computeAdSafe(project, comp).score} />}
           <button className="btn-ghost h-10 w-10 p-0" onClick={undo} disabled={!past.length} aria-label="Undo"><Undo2 size={16} /></button>
           <button className="btn-ghost h-10 w-10 p-0" onClick={redo} disabled={!future.length} aria-label="Redo"><Redo2 size={16} /></button>
+          {project.groupId === "lecture-merge" && <><button className="btn-ghost" onClick={() => setReport(true)}><Sparkles size={16} />AI report</button><LectureReport open={report} onClose={() => setReport(false)} /></>}
+          {project.reel && <button className="btn-ghost" onClick={resetReel}><RotateCcw size={16} />Reset</button>}
           <span className="mx-1 hidden h-6 w-px bg-line md:block" />
           <button className="btn-ghost" onClick={() => setCaps(true)}><Subtitles size={16} />Captions{project.caption && <Check size={14} className="text-ok" />}</button>
           <button className="btn-ghost" onClick={() => setThumb(true)}><ImageIcon size={16} />Thumbnail{project.thumb && <Check size={14} className="text-ok" />}</button>
           <span className="mx-1 hidden h-6 w-px bg-line md:block" />
           <button className="btn-ghost" onClick={() => { save(); toast("Saved"); }}><Save size={16} />Save</button>
           <button className="btn-ghost" onClick={preview}><Play size={16} />Preview</button>
+          {project.reel && <button className="btn-ghost" onClick={exportReel} disabled={!!exporting} aria-live="polite"><Download size={16} />{exporting ?? "Export"}</button>}
           <div className="group relative">
             <button className="btn-brand" disabled={missing.length > 0} onClick={done}>Done <Check size={16} /></button>
             {missing.length > 0 && <div role="tooltip" className="pointer-events-none absolute right-0 top-12 z-20 w-60 rounded-xl border border-line bg-surface p-3 text-xs opacity-0 shadow-soft transition-opacity group-hover:opacity-100">Almost there, you still need {missing.join(" and ")}.</div>}
@@ -252,8 +402,8 @@ export function Editor({ projectId }: { projectId: string }) {
         {/* YOUR CONTENT */}
         <section className="order-2 overflow-hidden rounded-[24px] border border-text/10 bg-surface xl:order-1" aria-label="Your content">
           <h2 className="px-4 pt-4 text-xs font-semibold uppercase tracking-[0.14em] text-muted">Your content</h2>
-          <div role="tablist" className="grid grid-cols-4 gap-1 p-2 text-xs font-medium">
-            {TABS.map((t) => (
+          <div role="tablist" className="grid gap-1 p-2 text-xs font-medium" style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))` }}>
+            {visibleTabs.map((t) => (
               <button key={t.id} role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)} className={clsx("rounded-xl px-1 py-2.5 leading-tight transition-colors", tab === t.id ? "bg-brand text-brand-ink" : "text-muted hover:bg-sunken")}>{t.label}</button>
             ))}
           </div>
@@ -271,7 +421,7 @@ export function Editor({ projectId }: { projectId: string }) {
                     }}><option value="">Adapt for…</option><option value="ig_reel">Instagram Reel (punchy)</option><option value="linkedin">LinkedIn (professional)</option><option value="x">X (short)</option></select>
                   </div>
                 </div>
-                <div>
+                {!project.reel && <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted">Opening ideas</p>
                   <ul className="grid gap-2">{sortHooksByDNA(hooks, dna).map((h) => (
                     <li key={h.text} className="rounded-xl border border-line p-3">
@@ -279,7 +429,7 @@ export function Editor({ projectId }: { projectId: string }) {
                       {dna.hooks.includes(h.style) && <span className="mt-1 inline-block text-[11px] text-brand">Matches your style</span>}
                       <button className="mt-2 block text-xs font-medium text-brand underline-offset-4 hover:underline" onClick={() => { const first = tl[0]; if (first?.id) { addFeedback({ type: "hook", originalValue: first.caption ?? "", newValue: h.text, context: `hook:${h.style}` }); edit(first.id, { caption: h.text }); toast("Opening updated", h.text); } }}>Use this opening</button>
                     </li>))}</ul>
-                </div>
+                </div>}
               </div>
             )}
             {tab === "moments" && (
@@ -317,7 +467,7 @@ export function Editor({ projectId }: { projectId: string }) {
                     {(["9:16", "1:1", "4:5", "16:9"] as Aspect[]).map((a) => <button key={a} aria-pressed={project.aspect === a} onClick={() => setAspect(a)} className={clsx("chip px-3 py-1", project.aspect === a && "border-brand bg-brand text-brand-ink")}>{a}</button>)}
                   </div>
                 </div>
-                <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={safe} onChange={(e) => setSafe(e.target.checked)} className="accent-[rgb(var(--brand))]" />Show where buttons and text can cover the video</label>
+                <div><p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted">Preview as</p><ViewAsControl value={viewAs} onChange={setViewAs} /><p className="mt-1.5 text-xs text-muted">Shows where buttons and text can cover the video.</p></div>
                 {(Object.keys(PROFILES) as PlatformId[]).map((p) => {
                   const pr = PROFILES[p]; const on = project.platforms.includes(p);
                   return (
@@ -343,20 +493,21 @@ export function Editor({ projectId }: { projectId: string }) {
               <button className="grid h-10 w-10 place-items-center rounded-full bg-text text-bg" onClick={togglePlay} aria-label={playing ? "Pause" : "Play"}>{playing ? <Pause size={16} /> : <Play size={16} />}</button>
               <span className="font-mono text-sm tabular-nums">{fmtTime(nowSec)} / {fmtTime(total)}</span>
             </div>
+            <div className="mt-3"><ViewAsControl value={viewAs} onChange={setViewAs} /></div>
           </div>
           {(project.caption || project.thumb) && (
             <div className="mt-4 grid gap-4 rounded-[24px] border border-text/10 bg-surface p-4 sm:grid-cols-[160px_1fr]">
-              {project.thumb ? <ThumbCard hue={project.hue} frame={project.thumb.frame} text={project.thumb.text} template={project.thumb.template} badge={fmtTime(total)} className="rounded-lg" /> : <div className="grid place-items-center rounded-lg border border-dashed border-line text-xs text-muted">No thumbnail yet</div>}
+              {project.thumb ? <ThumbCard hue={project.hue} frame={project.thumb.frame} text={project.thumb.text} template={project.thumb.template} url={project.thumb.url} badge={fmtTime(total)} className="rounded-lg" /> : <div className="grid place-items-center rounded-lg border border-dashed border-line text-xs text-muted">No thumbnail yet</div>}
               <div className="text-sm">{project.caption ? <><p>{project.caption.caption}</p><p className="mt-1 text-xs text-muted">{project.caption.cta} · {project.caption.hashtags.join(" ")}</p></> : <p className="text-muted">No caption chosen yet.</p>}</div>
             </div>
           )}
-          {comp && <GateRow project={project} g={gate(project)} title={title} />}
+          {(comp || project.reel) && <GateRow project={project} g={gate(project)} title={title} />}
         </section>
 
         {/* ADJUST */}
         <section ref={checksRef} className="order-3 rounded-[24px] border border-text/10 bg-surface p-4 text-sm" aria-label="Inspector">
-          <div role="tablist" className="grid grid-cols-2 gap-1 text-xs font-semibold uppercase tracking-[0.1em]">
-            {(["adjust", "checks"] as const).map((t) => {
+          <div role="tablist" className={clsx("grid gap-1 text-xs font-semibold uppercase tracking-[0.1em]", project.reel ? "grid-cols-1" : "grid-cols-2")}>
+            {(["adjust", "checks"] as const).filter((t) => !(project.reel && t === "checks")).map((t) => {
               const n = comp ? computeAdSafe(project, comp).issues.filter((i) => i.status === "open").length + comp.pii.filter((p) => p.status === "open").length + comp.claims.filter((k) => k.status === "open").length + comp.people.filter((p) => p.status === "unknown").length : 0;
               return <button key={t} role="tab" aria-selected={side === t} onClick={() => setSide(t)} className={clsx("flex items-center justify-center gap-1.5 rounded-xl py-2 transition-colors", side === t ? "bg-sunken text-text" : "text-muted hover:bg-sunken")}>{t === "adjust" ? "Adjust" : "Checks"}{t === "checks" && n > 0 && <span className="min-w-4 rounded-full bg-bad px-1 text-[10px] leading-4 text-bg">{n}</span>}</button>;
             })}
@@ -365,6 +516,8 @@ export function Editor({ projectId }: { projectId: string }) {
             <div className="mt-4 max-h-[600px] overflow-y-auto pr-1">
               <ChecksPanel c={comp} apply={applyComp} issues={computeAdSafe(project, comp).issues} capIssues={capIss} fixCaptions={fixCaptions} lane={lane} setLane={setLane} focus={focus} setFocus={setFocus} jump={jump} adSafe={computeAdSafe(project, comp).score} />
             </div>
+          ) : reelInspector ? (
+            reelInspector
           ) : selected ? (
             <div className="mt-4 grid gap-4" key={selected.id}>
               <div>
@@ -389,7 +542,7 @@ export function Editor({ projectId }: { projectId: string }) {
               {tracks.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
             </select>
             <div className="mt-2"><Badge tone={{ low: "ok", medium: "warn", high: "bad" }[music?.risk ?? "low"] as "ok"}>{RISK_COPY[(music?.risk ?? "low") as keyof typeof RISK_COPY]}</Badge></div>
-            <MusicSearch onPick={(tr) => { patch(project.id, { audioId: tr.id }); toast("Music changed", `${tr.title} · commercial track, flagged as high copyright risk`); }} />
+            <MusicSearch onPick={(tr) => { patch(project.id, { audioId: tr.id, noAudio: false }); toast("Music changed", `${tr.title} · commercial track, flagged as high copyright risk`); }} />
           </div>
         </section>
       </div>
@@ -401,7 +554,7 @@ export function Editor({ projectId }: { projectId: string }) {
           <span className="text-xs text-muted">Drag the edges to shorten or extend a section · <span className="text-brand">■</span> Suggested by CreatorAI <span className="ml-1 text-accent">■</span> Edited by you</span>
         </div>
         <div className="relative">
-          <div className="mb-1 h-4 cursor-pointer text-[10px] text-muted" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); playerRef.current?.seekTo(Math.round(((e.clientX - r.left) / r.width) * total * FPS)); }} aria-hidden="true">
+          <div className="mb-1 h-4 cursor-pointer touch-none select-none text-[10px] text-muted" onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); scrubTo(e); }} onPointerMove={(e) => { if (e.buttons === 1) scrubTo(e); }} aria-hidden="true">
             <div className="flex justify-between">{Array.from({ length: Math.min(8, Math.ceil(total / 5) + 1) }, (_, i) => <span key={i}>{fmtTime((total / Math.max(1, Math.min(7, Math.ceil(total / 5)))) * i)}</span>)}</div>
           </div>
           {comp && <><StrictBracket total={total} /><MonStrip issues={computeAdSafe(project, comp).issues} total={total} focus={focus} onPick={pick} /></>}
@@ -416,6 +569,7 @@ export function Editor({ projectId }: { projectId: string }) {
                 <div className="relative truncate font-semibold">{!s.touched && <Sparkles size={10} className="mr-1 inline" />}{nameOf(s)}</div>
                 <div className="relative truncate text-muted">{s.dur.toFixed(1)} sec</div>
                 <div role="separator" aria-label="Drag to change length" onPointerDown={(e) => trim(s, e)} onClick={(e) => e.stopPropagation()} className="absolute inset-y-0 right-0 w-2 cursor-ew-resize bg-text/40 hover:bg-text" />
+                {s.url && <div role="separator" aria-label="Drag to change where it starts" onPointerDown={(e) => trimStart(s, e)} onClick={(e) => e.stopPropagation()} className="absolute inset-y-0 left-0 w-2 cursor-ew-resize bg-text/40 hover:bg-text" />}
               </motion.div>
             ))}
             <div className="pointer-events-none absolute inset-y-0 w-0.5 bg-text" style={{ left: `${playheadPct}%` }} aria-hidden="true"><span className="absolute -left-1 -top-0.5 h-2 w-2.5 rounded-sm bg-text" /></div>
@@ -426,9 +580,14 @@ export function Editor({ projectId }: { projectId: string }) {
                 {tl.map((s) => <div key={s.id} style={{ flexGrow: s.dur, flexBasis: 0, minWidth: 0 }} className={clsx("overflow-hidden whitespace-nowrap px-1.5 text-[10px] normal-case leading-6", s.caption ? (s.touched ? "bg-accent/40 text-text" : "bg-brand-2/50 text-text") : "")}>{s.caption}</div>)}
               </div>
             </div>
-            <div className="flex items-center gap-2"><span className="w-16 shrink-0">Music</span>
+            {project.reel && <div className="flex items-center gap-2"><span className="w-16 shrink-0">Text</span>
+              <div className="relative h-6 min-w-0 flex-1 rounded-lg bg-sunken">{ov.map((o) => <button key={o.id} type="button" onClick={() => { setSelOv(o.id); jump(o.at); }} style={{ left: `${(o.at / Math.max(total, 0.1)) * 100}%`, width: `${Math.max(3, (o.dur / Math.max(total, 0.1)) * 100)}%` }} className={clsx("absolute inset-y-0 overflow-hidden whitespace-nowrap rounded-lg px-1.5 text-left text-[10px] normal-case leading-6", o.id === selOv ? "bg-brand text-white dark:text-brand-ink" : "bg-accent/40 text-text")}>{o.text}</button>)}</div>
+            </div>}
+            {!project.noAudio && (
+              <div className="flex items-center gap-2"><span className="w-16 shrink-0">Music</span>
               <div className="relative h-6 min-w-0 flex-1 rounded-lg bg-sunken"><div className="h-full w-full overflow-hidden rounded-lg bg-tan/40 px-2 text-[10px] normal-case leading-6 text-text">{music?.title}</div>{comp && <BleepMarks c={comp} total={total} />}</div>
             </div>
+            )}
             {comp && <ReviewLanes c={comp} total={total} focus={focus} onPick={pick} selectedBlur={selBlur} onSelectBlur={setSelBlur} onBlurChange={(id, a, b) => applyComp((x) => moveBlur(x, id, a, b))} />}
           </div>
         </div>

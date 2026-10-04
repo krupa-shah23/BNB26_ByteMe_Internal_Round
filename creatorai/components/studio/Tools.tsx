@@ -9,15 +9,21 @@ import captionsFx from "@/fixtures/captions.json";
 import home from "@/fixtures/home.json";
 import { Overlay } from "@/components/ui/Overlay";
 import { Badge, Poster, Skeleton } from "@/components/ui/bits";
+import { CoverFit } from "@/components/ui/ReelMedia";
+import { mineVideoFrames, minePhotos, type MinedFrame } from "@/lib/frameMine";
 import { fmtTime, totalDur } from "@/lib/projects";
 import { captionService } from "@/lib/services";
 import type { CaptionOption } from "@/lib/services/types";
 import type { Project, ThumbSpec } from "@/lib/types";
 
+/** Caption/hashtag/thumbnail-text set for a fixed-video project. */
+const reelFx = (p: Project) => (p.groupId === "lecture-merge" ? captionsFx.lecture : p.groupId === "vlog-merge" ? captionsFx.vlog : captionsFx.photoReel);
+
 /* ───────────── Thumbnail rendering (tokens only) ───────────── */
-export function ThumbCard({ hue, frame, text, template, cutout = true, badge, className }: { hue: number; frame: number; text: string; template: ThumbSpec["template"]; cutout?: boolean; badge?: string; className?: string }) {
+export function ThumbCard({ hue, frame, text, template, cutout = true, badge, className, url }: { hue: number; frame: number; text: string; template: ThumbSpec["template"]; cutout?: boolean; badge?: string; className?: string; url?: string }) {
   return (
     <Poster seed={hue * 3 + frame} className={clsx("aspect-video w-full", className)} label={`Thumbnail: ${text}`}>
+      {url && <CoverFit src={url} className="absolute inset-0 h-full w-full" />}
       {template === "blur" && <div className="absolute inset-0 backdrop-blur-sm bg-bg/10" />}
       {template === "brand" && <div className="absolute inset-x-0 bottom-0 h-[34%] bg-brand/90" />}
       {cutout && (
@@ -40,11 +46,37 @@ import { clickReadiness } from "@/lib/thumbScore";
 /* ───────────── Thumbnail modal ───────────── */
 export function ThumbnailModal({ open, onClose, project, onUse }: { open: boolean; onClose: () => void; project: Project; onUse: (t: ThumbSpec) => void }) {
   const frames = Array.from({ length: 6 }, (_, i) => ({ i, t: +((totalDur(project.timeline) / 6) * i + 0.5).toFixed(1), face: [92, 71, 84, 63, 88, 77][i], sharp: [88, 80, 91, 70, 85, 82][i] }));
+  const reel = project.reel;
+  const thumbTexts = reel ? reelFx(project).thumbText : captionsFx.thumbText;
+  const [mined, setMined] = useState<{ video: MinedFrame[]; photos: MinedFrame[] } | null>(null);
+  const [mineErr, setMineErr] = useState(false);
+  const [pick, setPick] = useState<MinedFrame | undefined>(project.thumb?.url ? { id: "saved", t: 0, score: project.thumb.score, face: 72, sharp: 72, source: project.thumb.source ?? "video", url: project.thumb.url } : undefined);
+  const tu = reel ? pick?.url : undefined;
+  const stepIds = reel ? [0, 2, 3] : [0, 1, 2, 3];
+  const best = mined ? [...mined.video, ...mined.photos].sort((a, b) => b.score - a.score)[0] : undefined;
+  const seg = project.timeline[0];
+  useEffect(() => {
+    if (!open || !reel || mined) return;
+    const ac = new AbortController();
+    const from = seg?.in ?? 0, to = from + (seg?.dur ?? reel.durationSec);
+    setMineErr(false);
+    Promise.all([
+      mineVideoFrames(reel.video, from, to, 0.5, ac.signal).catch(() => [] as MinedFrame[]),
+      minePhotos(Array.from({ length: project.photos || 0 }, (_, i) => `/demo/${project.groupId}/photos/thumbs/p${i + 1}.jpg`)),
+    ]).then(([video, photos]) => {
+      if (ac.signal.aborted) return;
+      if (!video.length && !photos.length) { setMineErr(true); return; }
+      const photosFull = photos.map((p) => ({ ...p, url: p.url.replace("/thumbs/", "/") }));
+      setMined({ video: video.slice(0, 6), photos: photosFull });
+      setPick((cur) => cur ?? [...video.slice(0, 6), ...photosFull].sort((a, b) => b.score - a.score)[0]);
+    });
+    return () => ac.abort();
+  }, [open, reel, mined, seg, project.photos, project.groupId]);
   const [step, setStep] = useState(0);
   const [frame, setFrame] = useState(project.thumb?.frame ?? 0);
   const [cutout, setCutout] = useState<"idle" | "working" | "done">("idle");
   const [template, setTemplate] = useState<ThumbSpec["template"]>(project.thumb?.template ?? "brand");
-  const [text, setText] = useState(project.thumb?.text ?? captionsFx.thumbText[0]);
+  const [text, setText] = useState(project.thumb?.text ?? thumbTexts[0]);
   useEffect(() => { if (open) setStep(project.thumb ? 3 : 0); }, [open, project.thumb]);
   useEffect(() => {
     if (cutout !== "working") return;
@@ -52,20 +84,43 @@ export function ThumbnailModal({ open, onClose, project, onUse }: { open: boolea
     return () => clearTimeout(t);
   }, [cutout]);
 
-  const r = clickReadiness({ text, frameFace: frames[frame].face, cutout: cutout === "done" || !!project.thumb, template });
+  const r = clickReadiness({ text, frameFace: reel ? (pick?.face ?? 70) : frames[frame].face, cutout: !reel && (cutout === "done" || !!project.thumb), template });
   const steps = ["Pick a frame", "Cut out", "Style", "Words"];
   const dur = fmtTime(totalDur(project.timeline));
-  const showCut = cutout === "done" || !!project.thumb;
+  const showCut = !reel && (cutout === "done" || !!project.thumb);
   return (
     <Overlay open={open} onClose={onClose} full labelledBy="th-h">
       <div className="mx-auto grid max-w-6xl gap-8 px-5 pb-16 pt-20 md:px-10 lg:grid-cols-5">
         <div className="lg:col-span-3">
           <h2 id="th-h" className="t-h1">Make a thumbnail</h2>
           <ol className="mt-6 flex gap-2" aria-label="Steps">
-            {steps.map((s, i) => (<li key={s}><button onClick={() => setStep(i)} aria-current={step === i} className={clsx("chip px-4 py-1.5", step === i && "border-brand bg-brand text-brand-ink", i < step && "border-ok text-ok")}>{i < step && <Check size={12} />}{i + 1}. {s}</button></li>))}
+            {stepIds.map((i, n) => (<li key={i}><button onClick={() => setStep(i)} aria-current={step === i} className={clsx("chip px-4 py-1.5", step === i && "border-brand bg-brand text-brand-ink", i < step && "border-ok text-ok")}>{i < step && <Check size={12} />}{n + 1}. {steps[i]}</button></li>))}
           </ol>
           <div className="mt-6">
-            {step === 0 && (
+            {step === 0 && reel && (
+              <div className="grid gap-5">
+                <p className="text-sm text-muted">We looked at your reel every half second and at your photos, and scored each still for sharpness, light and faces. These are real pixels, nothing is generated.</p>
+                {mineErr && <p role="alert" className="rounded-xl border border-warn/40 bg-warn/10 p-3 text-sm">Couldn’t read the video, showing your photos only.</p>}
+                {!mined && !mineErr && <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" aria-busy="true">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="aspect-video w-full rounded-xl" />)}</div>}
+                {mined && ([["From your reel", mined.video], ["Your photos", mined.photos]] as const).map(([title, list]) => list.length > 0 && (
+                  <div key={title}>
+                    <p className="t-label mb-2 text-muted">{title}</p>
+                    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {list.slice(0, title === "Your photos" ? 18 : 6).map((c) => (
+                        <li key={c.id}>
+                          <button onClick={() => setPick(c)} aria-pressed={pick?.id === c.id} className={clsx("relative block w-full overflow-hidden rounded-xl border-2 text-left", pick?.id === c.id ? "border-brand" : "border-transparent")}>
+                            <ThumbCard hue={project.hue} frame={0} url={c.url} text="" template="blur" cutout={false} badge={c.source === "video" ? `${c.t}s` : undefined} />
+                            {best?.id === c.id && <span className="absolute left-1.5 top-1.5 rounded bg-brand px-1.5 text-[10px] font-semibold text-brand-ink">Recommended</span>}
+                            <div className="flex justify-between px-2 py-1.5 text-xs text-muted"><span>face {c.face}</span><span>sharp {c.sharp}</span></div>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+            {step === 0 && !reel && (
               <div>
                 <p className="mb-3 text-sm text-muted">We picked the sharpest, most expressive moments from your own video. Real frames keep the click honest.</p>
                 <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -84,7 +139,7 @@ export function ThumbnailModal({ open, onClose, project, onUse }: { open: boolea
               <div className="grid gap-4">
                 <p className="text-sm text-muted">We lift you out of the frame right here on your device. The background stays a still from your video, and we never invent your face.</p>
                 <div className="relative max-w-xl overflow-hidden rounded-2xl">
-                  <ThumbCard hue={project.hue} frame={frame} text="" template="blur" cutout={cutout === "done"} />
+                  <ThumbCard hue={project.hue} url={tu} frame={frame} text="" template="blur" cutout={cutout === "done"} />
                   {cutout === "working" && <motion.div className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-brand/60 to-transparent" initial={{ left: "-33%" }} animate={{ left: "100%" }} transition={{ repeat: Infinity, duration: 0.9, ease: "linear" }} />}
                 </div>
                 <button className="btn-brand w-fit" disabled={cutout === "working"} onClick={() => setCutout("working")}>{cutout === "done" ? <><Check size={16} />Cutout ready, redo</> : cutout === "working" ? "Removing background…" : "Remove background"}</button>
@@ -96,7 +151,7 @@ export function ThumbnailModal({ open, onClose, project, onUse }: { open: boolea
                 <ul className="grid gap-3 sm:grid-cols-3">
                   {(["brand", "blur", "bold"] as const).map((t) => (
                     <li key={t}><button onClick={() => setTemplate(t)} aria-pressed={template === t} className={clsx("block w-full overflow-hidden rounded-xl border-2", template === t ? "border-brand" : "border-transparent")}>
-                      <ThumbCard hue={project.hue} frame={frame} text={text} template={t} cutout={showCut} /><div className="px-2 py-1.5 text-left text-xs capitalize text-muted">{t}</div></button></li>
+                      <ThumbCard hue={project.hue} url={tu} frame={frame} text={text} template={t} cutout={showCut} /><div className="px-2 py-1.5 text-left text-xs capitalize text-muted">{t}</div></button></li>
                   ))}
                 </ul>
               </div>
@@ -105,19 +160,19 @@ export function ThumbnailModal({ open, onClose, project, onUse }: { open: boolea
               <div className="grid gap-4">
                 <label htmlFor="th-text" className="t-label text-muted">Words on the thumbnail (3–4 words works best)</label>
                 <input id="th-text" className="input" value={text} onChange={(e) => setText(e.target.value.toUpperCase())} maxLength={40} />
-                <div className="flex flex-wrap gap-2">{captionsFx.thumbText.map((t) => <button key={t} className="chip px-3 py-1.5 hover:bg-sunken" onClick={() => setText(t)}><Sparkles size={12} />{t}</button>)}</div>
+                <div className="flex flex-wrap gap-2">{thumbTexts.map((t) => <button key={t} className="chip px-3 py-1.5 hover:bg-sunken" onClick={() => setText(t)}><Sparkles size={12} />{t}</button>)}</div>
               </div>
             )}
           </div>
           <div className="mt-8 flex gap-2">
-            {step > 0 && <button className="btn-ghost" onClick={() => setStep(step - 1)}>Back</button>}
-            {step < 3 && <button className="btn-primary" onClick={() => setStep(step + 1)}>Next</button>}
+            {step > 0 && <button className="btn-ghost" onClick={() => setStep(stepIds[Math.max(0, stepIds.indexOf(step) - 1)])}>Back</button>}
+            {step < 3 && <button className="btn-primary" onClick={() => setStep(stepIds[stepIds.indexOf(step) + 1])}>Next</button>}
           </div>
         </div>
 
         <aside className="lg:col-span-2" aria-label="Preview and click-readiness">
           <div className="sticky top-6 grid gap-5">
-            <ThumbCard hue={project.hue} frame={frame} text={text} template={template} cutout={showCut} badge={dur} className="rounded-2xl border border-line" />
+            <ThumbCard hue={project.hue} url={tu} frame={frame} text={text} template={template} cutout={showCut} badge={dur} className="rounded-2xl border border-line" />
             <div className="card p-5">
               <div className="flex items-center justify-between"><span className="t-label text-muted">Click appeal <span className="normal-case">(our estimate)</span></span><span className="font-display text-3xl">{r.score}</span></div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-sunken" role="meter" aria-valuenow={r.score} aria-valuemin={0} aria-valuemax={100} aria-label="Click appeal">
@@ -128,12 +183,12 @@ export function ThumbnailModal({ open, onClose, project, onUse }: { open: boolea
             <div className="card p-5">
               <p className="t-label mb-3 text-muted">How it looks on a phone</p>
               <div className="flex gap-4">
-                <div className="rounded-lg bg-bg p-2"><div className="w-[120px]"><ThumbCard hue={project.hue} frame={frame} text={text} template={template} cutout={showCut} badge={dur} className="rounded-md" /></div></div>
-                <div className="rounded-lg bg-text p-2"><div className="w-[120px]"><ThumbCard hue={project.hue} frame={frame} text={text} template={template} cutout={showCut} badge={dur} className="rounded-md" /></div></div>
+                <div className="rounded-lg bg-bg p-2"><div className="w-[120px]"><ThumbCard hue={project.hue} url={tu} frame={frame} text={text} template={template} cutout={showCut} badge={dur} className="rounded-md" /></div></div>
+                <div className="rounded-lg bg-text p-2"><div className="w-[120px]"><ThumbCard hue={project.hue} url={tu} frame={frame} text={text} template={template} cutout={showCut} badge={dur} className="rounded-md" /></div></div>
               </div>
               <p className="mt-3 text-xs text-muted">Not generated by AI. For A/B tests use YouTube's native Test &amp; Compare, we don't fake results.</p>
             </div>
-            <button className="btn-brand" onClick={() => { onUse({ id: `th_${Date.now()}`, frame, text, template, score: r.score }); onClose(); }}>Use this thumbnail</button>
+            <button className="btn-brand" disabled={!!reel && !pick} onClick={() => { onUse({ id: `th_${Date.now()}`, frame, text, template, score: r.score, ...(reel && pick ? { url: pick.url, source: pick.source } : {}) }); onClose(); }}>Use this thumbnail</button>
           </div>
         </aside>
       </div>
@@ -149,15 +204,17 @@ export function CaptionsDrawer({ open, onClose, project, onUse }: { open: boolea
   const [opts, setOpts] = useState<CaptionOption[] | null>(null);
   const [source, setSource] = useState<"live" | "demo">("demo");
   const [copied, setCopied] = useState<string | null>(null);
-  const tags = home.trending.hashtags;
+  const tags = project.reel ? { ...home.trending.hashtags, ...reelFx(project).hashtags } : home.trending.hashtags;
 
   useEffect(() => {
     if (!open) return;
     let alive = true;
     setOpts(null);
-    captionService.suggest({ tone, platform, topic: project.title, style: styleBrief(dna) }).then((r) => { if (alive) { setOpts(personaliseCaptions(r.options, dna)); setSource(r.source); } });
+    (project.reel
+      ? new Promise<{ options: CaptionOption[]; source: "demo" }>((res) => setTimeout(() => { const m = reelFx(project).options as Record<string, CaptionOption[]>; res({ options: m[tone] ?? m.witty, source: "demo" }); }, 700))
+      : captionService.suggest({ tone, platform, topic: project.title, style: styleBrief(dna) })).then((r) => { if (alive) { setOpts(personaliseCaptions(r.options, dna)); setSource(r.source); } });
     return () => { alive = false; };
-  }, [open, tone, platform, project.title, dna]);
+  }, [open, tone, platform, project.title, project.reel, dna]);
 
   const limit = platform === "x" ? 280 : platform === "linkedin" ? 3000 : 2200;
   const copy = (id: string, text: string) => { navigator.clipboard?.writeText(text).catch(() => undefined); setCopied(id); setTimeout(() => setCopied(null), 1400); };
@@ -197,8 +254,10 @@ export function CaptionsDrawer({ open, onClose, project, onUse }: { open: boolea
             );
           })}
         </ul>
-        <h3 className="t-label mt-8 text-muted">Opening ideas</h3>
-        <ul className="mt-3 grid gap-1.5">{captionsFx.hooks.slice(0, 3).map((h) => <li key={h.text} className="flex items-center justify-between rounded-xl border border-line px-3 py-2 text-sm"><span>{h.text}</span><span className="chip py-0.5">{h.style} · {h.score}</span></li>)}</ul>
+        {!project.reel && <>
+          <h3 className="t-label mt-8 text-muted">Opening ideas</h3>
+          <ul className="mt-3 grid gap-1.5">{captionsFx.hooks.slice(0, 3).map((h) => <li key={h.text} className="flex items-center justify-between rounded-xl border border-line px-3 py-2 text-sm"><span>{h.text}</span><span className="chip py-0.5">{h.style} · {h.score}</span></li>)}</ul>
+        </>}
         <h3 className="t-label mt-8 text-muted">Hashtags</h3>
         {(["niche", "broad", "trending"] as const).map((k) => (
           <div key={k} className="mt-3"><div className="mb-1 text-xs capitalize text-muted">{k}</div><div className="flex flex-wrap gap-1.5">{tags[k].map((t) => <span key={t} className="chip">{t}</span>)}</div></div>

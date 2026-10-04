@@ -77,14 +77,14 @@ export default function Review() {
           <div className="rounded-[2.5rem] border-[8px] border-text bg-surface p-2 shadow-soft">
             <div className="relative overflow-hidden rounded-[1.8rem]">
               <div className={clsx("relative", project.aspect === "9:16" ? "aspect-[9/16]" : "aspect-video")}>
-                <ThumbCard hue={project.hue} frame={project.thumb?.frame ?? 0} text={project.thumb?.text ?? "No thumbnail"} template={project.thumb?.template ?? "blur"} cutout={!!project.thumb} className="!aspect-auto h-full" />
+                <ThumbCard hue={project.hue} url={project.thumb?.url ?? project.cover} frame={project.thumb?.frame ?? 0} text={project.thumb?.text ?? "No thumbnail"} template={project.thumb?.template ?? "blur"} cutout={!!project.thumb && !project.reel} className="!aspect-auto h-full" />
                 {first?.caption && <div className="absolute inset-x-4 bottom-[34%] text-center"><span className="inline-block rounded-xl bg-text/75 px-3 py-1.5 font-display text-sm text-bg">{first.caption}</span></div>}
                 <div className="absolute right-3 bottom-[22%] grid gap-4 text-brand-ink"><Heart size={22} /><MessageCircle size={22} /><Send size={22} /></div>
                 <div className="absolute inset-x-3 bottom-3 text-brand-ink" style={{ textShadow: "0 1px 6px rgb(var(--text) / .7)" }}>
                   <div className="text-xs font-semibold">@aarav.makes</div>
                   <div className="line-clamp-2 text-xs">{project.caption?.caption ?? "Add a caption in Studio"}</div>
                   <div className="mt-1 text-[11px] opacity-90">{(project.caption?.hashtags ?? project.hashtags).join(" ")}</div>
-                  <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-text/50 px-2 py-0.5 text-[10px]"><Music2 size={10} />{track?.title ?? "Original audio"}</div>
+                  {!project.noAudio && <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-text/50 px-2 py-0.5 text-[10px]"><Music2 size={10} />{track?.title ?? "Original audio"}</div>}
                 </div>
               </div>
             </div>

@@ -29,6 +29,8 @@ export function gate(project: Pick<Project, "title" | "thumb">) {
  * BACKEND-SLOT(compliance): swap this for POST /api/v1/projects/:id/compliance. Same `Compliance` shape in, same out.
  * Positions scale with the video so the demo works for a 12 s short and a 40 s lecture alike. */
 export function analyzeProject(project: Project): Compliance {
+  // A fixed video file (photo reel) is never inspected, so there is nothing to flag and nothing is invented about it.
+  if (project.reel) return { version: 1, cues: [], monetization: [], bleeps: [], pii: [], claims: [], people: [], blurs: [] };
   const T = Math.max(8, totalDur(project.timeline));
   const at = (f: number, d: number) => { const dur = r1(Math.min(d, T * 0.14)); return { at: r1(clamp(T * f, 0.5, T - dur - 0.2)), dur }; };
 

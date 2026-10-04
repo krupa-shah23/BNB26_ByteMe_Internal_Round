@@ -19,13 +19,14 @@ export function seedTimeline(g: Group): Segment[] {
 export function makeProject(g: Group, over: Partial<Project> = {}): Project {
   const now = new Date().toISOString();
   const isShort = g.format === "short";
+  const reel = g.output ? { reel: g.output, cover: g.output.poster, noAudio: g.kind === "photo-reel", overlays: [], photos: g.kind === "photo-reel" ? g.inputs.length : 0 } : {};
   return {
     id: uid("p"), title: g.title, type: isShort ? "Short" : "Video", groupId: g.id, hue: g.hue,
     createdAt: now, updatedAt: now, status: "Generated",
     platforms: isShort ? ["ig_reel", "yt_short"] : ["yt_video", "linkedin"],
     aspect: isShort ? "9:16" : "16:9", timeline: seedTimeline(g), audioId: g.audio.id,
     files: g.inputs.map((i) => i.filenames[0]), photos: g.photos.length, hashtags: g.hashtags,
-    version: 1, media: g.media, ...over,
+    version: 1, media: g.media, ...reel, ...over,
   };
 }
 

@@ -4,5 +4,8 @@
   "g3": ["Two days in Goa for under five thousand rupees.", "Day one: scooter, sunrise, Chapora fort.", "The thali that beat every café.", "Full breakdown in the comments.", "Show the hostel booking receipt."],
   "g4": ["Nobody ships because nobody owns it.", "The 80 percent trap, explained by our guest.", "Episode twelve is out now.", "Subscribe wherever you listen.", "Insert sponsor read here."],
   "g5": ["Me at eleven PM: I'll start tomorrow.", "Exam tomorrow, nine AM.", "Every single semester.", "Tag your hostel roommate."],
+  "photo-reel": ["A few moments, one reel.", "Add a line of text where it matters.", "Save this for later."],
+  "lecture-merge": ["Consider the function of maximising f(x) = x².", "Start with an initial population.", "Fitness decides who gets selected.", "Crossover and mutation create the next generation."],
+  "vlog-merge": ["Come along with me today.", "Here is how it went.", "Follow for the next one."],
   "_default": ["The one thing nobody tells you.", "Here is what actually happened.", "Follow for more."]
 }

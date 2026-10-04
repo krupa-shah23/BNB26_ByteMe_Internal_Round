@@ -2,7 +2,8 @@ import { z } from "zod";
 import { platformId, aspect, segment } from "./project";
 
 /** Shapes the fixtures must keep. A fixture edit that breaks one of these fails the contract test, not the demo. */
-const inputRole = z.object({ role: z.string(), filenames: z.array(z.string()).min(1), sha256_first_1mb: z.string(), durationSec: z.number().positive() });
+const inputRole = z.object({ role: z.string(), filenames: z.array(z.string()).min(1), sha256_first_1mb: z.string(), durationSec: z.number().min(0), kind: z.enum(["video", "image"]).optional(), size: z.number().int().min(0).optional(), width: z.number().int().optional(), height: z.number().int().optional() });
+const reelOutput = z.object({ video: z.string(), poster: z.string(), durationSec: z.number().positive(), width: z.number().int().positive(), height: z.number().int().positive(), fps: z.number().optional(), codec: z.string().optional(), hasAudio: z.boolean().optional() });
 export const groupSchema = z.object({
   id: z.string(), title: z.string(), topic: z.string(), format: z.enum(["short", "video"]), type: z.string(), preset: z.string(), media: z.boolean(), hue: z.number(),
   inputs: z.array(inputRole), // the _default group has none by design
@@ -10,6 +11,7 @@ export const groupSchema = z.object({
   audio: z.object({ id: z.string(), src: z.string(), risk: z.string() }),
   timeline: z.array(segment.omit({ ai: true, touched: true, id: true })).min(1),
   hashtags: z.array(z.string()), chapters: z.array(z.object({ t: z.number(), title: z.string() })),
+  kind: z.enum(["photo-reel", "lecture-merge", "vlog-merge"]).optional(), output: reelOutput.optional(),
 });
 export const groupsFile = z.object({ groups: z.array(groupSchema.refine((g) => g.inputs.length > 0, "a real group needs inputs")).min(1), default: groupSchema });
 

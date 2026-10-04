@@ -29,6 +29,69 @@
     { "text": "₹0 budget. One laptop. A term sheet.", "style": "numbers", "score": 82 },
     { "text": "Founders: do this before your next pitch", "style": "direct", "score": 76 }
   ],
+  "vlog": {
+    "options": {
+      "witty": [
+        { "id": "vw1", "caption": "Three clips, one very full day 🎬", "cta": "Follow for the next vlog" },
+        { "id": "vw2", "caption": "Come along, I promise it gets interesting.", "cta": "Save this for later" },
+        { "id": "vw3", "caption": "The whole day, no skips.", "cta": "Tell me your favourite part" }
+      ]
+    },
+    "hashtags": { "niche": ["#vlog", "#dayinmylife", "#vloggerlife"], "broad": ["#lifestyle", "#reels", "#explore"], "trending": ["#fyp", "#minivlog", "#aesthetic"] },
+    "thumbText": ["THE FULL VLOG", "COME ALONG", "ONE FULL DAY"]
+  },
+  "lecture": {
+    "options": {
+      "witty": [
+        { "id": "lw1", "caption": "Evolution, but for algorithms 🧬 f(x) = x² just got solved.", "cta": "Save this for your exam" },
+        { "id": "lw2", "caption": "Selection, crossover, mutation. Survival of the fittest, in 12 minutes.", "cta": "Share with your study group" },
+        { "id": "lw3", "caption": "The algorithm that evolves its own answer.", "cta": "Follow for more" }
+      ],
+      "pro": [
+        { "id": "lp1", "caption": "A complete Genetic Algorithm example: population, fitness, selection, crossover and mutation.", "cta": "Follow for the full course" },
+        { "id": "lp2", "caption": "How a genetic algorithm maximises f(x) = x², step by step.", "cta": "Save for revision" },
+        { "id": "lp3", "caption": "Optimisation inspired by evolution, explained with numbers.", "cta": "Read the chapters below" }
+      ],
+      "storytelling": [
+        { "id": "ls1", "caption": "Start with random guesses. Keep the best. Mix them. Repeat. That is the whole idea.", "cta": "Watch to the mutation step" },
+        { "id": "ls2", "caption": "Generation by generation, the answers get better.", "cta": "Follow along" },
+        { "id": "ls3", "caption": "One equation, a few binary strings, and a population that learns.", "cta": "Part 2 soon" }
+      ],
+      "Hinglish": [
+        { "id": "lh1", "caption": "Genetic Algorithm ek solved example ke saath, bilkul simple 🧬", "cta": "Exam se pehle save karlo" },
+        { "id": "lh2", "caption": "Selection, crossover, mutation, sab ek video mein.", "cta": "Dost ko bhejo" },
+        { "id": "lh3", "caption": "f(x) = x² ko evolution se solve karte hain.", "cta": "Follow karo" }
+      ]
+    },
+    "hashtags": { "niche": ["#geneticalgorithm", "#optimisation", "#ai"], "broad": ["#education", "#btech", "#learning"], "trending": ["#studytok", "#codinglife", "#computerscience"] },
+    "thumbText": ["GENETIC ALGORITHM SOLVED", "HOW DOES AI EVOLVE?", "f(x) = x² SOLVED"]
+  },
+  "photoReel": {
+    "options": {
+      "witty": [
+        { "id": "pw1", "caption": "Camera roll, but make it a movie 🎞️", "cta": "Save this for your next photo dump" },
+        { "id": "pw2", "caption": "18 photos, zero filter debates. We just pressed play.", "cta": "Tag the one who took half of these" },
+        { "id": "pw3", "caption": "Not a highlight reel. Just the good parts of the week.", "cta": "Follow for more dumps" }
+      ],
+      "pro": [
+        { "id": "pp1", "caption": "A week in frames. Sharing the moments that made it worth documenting.", "cta": "Follow for more behind the scenes" },
+        { "id": "pp2", "caption": "Turning a folder of photos into a story, one beat at a time.", "cta": "Share with someone who would enjoy it" },
+        { "id": "pp3", "caption": "Small moments, thoughtfully kept.", "cta": "Save for later" }
+      ],
+      "storytelling": [
+        { "id": "ps1", "caption": "It started as a few photos on my phone. By the end, it was a whole day I did not want to forget.", "cta": "Stay for the last frame" },
+        { "id": "ps2", "caption": "Every picture here has a story. This is the short version.", "cta": "Tell me which one you want the long version of" },
+        { "id": "ps3", "caption": "Scroll back far enough and the ordinary days turn out to be the best ones.", "cta": "Follow along" }
+      ],
+      "Hinglish": [
+        { "id": "ph1", "caption": "Camera roll ka poora scene, ek reel mein 🎞️", "cta": "Save karlo, baad mein kaam aayega" },
+        { "id": "ph2", "caption": "Photos bahut, words kam. Bas dekho.", "cta": "Dost ko tag karo" },
+        { "id": "ph3", "caption": "Yeh sab yaadein, ek jagah. Photo dump time!", "cta": "Follow karo aur dumps ke liye" }
+      ]
+    },
+    "hashtags": { "niche": ["#photodump", "#cameraroll", "#weekinphotos"], "broad": ["#reels", "#memories", "#lifestyle"], "trending": ["#photodumpchallenge", "#aesthetic", "#fyp"] },
+    "thumbText": ["PHOTO DUMP", "THE GOOD PARTS", "A WEEK IN FRAMES"]
+  },
   "thumbText": ["TERM SHEET, 3 DAYS", "SKIP THIS SLIDE", "40 PITCHES. 1 YES."]
 }
 

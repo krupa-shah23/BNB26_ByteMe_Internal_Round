@@ -9,12 +9,27 @@ import { Poster, Reveal, SlidingNav } from "@/components/ui/bits";
 import { AiClipLab } from "@/components/workspace/AiClipLab";
 import { fingerprint } from "@/lib/fingerprint";
 import { defaultGroup, groupById, groups, sampleFingerprints } from "@/lib/match";
+import { GENERATE_MIN, PHOTO_COUNT, isPhotoReel, recognisedLabel } from "@/lib/photoReel";
+import { CoverFit, ReelPreview } from "@/components/ui/ReelMedia";
+import { LectureReport } from "@/components/studio/LectureReport";
+import { SongPick } from "@/components/audio/SongSearch";
 import { PROFILES, absTime, fmtTime, friendlyTitle, makeProject, relTime, totalDur } from "@/lib/projects";
 import { projectApi } from "@/lib/api/projects";
 import { clipService, groupService } from "@/lib/services";
 import { generationSteps, sleep } from "@/lib/services/demo";
 import { useStore } from "@/lib/store";
-import type { FileFingerprint, MatchResult, PlatformId, Project } from "@/lib/types";
+import type { Asset, FileFingerprint, Group, MatchResult, PlatformId, Project } from "@/lib/types";
+
+/** Library rows for the photos a photo-reel generation used: the uploaded name, the resized copy and its thumbnail. */
+function photoAssets(g: Group, m: MatchResult | null, at: string): Asset[] {
+  return g.inputs.filter((r) => !m || m.isDefault || m.matched.some((x) => x.role === r.role)).map((r) => {
+    const n = r.role.slice(1);
+    return {
+      id: `asset_${g.id}_${r.role}`, name: m?.matched.find((x) => x.role === r.role)?.fileName ?? r.filenames[0], kind: "image" as const,
+      url: `/demo/${g.id}/photos/p${n}.jpg`, thumbUrl: `/demo/${g.id}/photos/thumbs/p${n}.jpg`, groupId: g.id, createdAt: at, size: r.size, width: r.width, height: r.height,
+    };
+  });
+}
 
 type Kind = "short" | "video";
 const TABS = {
@@ -44,7 +59,8 @@ function JobRing({ progress }: { progress: number }) {
 export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, dropHint }: { kind: Kind; embedded?: boolean; forcedTab?: string; dropTitle?: string; dropHint?: string }) {
   const router = useRouter();
   const params = useSearchParams();
-  const { projects, upsertProject, forceGroup, toast } = useStore();
+  const { projects, upsertProject, addAssets, forceGroup, toast } = useStore();
+  const [report, setReport] = useState(false);
   const tabs = TABS[kind];
   const typeParam = params.get("type");
   const initial = tabs.find((t) => t.id.toLowerCase() === typeParam?.toLowerCase())?.id ?? tabs[0].id;
@@ -78,7 +94,7 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
     let m = await groupService.match(all); // BACKEND-SLOT(groups-match): demo = local matcher, live = POST /api/v1/groups/match
     if (forceGroup && (m.isDefault || m.confidence < 1)) {
       const g = groupById(forceGroup);
-      m = { groupId: g.id, matched: g.inputs.map((r) => ({ role: r.role, fileName: r.filenames[0] })), missingRoles: [], photosMatched: g.photos.map((p) => p.filenames[0]), unused: [], confidence: 1, candidates: [{ groupId: g.id, score: 9 }], isDefault: false, duplicates: [] };
+      m = { groupId: g.id, matched: g.inputs.map((r) => ({ role: r.role, fileName: r.filenames[0] })), missingRoles: [], photosMatched: isPhotoReel(g) ? g.inputs.map((r) => r.filenames[0]) : g.photos.map((p) => p.filenames[0]), unused: [], confidence: 1, candidates: [{ groupId: g.id, score: 9 }], isDefault: false, duplicates: [] };
     }
     setMatch(m); setBusy(null);
   };
@@ -95,7 +111,7 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
   const generate = async () => {
     if (!group) return;
     setBusy("job");
-    const steps = generationSteps(group);
+    const steps = generationSteps(group, isPhotoReel(group) && match && !match.isDefault ? match.matched.length : undefined);
     setJob({ step: 0, progress: 0, steps });
     const out = await clipService.generate(group, (p) => setJob({ step: p.stepIndex, progress: p.progress, steps: p.steps }));
     const server = out?.projectId ? await projectApi.get(out.projectId).catch(() => null) : null; // live: the server already created the project
@@ -109,12 +125,23 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
     // live: keep the server's id/version/timeline but apply what this screen knows (upload tab targets, file names)
     const p: Project = server ? { ...server, files: fresh.files, photos: fresh.photos, platforms: fresh.platforms, title: fresh.title } : fresh;
     if (!p.files.length) p.files = group.inputs.map((i) => i.filenames[0]);
-    if (useStore.getState().creatorDNA.editing.zooms === "punchy") p.timeline = p.timeline.map((s, i) => (i === 0 ? { ...s, zoom: 12 } : s));
+    if (!isPhotoReel(group) && useStore.getState().creatorDNA.editing.zooms === "punchy") p.timeline = p.timeline.map((s, i) => (i === 0 ? { ...s, zoom: 12 } : s));
+    const song = useStore.getState().pickedTrack;
+    if (song) { p.audioId = song.id; if (p.noAudio) p.noAudio = false; }
     upsertProject(p);
+    if (isPhotoReel(group)) addAssets(photoAssets(group, match, p.createdAt));
     useStore.getState().notify("Video generated", `${p.title} is ready in Studio.`);
     setResult(p); setBusy(null);
     toast("Generated", "Opened in Studio history");
   };
+
+  const generateRef = useRef(generate);
+  generateRef.current = generate;
+  useEffect(() => {
+    if (!match || match.isDefault || busy || job || result || existing || !(isPhotoReel(group) ? match.matched.length >= GENERATE_MIN : (group?.kind === "lecture-merge" || group?.kind === "vlog-merge") && match.matched.length === group.inputs.length)) return;
+    const id = setTimeout(() => void generateRef.current(), 1100); // long enough to read "Recognised 18 photos"
+    return () => clearTimeout(id);
+  }, [match, busy, job, result, existing, group]);
 
   const visible = projects.filter((p) => {
     if (p.type !== (kind === "short" ? "Short" : "Video")) return false;
@@ -137,6 +164,7 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
       {!embedded && <AiClipLab format={kind} />}
 
       {/* upload zone */}
+      {showDrop && kind === "short" && <div className="mb-3"><SongPick /></div>}
       {showDrop && <section aria-label="Upload" className={embedded ? "grid gap-3" : "grid gap-6 lg:grid-cols-5"}>
         <div className={embedded ? "" : "lg:col-span-3"}>
           <motion.div
@@ -167,7 +195,7 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
                 <li key={g.id}>
                   <button onClick={() => useSample(g.id)} className="flex w-full items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-left text-sm transition-colors hover:border-brand hover:bg-sunken">
                     <Poster seed={g.hue} className="h-10 w-10 shrink-0 rounded-lg"><span className="absolute inset-0 grid place-items-center text-xs font-bold text-brand-ink">{g.id.toUpperCase()}</span></Poster>
-                    <span className="min-w-0 flex-1"><span className="block truncate font-medium">{g.title}</span><span className="text-xs text-muted">3 clips + 1 photo · {g.format === "short" ? "Short" : "Video"} · {g.type}</span></span>
+                    <span className="min-w-0 flex-1"><span className="block truncate font-medium">{g.title}</span><span className="text-xs text-muted">{isPhotoReel(g) ? `${g.inputs.length} photos` : "3 clips + 1 photo"} · {g.format === "short" ? "Short" : "Video"} · {g.type}</span></span>
                   </button>
                 </li>
               ))}
@@ -185,7 +213,7 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
                 <li key={g.id}>
                   <button onClick={() => useSample(g.id)} className="flex w-full items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-left text-sm transition-colors hover:border-brand hover:bg-sunken">
                     <Poster seed={g.hue} className="h-10 w-10 shrink-0 rounded-lg"><span className="absolute inset-0 grid place-items-center text-xs font-bold text-brand-ink">{g.id.toUpperCase()}</span></Poster>
-                    <span className="min-w-0 flex-1"><span className="block truncate font-medium">{g.title}</span><span className="text-xs text-muted">3 clips + 1 photo · {g.format === "short" ? "Short" : "Video"} · {g.type}</span></span>
+                    <span className="min-w-0 flex-1"><span className="block truncate font-medium">{g.title}</span><span className="text-xs text-muted">{isPhotoReel(g) ? `${g.inputs.length} photos` : "3 clips + 1 photo"} · {g.format === "short" ? "Short" : "Video"} · {g.type}</span></span>
                   </button>
                 </li>
               ))}
@@ -224,17 +252,19 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
             ) : (
               <>
                 <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="font-display text-2xl">Recognised {match.matched.length} clip{match.matched.length !== 1 && "s"}{match.photosMatched.length ? ` · ${match.photosMatched.length} photo` : ""}</h2>
+                  <h2 className="font-display text-2xl">{isPhotoReel(group) ? recognisedLabel(match.matched.length, group?.inputs.length ?? PHOTO_COUNT) : <>Recognised {match.matched.length} clip{match.matched.length !== 1 && "s"}{match.photosMatched.length ? ` · ${match.photosMatched.length} photo` : ""}</>}</h2>
                   {group && <span className="chip">{group.title}</span>}
                 </div>
                 <ul className="mt-4 flex flex-wrap gap-2 text-sm">
-                  {match.matched.map((m) => <li key={m.role} className="chip py-1.5"><FileVideo size={14} /> Role {m.role} · {m.fileName}</li>)}
-                  {match.photosMatched.map((n) => <li key={n} className="chip py-1.5"><ImageIcon size={14} /> {n}</li>)}
+                  {isPhotoReel(group)
+                    ? <li className="chip py-1.5"><ImageIcon size={14} /> {match.matched.length} of {group?.inputs.length} photos</li>
+                    : <>{match.matched.map((m) => <li key={m.role} className="chip py-1.5"><FileVideo size={14} /> Role {m.role} · {m.fileName}</li>)}
+                  {match.photosMatched.map((n) => <li key={n} className="chip py-1.5"><ImageIcon size={14} /> {n}</li>)}</>}
                   {match.unused.map((n) => <li key={n} className="chip py-1.5 text-muted">{n} · not used</li>)}
                   {match.duplicates.map((n) => <li key={n} className="chip py-1.5 text-muted">{n} · duplicate ignored</li>)}
                 </ul>
                 {tie && <div className="mt-4"><p className="mb-2 text-sm">Which set did you mean?</p><div className="flex gap-2">{match.candidates.map((c) => <button key={c.groupId} className="chip px-4 py-2 text-sm hover:bg-sunken" onClick={() => setPick(c.groupId)}>{c.groupId.toUpperCase()} · {groupById(c.groupId).title}</button>)}</div></div>}
-                {missing > 0 && !tie && <p className="mt-4 rounded-xl border border-warn/40 bg-warn/10 p-3 text-sm">{missing} clip missing (role {match.missingRoles.join(", ")}). Add it, or generate with what you have.</p>}
+                {missing > 0 && !tie && <p className="mt-4 rounded-xl border border-warn/40 bg-warn/10 p-3 text-sm">{isPhotoReel(group) ? `${missing} photo${missing === 1 ? "" : "s"} missing (${match.missingRoles.join(", ")}). Add them, or generate anyway.` : `${missing} clip missing (role ${match.missingRoles.join(", ")}). Add it, or generate with what you have.`}</p>}
                 {match.photosMatched.length === 0 && group?.photos.length ? <p className="mt-3 text-sm text-muted">No photo uploaded, using this set's default photo.</p> : null}
               </>
             )}
@@ -268,15 +298,22 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
       {/* output */}
       {result && group && (
         <motion.section initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className={clsx("card grid gap-6 p-6", embedded ? "md:grid-cols-[120px_1fr]" : "mt-6 md:grid-cols-[220px_1fr]")} aria-label="Generated video">
-          <Poster seed={result.hue} label={result.title} className={clsx("w-full rounded-2xl border border-line", result.aspect === "9:16" ? (embedded ? "aspect-[9/16] max-w-[120px]" : "aspect-[9/16] max-w-[220px]") : (embedded ? "aspect-video md:w-[120px]" : "aspect-video md:w-[220px]"))}>
-            <span className="absolute bottom-3 right-3 rounded-md bg-text/80 px-2 py-0.5 text-xs text-bg">{fmtTime(totalDur(result.timeline))}</span>
-            <motion.span className="absolute right-3 top-3 text-brand-ink" animate={{ rotate: [0, 20, 0], scale: [1, 1.3, 1] }} transition={{ repeat: 3, duration: 0.8 }}><Sparkles size={18} /></motion.span>
-          </Poster>
+          {result.reel ? (
+            <div className={clsx("relative w-full overflow-hidden rounded-2xl border border-line", result.groupId === "lecture-merge" ? "aspect-video max-w-[360px]" : embedded ? "aspect-[9/16] max-w-[120px]" : "aspect-[9/16] max-w-[220px]")}>
+              <ReelPreview src={result.reel.video} poster={result.reel.poster} label={result.title} className="h-full w-full" muted={result.groupId !== "lecture-merge" && result.groupId !== "vlog-merge"} />
+              <span className="pointer-events-none absolute bottom-3 right-3 rounded-md bg-text/80 px-2 py-0.5 text-xs text-bg">{fmtTime(totalDur(result.timeline))}</span>
+            </div>
+          ) : (
+            <Poster seed={result.hue} label={result.title} className={clsx("w-full rounded-2xl border border-line", result.aspect === "9:16" ? (embedded ? "aspect-[9/16] max-w-[120px]" : "aspect-[9/16] max-w-[220px]") : (embedded ? "aspect-video md:w-[120px]" : "aspect-video md:w-[220px]"))}>
+              <span className="absolute bottom-3 right-3 rounded-md bg-text/80 px-2 py-0.5 text-xs text-bg">{fmtTime(totalDur(result.timeline))}</span>
+              <motion.span className="absolute right-3 top-3 text-brand-ink" animate={{ rotate: [0, 20, 0], scale: [1, 1.3, 1] }} transition={{ repeat: 3, duration: 0.8 }}><Sparkles size={18} /></motion.span>
+            </Poster>
+          )}
           <div className="flex flex-col justify-between gap-6">
             <div>
               <span className="chip border-ok/40 bg-ok/10 text-ok"><Check size={14} />Generated just now</span>
               <h2 className="t-h2 mt-3">{result.title}</h2>
-              <p className="mt-2 text-sm text-muted">From {result.files.length} clips + {result.photos} photo · {result.timeline.length} edits placed by AI · {result.platforms.map((p) => PROFILES[p].label).join(" + ")}</p>
+              <p className="mt-2 text-sm text-muted">{result.groupId === "vlog-merge" ? `Full video from 3 clips · ${fmtTime(totalDur(result.timeline))}` : result.groupId === "lecture-merge" ? `Full video from 3 parts · ${fmtTime(totalDur(result.timeline))} · 16:9` : result.reel ? `From ${result.photos} photos · 9:16 · ${result.platforms.map((p) => PROFILES[p].label).join(" + ")}` : `From ${result.files.length} clips + ${result.photos} photo · ${result.timeline.length} edits placed by AI · ${result.platforms.map((p) => PROFILES[p].label).join(" + ")}`}</p>
               {kind === "video" && group.chapters.length > 0 && (
                 <div className="mt-4"><p className="t-label text-muted">Auto chapters</p><ul className="mt-2 grid gap-1 text-sm">{group.chapters.map((c) => <li key={c.t}><span className="mr-3 font-mono text-xs text-muted">{fmtTime(c.t)}</span>{c.title}</li>)}</ul></div>
               )}
@@ -284,6 +321,7 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
             </div>
             <div className="flex flex-wrap gap-2">
               <button className="btn-primary" onClick={() => router.push(`/studio/${result.id}`)}>Edit in Studio</button>
+              {result.groupId === "lecture-merge" && <><button className="btn-ghost" onClick={() => setReport(true)}>View AI report</button><LectureReport open={report} onClose={() => setReport(false)} /></>}
               <button className="btn-ghost" onClick={reset}>Add another set</button>
             </div>
           </div>
@@ -299,6 +337,7 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
               <li key={p.id}>
                 <Link href={`/studio/${p.id}`} className="group block">
                   <Poster seed={p.hue} label={p.title} className={clsx("w-full rounded-2xl border border-line transition-transform group-hover:scale-[0.98]", p.type === "Short" ? "aspect-[4/5]" : "aspect-video")}>
+                    {p.cover && <CoverFit src={p.cover} alt={p.title} className="absolute inset-0 h-full w-full" />}
                     <span className="chip absolute left-3 top-3 border-transparent bg-bg/90 text-text">{p.status}</span>
                   </Poster>
                   <div className="mt-3 text-sm font-medium leading-snug">{p.title}</div>

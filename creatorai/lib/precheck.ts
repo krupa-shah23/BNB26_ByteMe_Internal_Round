@@ -93,6 +93,20 @@ export function precheck(p: Project, ctx: PrecheckContext = {}): PrecheckResult 
         add({ id: `aud-${pl}`, platform: pl, severity: "pass", title: "Low audio risk", detail: `“${track.title}”, ${track.notes}.`, policyUrl: audioUrl });
       }
     }
+
+    // A fixed video file (photo reel): CreatorAi adds no music. Say what the file really contains.
+    if (p.noAudio) {
+      const audioUrl = rules.policy[rf.audio.policy];
+      add(p.reel?.hasAudio
+        ? { id: `aud-${pl}`, platform: pl, severity: "warn", title: "The video carries its own sound", detail: "CreatorAi added no music and plays the file muted in the editor. The sound inside the file isn't edited or assessed here, so its claim risk is unknown.", policyUrl: audioUrl }
+        : { id: `aud-${pl}`, platform: pl, severity: "pass", title: "No audio track", detail: "Nothing to claim.", policyUrl: audioUrl });
+    }
+    if (p.reel) {
+      const { width, height } = p.reel;
+      add(width < 720
+        ? { id: `res-${pl}`, platform: pl, severity: "warn", title: `Low resolution (${width}×${height})`, detail: "Under 720 px wide can look soft on phones.", policyUrl: policy }
+        : { id: `res-${pl}`, platform: pl, severity: "pass", title: `Resolution ${width}×${height}`, detail: width >= height ? "Shown 9:16 with a blurred background in the editor; the exported file keeps its original frame." : "Matches the platform frame.", policyUrl: policy });
+    }
   }
 
   // platform-independent checks

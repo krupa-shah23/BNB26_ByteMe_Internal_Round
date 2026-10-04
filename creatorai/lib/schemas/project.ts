@@ -9,13 +9,13 @@ export const segment = z.strictObject({
   at: z.number().min(0), dur: z.number().positive(),
   src: z.string().optional(), in: z.number().optional(), out: z.number().optional(),
   photo: z.string().optional(), anim: z.string().optional(),
-  kind: z.string(), caption: z.string().optional(), zoom: z.number().optional(),
+  kind: z.string(), caption: z.string().optional(), zoom: z.number().optional(), url: z.string().optional(),
   touched: z.boolean().optional(),
   ai: z.strictObject({ dur: z.number(), caption: z.string().optional(), in: z.number().optional(), out: z.number().optional() }).optional(),
 });
 
 const captionSel = z.strictObject({ id: z.string(), caption: z.string(), cta: z.string(), tone: z.string(), hashtags: z.array(z.string()) });
-const thumb = z.strictObject({ frame: z.number(), text: z.string(), template: z.enum(["brand", "blur", "bold"]), score: z.number(), id: z.string() });
+const thumb = z.strictObject({ frame: z.number(), text: z.string(), template: z.enum(["brand", "blur", "bold"]), score: z.number(), id: z.string(), url: z.string().optional(), source: z.enum(["video", "photo"]).optional() });
 
 /** Every write carries the version it was based on. */
 const versioned = { version: z.number().int().min(1) };

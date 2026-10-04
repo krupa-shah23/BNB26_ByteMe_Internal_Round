@@ -11,7 +11,7 @@ const thumb = { id: "t", frame: 1, text: "ONE TWO THREE FOUR FIVE", template: "b
 
 function matrix(): Project[] {
   const out: Project[] = [];
-  for (const g of [...groups, defaultGroup]) {
+  for (const g of [...groups.filter((x) => !x.kind), defaultGroup]) { // the photo reel has its own rows (no audio layer, real resolution)
     for (const platforms of PLATFORM_SETS) {
       for (const audioId of tracks.map((t) => t.id)) {
         for (const [withCaption, withThumb] of [[false, false], [true, false], [false, true], [true, true]]) {

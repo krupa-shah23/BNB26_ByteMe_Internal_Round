@@ -5,12 +5,24 @@ export type PlatformId = "ig_reel" | "yt_short" | "yt_video" | "linkedin" | "x" 
 export type Aspect = "9:16" | "1:1" | "16:9" | "4:5";
 export type ProjectStatus = "Generated" | "Editing" | "In review" | "Scheduled" | "Published";
 
-export interface InputRole { role: string; filenames: string[]; sha256_first_1mb: string; durationSec: number }
+export interface InputRole {
+  role: string; filenames: string[]; sha256_first_1mb: string; durationSec: number;
+  /** photo-reel roles (p1…p18) are images; size/width/height come from `npm run hash-demo -- <folder>` */
+  kind?: "video" | "image"; size?: number; width?: number; height?: number;
+}
+/** A finished, pre-baked video a group delivers instead of an edit (the "Photo Dump → Reel" scenario). */
+export interface ReelOutput { video: string; poster: string; durationSec: number; width: number; height: number; fps?: number; codec?: string; hasAudio?: boolean }
+/** Free text the creator adds on top of the video (never burned into the file). */
+export interface TextOverlay { id: string; text: string; at: number; dur: number; pos: "top" | "middle" | "bottom"; size: "s" | "m" | "l" }
+/** A file in the Library. */
+export interface Asset { id: string; name: string; kind: "image" | "video" | "audio"; url: string; thumbUrl: string; groupId?: string; createdAt: string; size?: number; width?: number; height?: number }
 export interface Segment {
   id?: string;
   at: number; dur: number;
   src?: string; in?: number; out?: number; photo?: string; anim?: string;
   kind: string; caption?: string; zoom?: number;
+  /** full media URL; takes precedence over the group's /demo/<group>/<src>.mp4 convention */
+  url?: string;
   /** set when the creator changes it, so the UI can tint AI vs user edits */
   touched?: boolean;
   /** original AI values, for "Reset AI suggestion" */
@@ -23,8 +35,11 @@ export interface Group {
   photos: { id: string; filenames: string[]; sha256: string }[];
   audio: { id: string; src: string; risk: string };
   timeline: Segment[]; hashtags: string[]; chapters: { t: number; title: string }[];
+  /** "photo-reel": matched by photo names/hashes; delivers `output` unchanged */
+  kind?: "photo-reel" | "lecture-merge" | "vlog-merge";
+  output?: ReelOutput;
 }
-export interface ThumbSpec { frame: number; text: string; template: "brand" | "blur" | "bold"; score: number; id: string }
+export interface ThumbSpec { frame: number; text: string; template: "brand" | "blur" | "bold"; score: number; id: string; /** a real still (data URL or /demo path) instead of the storyboard frame */ url?: string; source?: "video" | "photo" }
 export interface Project {
   id: string; title: string; type: "Short" | "Video"; groupId: string; hue: number;
   createdAt: string; updatedAt: string; status: ProjectStatus;
@@ -37,6 +52,13 @@ export interface Project {
   /** Set by Audience → "Create response"; the editor consumes it once to pre-fill hook + script. */
   prefill?: { question: string; hook: string; script: string[]; source: string; applied?: boolean };
   version: number; media: boolean; scheduledAt?: string;
+  /** poster still shown on cards and lists */
+  cover?: string;
+  /** set for projects whose video is a fixed, pre-baked file */
+  reel?: ReelOutput;
+  /** the project has no music/audio layer: audio UI is hidden and the pre-publish check passes the audio row */
+  noAudio?: boolean;
+  overlays?: TextOverlay[];
 }
 export interface FileFingerprint { name: string; size: number; sha: string; durationSec: number; kind: "video" | "image" | "audio" | "other" }
 export interface MatchResult {

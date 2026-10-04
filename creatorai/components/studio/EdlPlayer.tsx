@@ -13,6 +13,6 @@ export default function EdlPlayer({ props, controls = true, playerRef }: { props
 
   return (
     <Player ref={playerRef} component={EdlComposition} inputProps={props} durationInFrames={frames} compositionWidth={d.w} compositionHeight={d.h} fps={FPS}
-      controls={controls} loop clickToPlay style={{ width: "100%", height: "100%" }} acknowledgeRemotionLicense />
+      controls={controls} showVolumeControls={false} loop clickToPlay style={{ width: "100%", height: "100%" }} acknowledgeRemotionLicense />
   );
 }

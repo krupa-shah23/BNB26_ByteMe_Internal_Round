@@ -1,5 +1,6 @@
 import groupsJson from "@/fixtures/groups.json";
 import type { FileFingerprint, Group, MatchResult } from "./types";
+import { ANYWAY_MIN, isPhotoReel, matchPhotoReel } from "./photoReel";
 
 export const groups = groupsJson.groups as unknown as Group[];
 export const defaultGroup = groupsJson.default as unknown as Group;
@@ -24,6 +25,12 @@ export interface MatchOpts {
 
 export function matchFiles(files: FileFingerprint[], opts: MatchOpts = {}): MatchResult {
   const pool = (opts.groups ?? groups).filter((g) => !opts.only || g.id === opts.only);
+  const reel = pool.find(isPhotoReel);
+  if (reel) {
+    const pr = matchPhotoReel(files, reel);
+    if (pr.count >= ANYWAY_MIN) return pr.result;
+    if (opts.only === reel.id) return { ...pr.result, matched: [], missingRoles: reel.inputs.map((r) => r.role), photosMatched: [], confidence: 0, candidates: [] }; // forced from the Demo Panel: still offer "generate anyway"
+  }
   // dedupe on sha (or name+size when hashing failed)
   const seen = new Set<string>();
   const duplicates: string[] = [];
@@ -36,7 +43,7 @@ export function matchFiles(files: FileFingerprint[], opts: MatchOpts = {}): Matc
   const videos = uniq.filter((f) => f.kind === "video");
   const images = uniq.filter((f) => f.kind === "image");
 
-  const results = pool.map((g) => {
+  const results = pool.filter((g) => !isPhotoReel(g)).map((g) => {
     const used = new Set<string>();
     const matched: { role: string; fileName: string; s: number }[] = [];
     for (const r of g.inputs) {
@@ -56,6 +63,7 @@ export function matchFiles(files: FileFingerprint[], opts: MatchOpts = {}): Matc
   });
   results.sort((a, b) => b.count - a.count || b.total - a.total);
   const top = results[0];
+  if (!top) return { matched: [], missingRoles: [], photosMatched: [], unused: uniq.map((f) => f.name), confidence: 0, candidates: [], isDefault: true, duplicates };
   if (opts.only && top && top.count === 0) {
     // forced group but nothing recognised: still report that group so the UI can offer "generate anyway"
     return { groupId: top.g.id, matched: [], missingRoles: top.g.inputs.map((r) => r.role), photosMatched: [], unused: uniq.map((f) => f.name), confidence: 0, candidates: [], isDefault: false, duplicates };
@@ -81,6 +89,10 @@ export function matchFiles(files: FileFingerprint[], opts: MatchOpts = {}): Matc
 
 /** Fingerprints that stand in for a group's real files (used by the "sample set" button + Demo Panel). */
 export function sampleFingerprints(g: Group, shuffle = true): FileFingerprint[] {
+  if (isPhotoReel(g)) {
+    const imgs: FileFingerprint[] = g.inputs.map((r) => ({ name: r.filenames[0], size: r.size ?? 90_000, sha: r.sha256_first_1mb, durationSec: 0, kind: "image" }));
+    return shuffle ? [...imgs].reverse() : imgs;
+  }
   const list: FileFingerprint[] = g.inputs.map((r) => ({
     name: r.filenames[0], size: Math.round(r.durationSec * 1_400_000), sha: r.sha256_first_1mb, durationSec: r.durationSec, kind: "video",
   }));
