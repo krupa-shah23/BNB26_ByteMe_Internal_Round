@@ -121,3 +121,8 @@ describe("vlog merge (video1 + video2 + video3 ? full)", () => {
     }
   });
 });
+
+describe("legal check videos", () => {
+  const f = (name: string): FileFingerprint => ({ name, size: 10, sha: "", durationSec: 0, kind: "video" });
+  it.each([["legal1.mp4", "legal1"], ["Legal2.MP4", "legal2"]])("%s ? %s", (name, id) => expect(matchFiles([f(name)]).groupId).toBe(id));
+});

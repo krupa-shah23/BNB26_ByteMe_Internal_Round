@@ -17,13 +17,14 @@ import type { CaptionOption } from "@/lib/services/types";
 import type { Project, ThumbSpec } from "@/lib/types";
 
 /** Caption/hashtag/thumbnail-text set for a fixed-video project. */
-const reelFx = (p: Project) => (p.groupId === "lecture-merge" ? captionsFx.lecture : p.groupId === "vlog-merge" ? captionsFx.vlog : captionsFx.photoReel);
+const reelFx = (p: Project) => (p.groupId === "lecture-merge" ? captionsFx.lecture : p.groupId === "vlog-merge" || p.groupId.startsWith("legal") ? captionsFx.vlog : captionsFx.photoReel);
 
 /* ───────────── Thumbnail rendering (tokens only) ───────────── */
-export function ThumbCard({ hue, frame, text, template, cutout = true, badge, className, url }: { hue: number; frame: number; text: string; template: ThumbSpec["template"]; cutout?: boolean; badge?: string; className?: string; url?: string }) {
+export function ThumbCard({ hue, frame, text, template, cutout = true, badge, className, url, video }: { video?: string; hue: number; frame: number; text: string; template: ThumbSpec["template"]; cutout?: boolean; badge?: string; className?: string; url?: string }) {
   return (
     <Poster seed={hue * 3 + frame} className={clsx("aspect-video w-full", className)} label={`Thumbnail: ${text}`}>
       {url && <CoverFit src={url} className="absolute inset-0 h-full w-full" />}
+      {!url && video && <video src={`${video}#t=1`} preload="metadata" muted playsInline aria-hidden="true" tabIndex={-1} className="absolute inset-0 h-full w-full object-cover" />}
       {template === "blur" && <div className="absolute inset-0 backdrop-blur-sm bg-bg/10" />}
       {template === "brand" && <div className="absolute inset-x-0 bottom-0 h-[34%] bg-brand/90" />}
       {cutout && (

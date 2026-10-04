@@ -26,7 +26,7 @@ function Poster({ p }: { p: Project }) {
   return (
     <motion.div whileHover={{ y: -6 }} transition={{ type: "spring", stiffness: 300, damping: 22 }}>
       <Link href={`/studio/${p.id}`} className="group block rounded-[28px] border border-text/10 bg-surface p-3 transition-shadow hover:shadow-soft" aria-label={`Open ${p.title}`}>
-        <ThumbCard hue={p.hue} url={p.thumb?.url ?? p.cover} frame={p.thumb?.frame ?? 0} text={p.thumb?.text ?? ""} template={p.thumb?.template ?? "blur"} cutout={!!p.thumb && !p.reel} badge={fmtTime(totalDur(p.timeline))} className="rounded-2xl" />
+        <ThumbCard hue={p.hue} url={p.thumb?.url ?? p.cover} video={p.reel?.video} frame={p.thumb?.frame ?? 0} text={p.thumb?.text ?? ""} template={p.thumb?.template ?? "blur"} cutout={!!p.thumb && !p.reel} badge={fmtTime(totalDur(p.timeline))} className="rounded-2xl" />
         <div className="flex items-end justify-between gap-3 px-2 pb-2 pt-4">
           <div className="min-w-0">
             <div className="truncate font-display text-xl tracking-tight">{friendlyTitle(p.title)}</div>
@@ -110,7 +110,7 @@ export default function StudioList() {
                       <motion.li key={p.id} layout initial={{ opacity: 0, y: -24, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, x: -40 }} transition={{ type: "spring", stiffness: 300, damping: 28 }}
                         className="grid items-center gap-4 rounded-[24px] border border-text/10 bg-surface p-3 md:grid-cols-[168px_1fr_auto]">
                         <Link href={`/studio/${p.id}`} className="block" aria-label={`Open ${p.title}`}>
-                          <ThumbCard hue={p.hue} url={p.thumb?.url ?? p.cover} frame={p.thumb?.frame ?? 0} text={p.thumb?.text ?? ""} template={p.thumb?.template ?? "blur"} cutout={!!p.thumb && !p.reel} badge={fmtTime(totalDur(p.timeline))} className="rounded-xl" />
+                          <ThumbCard hue={p.hue} url={p.thumb?.url ?? p.cover} video={p.reel?.video} frame={p.thumb?.frame ?? 0} text={p.thumb?.text ?? ""} template={p.thumb?.template ?? "blur"} cutout={!!p.thumb && !p.reel} badge={fmtTime(totalDur(p.timeline))} className="rounded-xl" />
                         </Link>
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2"><Link href={`/studio/${p.id}`} className="truncate font-display text-xl hover:text-brand">{friendlyTitle(p.title)}</Link><Badge tone={tone[p.status]}>{p.status}</Badge></div>

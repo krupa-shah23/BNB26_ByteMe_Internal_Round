@@ -3,6 +3,8 @@ node_modules/
 .env*
 *.log
 .DS_Store
+
 # Large demo videos
-public/demo/lecture-merge/full_video.mp4
-public/demo/vlog-merge/full.mp4
+creatorai/public/demo/legal/
+creatorai/public/demo/lecture-merge/
+creatorai/public/demo/vlog-merge/

@@ -138,7 +138,7 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
   const generateRef = useRef(generate);
   generateRef.current = generate;
   useEffect(() => {
-    if (!match || match.isDefault || busy || job || result || existing || !(isPhotoReel(group) ? match.matched.length >= GENERATE_MIN : (group?.kind === "lecture-merge" || group?.kind === "vlog-merge") && match.matched.length === group.inputs.length)) return;
+    if (!match || match.isDefault || busy || job || result || existing || !(isPhotoReel(group) ? match.matched.length >= GENERATE_MIN : (group?.kind === "lecture-merge" || group?.kind === "vlog-merge" || group?.kind === "legal-check") && match.matched.length === group.inputs.length)) return;
     const id = setTimeout(() => void generateRef.current(), 1100); // long enough to read "Recognised 18 photos"
     return () => clearTimeout(id);
   }, [match, busy, job, result, existing, group]);
@@ -300,7 +300,7 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
         <motion.section initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className={clsx("card grid gap-6 p-6", embedded ? "md:grid-cols-[120px_1fr]" : "mt-6 md:grid-cols-[220px_1fr]")} aria-label="Generated video">
           {result.reel ? (
             <div className={clsx("relative w-full overflow-hidden rounded-2xl border border-line", result.groupId === "lecture-merge" ? "aspect-video max-w-[360px]" : embedded ? "aspect-[9/16] max-w-[120px]" : "aspect-[9/16] max-w-[220px]")}>
-              <ReelPreview src={result.reel.video} poster={result.reel.poster} label={result.title} className="h-full w-full" muted={result.groupId !== "lecture-merge" && result.groupId !== "vlog-merge"} />
+              <ReelPreview src={result.reel.video} poster={result.reel.poster} label={result.title} className="h-full w-full" muted={result.groupId === "photo-reel"} />
               <span className="pointer-events-none absolute bottom-3 right-3 rounded-md bg-text/80 px-2 py-0.5 text-xs text-bg">{fmtTime(totalDur(result.timeline))}</span>
             </div>
           ) : (
@@ -313,7 +313,7 @@ export function UploadWorkspace({ kind, embedded = false, forcedTab, dropTitle, 
             <div>
               <span className="chip border-ok/40 bg-ok/10 text-ok"><Check size={14} />Generated just now</span>
               <h2 className="t-h2 mt-3">{result.title}</h2>
-              <p className="mt-2 text-sm text-muted">{result.groupId === "vlog-merge" ? `Full video from 3 clips · ${fmtTime(totalDur(result.timeline))}` : result.groupId === "lecture-merge" ? `Full video from 3 parts · ${fmtTime(totalDur(result.timeline))} · 16:9` : result.reel ? `From ${result.photos} photos · 9:16 · ${result.platforms.map((p) => PROFILES[p].label).join(" + ")}` : `From ${result.files.length} clips + ${result.photos} photo · ${result.timeline.length} edits placed by AI · ${result.platforms.map((p) => PROFILES[p].label).join(" + ")}`}</p>
+              <p className="mt-2 text-sm text-muted">{result.groupId.startsWith("legal") ? `Video ready · ${fmtTime(totalDur(result.timeline))} · run Final checks in Studio` : result.groupId === "vlog-merge" ? `Full video from 3 clips · ${fmtTime(totalDur(result.timeline))}` : result.groupId === "lecture-merge" ? `Full video from 3 parts · ${fmtTime(totalDur(result.timeline))} · 16:9` : result.reel ? `From ${result.photos} photos · 9:16 · ${result.platforms.map((p) => PROFILES[p].label).join(" + ")}` : `From ${result.files.length} clips + ${result.photos} photo · ${result.timeline.length} edits placed by AI · ${result.platforms.map((p) => PROFILES[p].label).join(" + ")}`}</p>
               {kind === "video" && group.chapters.length > 0 && (
                 <div className="mt-4"><p className="t-label text-muted">Auto chapters</p><ul className="mt-2 grid gap-1 text-sm">{group.chapters.map((c) => <li key={c.t}><span className="mr-3 font-mono text-xs text-muted">{fmtTime(c.t)}</span>{c.title}</li>)}</ul></div>
               )}

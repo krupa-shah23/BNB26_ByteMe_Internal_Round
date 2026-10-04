@@ -82,7 +82,7 @@ function Overview() {
           <tbody>
             {net !== "YouTube" && published.map((p) => (
               <motion.tr key={p.id} initial={{ opacity: 0, backgroundColor: "rgb(var(--brand) / .2)" }} animate={{ opacity: 1, backgroundColor: "rgb(var(--brand) / 0)" }} transition={{ duration: 2 }} className="border-b border-line">
-                <td className="w-32 p-3"><ThumbCard hue={p.hue} url={p.thumb?.url ?? p.cover} frame={p.thumb?.frame ?? 0} text={p.thumb?.text ?? ""} template={p.thumb?.template ?? "brand"} badge={fmtTime(totalDur(p.timeline))} className="rounded-md" /></td>
+                <td className="w-32 p-3"><ThumbCard hue={p.hue} url={p.thumb?.url ?? p.cover} video={p.reel?.video} frame={p.thumb?.frame ?? 0} text={p.thumb?.text ?? ""} template={p.thumb?.template ?? "brand"} badge={fmtTime(totalDur(p.timeline))} className="rounded-md" /></td>
                 <td className="px-4 font-medium">{p.title} <Badge tone="brand">New</Badge><span className="mt-0.5 block text-xs font-normal text-muted">{p.platforms.map((x) => (x.startsWith("yt") ? "YouTube" : "Instagram"))[0]} · just now</span></td>
                 <td className="px-4">{NA}</td><td className="px-4">{NA}</td>
               </motion.tr>

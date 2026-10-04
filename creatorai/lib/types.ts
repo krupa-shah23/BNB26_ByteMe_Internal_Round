@@ -36,11 +36,14 @@ export interface Group {
   audio: { id: string; src: string; risk: string };
   timeline: Segment[]; hashtags: string[]; chapters: { t: number; title: string }[];
   /** "photo-reel": matched by photo names/hashes; delivers `output` unchanged */
-  kind?: "photo-reel" | "lecture-merge" | "vlog-merge";
+  kind?: "photo-reel" | "lecture-merge" | "vlog-merge" | "legal-check";
   output?: ReelOutput;
 }
 export interface ThumbSpec { frame: number; text: string; template: "brand" | "blur" | "bold"; score: number; id: string; /** a real still (data URL or /demo path) instead of the storyboard frame */ url?: string; source?: "video" | "photo" }
+/** A Banuba effect the creator applied in Studio; baked in when the fixed video is exported. */
+export interface AppliedFilter { file: string; label: string }
 export interface Project {
+  filter?: AppliedFilter;
   id: string; title: string; type: "Short" | "Video"; groupId: string; hue: number;
   createdAt: string; updatedAt: string; status: ProjectStatus;
   platforms: PlatformId[]; aspect: Aspect; timeline: Segment[]; audioId: string;

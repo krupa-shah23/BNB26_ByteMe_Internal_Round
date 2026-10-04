@@ -77,7 +77,7 @@ export default function Review() {
           <div className="rounded-[2.5rem] border-[8px] border-text bg-surface p-2 shadow-soft">
             <div className="relative overflow-hidden rounded-[1.8rem]">
               <div className={clsx("relative", project.aspect === "9:16" ? "aspect-[9/16]" : "aspect-video")}>
-                <ThumbCard hue={project.hue} url={project.thumb?.url ?? project.cover} frame={project.thumb?.frame ?? 0} text={project.thumb?.text ?? "No thumbnail"} template={project.thumb?.template ?? "blur"} cutout={!!project.thumb && !project.reel} className="!aspect-auto h-full" />
+                <ThumbCard hue={project.hue} url={project.thumb?.url ?? project.cover} video={project.reel?.video} frame={project.thumb?.frame ?? 0} text={project.thumb?.text ?? "No thumbnail"} template={project.thumb?.template ?? "blur"} cutout={!!project.thumb && !project.reel} className="!aspect-auto h-full" />
                 {first?.caption && <div className="absolute inset-x-4 bottom-[34%] text-center"><span className="inline-block rounded-xl bg-text/75 px-3 py-1.5 font-display text-sm text-bg">{first.caption}</span></div>}
                 <div className="absolute right-3 bottom-[22%] grid gap-4 text-brand-ink"><Heart size={22} /><MessageCircle size={22} /><Send size={22} /></div>
                 <div className="absolute inset-x-3 bottom-3 text-brand-ink" style={{ textShadow: "0 1px 6px rgb(var(--text) / .7)" }}>

@@ -11,7 +11,7 @@ export const groupSchema = z.object({
   audio: z.object({ id: z.string(), src: z.string(), risk: z.string() }),
   timeline: z.array(segment.omit({ ai: true, touched: true, id: true })).min(1),
   hashtags: z.array(z.string()), chapters: z.array(z.object({ t: z.number(), title: z.string() })),
-  kind: z.enum(["photo-reel", "lecture-merge", "vlog-merge"]).optional(), output: reelOutput.optional(),
+  kind: z.enum(["photo-reel", "lecture-merge", "vlog-merge", "legal-check"]).optional(), output: reelOutput.optional(),
 });
 export const groupsFile = z.object({ groups: z.array(groupSchema.refine((g) => g.inputs.length > 0, "a real group needs inputs")).min(1), default: groupSchema });
 

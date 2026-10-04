@@ -1,7 +1,7 @@
 "use client";
 import type { PlayerRef } from "@remotion/player";
 import { motion } from "framer-motion";
-import { Check, Dna, Download, Pause, Play, Plus, Redo2, RotateCcw, Save, Sparkles, Subtitles, Trash2, Undo2, Image as ImageIcon } from "lucide-react";
+import { ShieldCheck, Check, Dna, Download, Pause, Play, Plus, Redo2, RotateCcw, Save, Sparkles, Subtitles, Trash2, Undo2, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -21,6 +21,9 @@ import { CaptionsDrawer, ThumbnailModal, ThumbCard } from "./Tools";
 import { PROFILES, aspectDims, fmtTime, friendlyTitle, normalize, relTime, seedTimeline, segmentName, totalDur, uid } from "@/lib/projects";
 import { runJob } from "@/lib/services/demo";
 import { LectureReport } from "./LectureReport";
+import dynamic from "next/dynamic";
+import { renderFiltered } from "@/lib/banuba";
+const FilterPanel = dynamic(() => import("./FilterPanel").then((m) => m.FilterPanel), { ssr: false, loading: () => <div className="skeleton mt-4 h-64 w-full rounded-2xl" /> });
 import { groupById } from "@/lib/match";
 import { tracks, trackById } from "@/lib/precheck";
 import { MusicSearch } from "@/components/audio/SongSearch";
@@ -215,7 +218,7 @@ export function Editor({ projectId }: { projectId: string }) {
   // review lanes: ad-safety, PII, claims, consent
   const [compRaw, applyComp] = useCompliance(project);
   const comp = project?.reel ? null : compRaw; // a fixed video file is never inspected, so no compliance layer is shown for it
-  const [side, setSide] = useState<"adjust" | "checks">("adjust");
+  const [side, setSide] = useState<"adjust" | "checks" | "filters">("adjust");
   const [lane, setLane] = useState<Lane>("mon");
   const [focus, setFocus] = useState<Focus>(null);
   const [selBlur, setSelBlur] = useState<string | undefined>();
@@ -306,7 +309,15 @@ export function Editor({ projectId }: { projectId: string }) {
     save();
     setExporting("Starting");
     await runJob([{ label: "Compositing", ms: 900 }, { label: "Encoding 1080p", ms: 1100 }, { label: "Packaging for platforms", ms: 800 }], (p) => setExporting(p.steps[Math.min(p.stepIndex, p.steps.length - 1)].label));
-    const a = document.createElement("a"); a.href = project.reel.video; a.download = "reel.mp4"; document.body.appendChild(a); a.click(); a.remove();
+    let href = project.reel.video, name = "reel.mp4", cleanup = () => {};
+    if (project.filter) {
+      try {
+        const s0 = tl[0], from = s0?.in ?? 0;
+        const blob = await renderFiltered(project.reel.video, from, from + (s0?.dur ?? project.reel.durationSec), project.filter.file, (p) => setExporting(`Applying ${project.filter!.label} ${Math.round(p * 100)}%`));
+        href = URL.createObjectURL(blob); name = "reel-filtered.webm"; cleanup = () => setTimeout(() => URL.revokeObjectURL(href), 4000);
+      } catch { toast("Filter couldn’t be applied", "Exporting the original video instead"); }
+    }
+    const a = document.createElement("a"); a.href = href; a.download = name; document.body.appendChild(a); a.click(); a.remove(); cleanup();
     setExporting(null); toast("Export ready", "Your video was saved to your device");
   };
 
@@ -380,6 +391,7 @@ export function Editor({ projectId }: { projectId: string }) {
           <button className="btn-ghost h-10 w-10 p-0" onClick={undo} disabled={!past.length} aria-label="Undo"><Undo2 size={16} /></button>
           <button className="btn-ghost h-10 w-10 p-0" onClick={redo} disabled={!future.length} aria-label="Redo"><Redo2 size={16} /></button>
           {project.groupId === "lecture-merge" && <><button className="btn-ghost" onClick={() => setReport(true)}><Sparkles size={16} />AI report</button><LectureReport open={report} onClose={() => setReport(false)} /></>}
+          {project.groupId.startsWith("legal") && <button className="btn-brand" onClick={() => { save(); router.push(`/legal/${project.id}`); }}><ShieldCheck size={16} />Final checks</button>}
           {project.reel && <button className="btn-ghost" onClick={resetReel}><RotateCcw size={16} />Reset</button>}
           <span className="mx-1 hidden h-6 w-px bg-line md:block" />
           <button className="btn-ghost" onClick={() => setCaps(true)}><Subtitles size={16} />Captions{project.caption && <Check size={14} className="text-ok" />}</button>
@@ -506,13 +518,15 @@ export function Editor({ projectId }: { projectId: string }) {
 
         {/* ADJUST */}
         <section ref={checksRef} className="order-3 rounded-[24px] border border-text/10 bg-surface p-4 text-sm" aria-label="Inspector">
-          <div role="tablist" className={clsx("grid gap-1 text-xs font-semibold uppercase tracking-[0.1em]", project.reel ? "grid-cols-1" : "grid-cols-2")}>
-            {(["adjust", "checks"] as const).filter((t) => !(project.reel && t === "checks")).map((t) => {
+          <div role="tablist" className={clsx("grid gap-1 text-xs font-semibold uppercase tracking-[0.1em]", "grid-cols-2")}>
+            {(["adjust", "checks", "filters"] as const).filter((t) => (project.reel ? t !== "checks" : t !== "filters")).map((t) => {
               const n = comp ? computeAdSafe(project, comp).issues.filter((i) => i.status === "open").length + comp.pii.filter((p) => p.status === "open").length + comp.claims.filter((k) => k.status === "open").length + comp.people.filter((p) => p.status === "unknown").length : 0;
-              return <button key={t} role="tab" aria-selected={side === t} onClick={() => setSide(t)} className={clsx("flex items-center justify-center gap-1.5 rounded-xl py-2 transition-colors", side === t ? "bg-sunken text-text" : "text-muted hover:bg-sunken")}>{t === "adjust" ? "Adjust" : "Checks"}{t === "checks" && n > 0 && <span className="min-w-4 rounded-full bg-bad px-1 text-[10px] leading-4 text-bg">{n}</span>}</button>;
+              return <button key={t} role="tab" aria-selected={side === t} onClick={() => setSide(t)} className={clsx("flex items-center justify-center gap-1.5 rounded-xl py-2 transition-colors", side === t ? "bg-sunken text-text" : "text-muted hover:bg-sunken")}>{t === "adjust" ? "Adjust" : t === "filters" ? "Filters" : "Checks"}{t === "checks" && n > 0 && <span className="min-w-4 rounded-full bg-bad px-1 text-[10px] leading-4 text-bg">{n}</span>}</button>;
             })}
           </div>
-          {side === "checks" && comp ? (
+          {side === "filters" && project.reel ? (
+            <FilterPanel project={project} onApply={(f) => { patch(project.id, { filter: f ?? undefined }); toast(f ? "Filter applied" : "Filter removed", f ? `${f.label} will be included when you export` : undefined); }} />
+          ) : side === "checks" && comp ? (
             <div className="mt-4 max-h-[600px] overflow-y-auto pr-1">
               <ChecksPanel c={comp} apply={applyComp} issues={computeAdSafe(project, comp).issues} capIssues={capIss} fixCaptions={fixCaptions} lane={lane} setLane={setLane} focus={focus} setFocus={setFocus} jump={jump} adSafe={computeAdSafe(project, comp).score} />
             </div>

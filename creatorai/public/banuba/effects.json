@@ -1,0 +1,15 @@
+{
+  "effects": [
+    { "file": "Sunset.zip", "label": "Sunset", "group": "Colour" },
+    { "file": "Retrowave.zip", "label": "Retrowave", "group": "Colour" },
+    { "file": "WhooshBeautyFemale.zip", "label": "Whoosh beauty", "group": "Beauty" },
+    { "file": "dialect.zip", "label": "Dialect", "group": "Beauty" },
+    { "file": "SkinSoftening.zip", "label": "Skin soften", "group": "Beauty" },
+    { "file": "Low_look_clubs.zip", "label": "Club look", "group": "Makeup" },
+    { "file": "Lips.zip", "label": "Lips", "group": "Makeup" },
+    { "file": "Eye_lenses.zip", "label": "Eye lenses", "group": "Makeup" },
+    { "file": "glasses_RayBan4165_Dark.zip", "label": "Sunglasses", "group": "Try-on" },
+    { "file": "Gangster.zip", "label": "Gangster", "group": "Fun" },
+    { "file": "Regular_blur.zip", "label": "Blur background", "group": "Background" }
+  ]
+}

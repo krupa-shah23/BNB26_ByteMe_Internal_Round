@@ -7,5 +7,7 @@
   "photo-reel": ["A few moments, one reel.", "Add a line of text where it matters.", "Save this for later."],
   "lecture-merge": ["Consider the function of maximising f(x) = x².", "Start with an initial population.", "Fitness decides who gets selected.", "Crossover and mutation create the next generation."],
   "vlog-merge": ["Come along with me today.", "Here is how it went.", "Follow for the next one."],
+  "legal1": ["Here is what happened with my order.", "I want to be clear about my experience."],
+  "legal2": ["Here is what happened when I tried to sell my phone.", "I want to be clear about my experience."],
   "_default": ["The one thing nobody tells you.", "Here is what actually happened.", "Follow for more."]
 }

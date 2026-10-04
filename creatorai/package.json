@@ -11,9 +11,13 @@
     "seed": "node scripts/seed.mjs",
     "hash-demo": "node scripts/hash-demo.mjs",
     "prep-demo": "node scripts/prep-demo.mjs",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "banuba:assets": "node scripts/banuba-assets.mjs",
+    "predev": "node scripts/banuba-assets.mjs",
+    "prebuild": "node scripts/banuba-assets.mjs"
   },
   "dependencies": {
+    "@banuba/webar": "^1.18.5",
     "@remotion/player": "^4.0.532",
     "@tanstack/react-query": "^5.104.1",
     "clsx": "^2.1.1",
@@ -28,6 +32,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@playwright/test": "^1.48.0",
     "@types/node": "^20.19.43",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
@@ -35,7 +40,6 @@
     "postcss": "^8.5.28",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.7",
-    "@playwright/test": "^1.48.0"
+    "vitest": "^3.2.7"
   }
 }

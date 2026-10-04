@@ -949,6 +949,112 @@
         "codec": "avc1",
         "hasAudio": true
       }
+    },
+    {
+      "id": "legal1",
+      "kind": "legal-check",
+      "title": "Legal check: video 1",
+      "topic": "education",
+      "format": "video",
+      "type": "Vlog",
+      "preset": "Vlog/lifestyle",
+      "media": true,
+      "hue": 10,
+      "inputs": [
+        {
+          "role": "video",
+          "filenames": [
+            "legal1.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 0
+        }
+      ],
+      "photos": [],
+      "audio": {
+        "id": "none",
+        "src": "",
+        "risk": "low"
+      },
+      "timeline": [
+        {
+          "at": 0,
+          "dur": 54.4,
+          "src": "full",
+          "in": 0,
+          "out": 54.4,
+          "kind": "reel",
+          "url": "/demo/legal/legal1.mp4"
+        }
+      ],
+      "hashtags": [
+        "#review",
+        "#honestreview"
+      ],
+      "chapters": [],
+      "output": {
+        "video": "/demo/legal/legal1.mp4",
+        "poster": "",
+        "durationSec": 54.4,
+        "width": 1918,
+        "height": 1078,
+        "fps": 30,
+        "codec": "avc1",
+        "hasAudio": true
+      }
+    },
+    {
+      "id": "legal2",
+      "kind": "legal-check",
+      "title": "Legal check: video 2",
+      "topic": "education",
+      "format": "video",
+      "type": "Vlog",
+      "preset": "Vlog/lifestyle",
+      "media": true,
+      "hue": 11,
+      "inputs": [
+        {
+          "role": "video",
+          "filenames": [
+            "legal2.mp4"
+          ],
+          "sha256_first_1mb": "",
+          "durationSec": 0
+        }
+      ],
+      "photos": [],
+      "audio": {
+        "id": "none",
+        "src": "",
+        "risk": "low"
+      },
+      "timeline": [
+        {
+          "at": 0,
+          "dur": 70.567,
+          "src": "full",
+          "in": 0,
+          "out": 70.567,
+          "kind": "reel",
+          "url": "/demo/legal/legal2.mp4"
+        }
+      ],
+      "hashtags": [
+        "#review",
+        "#honestreview"
+      ],
+      "chapters": [],
+      "output": {
+        "video": "/demo/legal/legal2.mp4",
+        "poster": "",
+        "durationSec": 70.567,
+        "width": 604,
+        "height": 1078,
+        "fps": 30,
+        "codec": "avc1",
+        "hasAudio": true
+      }
     }
   ],
   "default": {
